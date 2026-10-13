@@ -2,7 +2,7 @@
     $genders = ['L' => 'Laki-laki', 'P' => 'Perempuan'];
     $displayName = $student?->name ?? $teacher?->name ?? $guardian?->name ?? $user->name;
 @endphp
-<div class="mx-auto max-w-4xl space-y-6">
+<div class="space-y-6">
     <section class="overflow-hidden rounded-card border border-border bg-surface" aria-labelledby="nama-profil">
         <div class="h-24 bg-brand"></div>
         <div class="px-4 pb-5 sm:px-6">
