@@ -77,10 +77,10 @@ it('marks a course as not meeting the requirement once absences exceed the toler
 });
 
 it('counts izin and sakit as not attended', function () {
+    setCourseAttendance('IF101');
+
     $record = AttendanceRecord::query()->where('student_id', $this->student->id)
         ->whereHas('session.schedule.assignment.subject', fn ($query) => $query->where('code', 'IF101'))->firstOrFail();
-
-    setCourseAttendance('IF101');
     $record->update(['status' => AttendanceStatus::Sick]);
 
     $row = courseRow('IF101');

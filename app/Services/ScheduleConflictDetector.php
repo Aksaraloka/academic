@@ -19,6 +19,7 @@ class ScheduleConflictDetector
         $sameSlot = Schedule::query()
             ->with(['assignment.teacher', 'assignment.studyGroup', 'assignment.subject', 'room'])
             ->where('time_slot_id', $timeSlotId)
+            ->whereHas('assignment', fn ($query) => $query->where('academic_term_id', $assignment->academic_term_id))
             ->when($ignoreScheduleId, fn ($query) => $query->whereKeyNot($ignoreScheduleId))
             ->get();
 

@@ -151,7 +151,7 @@ SVG;
         $periods = [[1, '07:30', '09:10'], [2, '09:20', '11:00'], [3, '12:30', '14:10'], [4, '14:20', '16:00']];
         $slots = collect();
 
-        foreach ([1, 2, 3, 4, 5] as $day) {
+        foreach ([1, 2, 3, 4, 5, 6] as $day) {
             foreach ($periods as [$number, $start, $end]) {
                 $slots->push(TimeSlot::create(['tenant_id' => $tenant->id, 'day' => $day, 'period_number' => $number, 'starts_at' => $start, 'ends_at' => $end]));
             }
@@ -212,7 +212,8 @@ SVG;
                     'subject_id' => $subject->id, 'study_group_id' => $group->id, 'hours_per_week' => 2,
                 ]);
 
-                foreach ([1, 3] as $day) {
+                // Mata kuliah ketiga berlangsung Senin dan Sabtu; lainnya Senin dan Rabu.
+                foreach ([1, $subjectIndex === 2 ? 6 : 3] as $day) {
                     $period = (($subjectIndex + $groupIndex) % 3) + 1;
                     $slot = $slots->first(fn (TimeSlot $candidate) => $candidate->day === $day && $candidate->period_number === $period);
                     $schedules->put("{$assignment->id}-{$day}", Schedule::create([
@@ -393,8 +394,49 @@ SVG;
             }
         });
 
+        // Semester sebelumnya (arsip, terkunci): kelas yang sama dengan mata kuliah semester 2 pada Selasa dan Kamis.
+        $previousTerm = AcademicTerm::create([
+            'tenant_id' => $tenant->id, 'name' => '2025/2026', 'semester' => 'Genap',
+            'starts_at' => '2026-02-09', 'ends_at' => '2026-06-26', 'is_active' => false, 'is_locked' => true,
+        ]);
+
+        $previousSubjects = collect([
+            ['Pengantar Teknologi Informasi', 'IF102', 3],
+            ['Matematika Diskrit', 'MK102', 3],
+            ['Bahasa Inggris Akademik', 'UM101', 2],
+        ])->map(fn (array $row) => Subject::create([
+            'tenant_id' => $tenant->id, 'name' => $row[0], 'code' => $row[1], 'credits' => $row[2], 'semester' => 2, 'program_id' => $informatics->id,
+        ]));
+
+        foreach ($groups->values() as $groupIndex => $group) {
+            $previousGroup = StudyGroup::create([
+                'tenant_id' => $tenant->id, 'academic_term_id' => $previousTerm->id, 'program_id' => $informatics->id,
+                'name' => $group->name, 'homeroom_teacher_id' => $group->homeroom_teacher_id,
+            ]);
+
+            $group->activeStudents->each(fn (Student $student) => $previousGroup->members()->create([
+                'student_id' => $student->id, 'joined_at' => '2026-02-09', 'left_at' => '2026-07-01',
+            ]));
+
+            foreach ($previousSubjects as $subjectIndex => $subject) {
+                $assignment = TeachingAssignment::create([
+                    'tenant_id' => $tenant->id, 'academic_term_id' => $previousTerm->id, 'teacher_id' => $teachers[$subjectIndex]->id,
+                    'subject_id' => $subject->id, 'study_group_id' => $previousGroup->id, 'hours_per_week' => 2,
+                ]);
+
+                foreach ([2, $subjectIndex === 2 ? 6 : 4] as $day) {
+                    $period = (($subjectIndex + $groupIndex) % 3) + 1;
+                    $slot = $slots->first(fn (TimeSlot $candidate) => $candidate->day === $day && $candidate->period_number === $period);
+                    Schedule::create([
+                        'tenant_id' => $tenant->id, 'teaching_assignment_id' => $assignment->id,
+                        'time_slot_id' => $slot->id, 'room_id' => $rooms[$groupIndex]->id,
+                    ]);
+                }
+            }
+        }
+
         // Riwayat presensi lima minggu terakhir (tanpa hari ini) agar rekap dan syarat ujian 75% terlihat.
-        $dates = collect(range(1, 35))->map(fn (int $back) => today()->subDays($back))->filter(fn ($date) => $date->isWeekday());
+        $dates = collect(range(1, 35))->map(fn (int $back) => today()->subDays($back))->filter(fn ($date) => ! $date->isSunday());
         $demoStudentId = $students->first()->id;
         $skippers = $students->filter(fn (Student $student, int $index) => $index % 15 === 7)->pluck('id');
 

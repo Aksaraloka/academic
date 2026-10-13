@@ -51,7 +51,7 @@ class Manage extends Component
             [4, '09:15', '09:55'], [5, '09:55', '10:35'], [6, '10:35', '11:15'],
         ];
 
-        foreach (array_keys(array_slice(TimeSlot::DAYS, 0, 5, true)) as $day) {
+        foreach (array_keys(TimeSlot::DAYS) as $day) {
             foreach ($periods as [$number, $start, $end]) {
                 TimeSlot::create(['day' => $day, 'period_number' => $number, 'starts_at' => $start, 'ends_at' => $end]);
             }

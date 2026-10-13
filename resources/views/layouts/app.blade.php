@@ -108,7 +108,7 @@
             </div>
         </header>
 
-        <main id="konten" class="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 pb-28 sm:px-6 lg:pb-10">
+        <main id="konten" class="mx-auto w-full {{ ($fullWidth ?? false) ? 'max-w-none' : 'max-w-6xl' }} space-y-6 px-4 py-6 pb-28 sm:px-6 lg:pb-10">
             {{ $slot }}
         </main>
     </div>
