@@ -13,13 +13,11 @@ use App\Models\StudyGroup;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class AttendanceService
 {
     public function __construct(
         private readonly AuditLogger $audit,
-        private readonly QrTokenService $qr,
     ) {}
 
     /**
@@ -81,35 +79,6 @@ class AttendanceService
     {
         $this->authorizeEdit($session, $actor);
         $session->update(['closed_at' => now()]);
-    }
-
-    /**
-     * Mahasiswa memindai QR dosen dari akunnya sendiri (P-03). Token divalidasi server.
-     */
-    public function scanQr(AttendanceSession $session, User $student, string $token): AttendanceRecord
-    {
-        if ($session->mode !== AttendanceMode::Qr || ! $this->qr->isValid($session, $token)) {
-            throw ValidationException::withMessages(['token' => 'Kode QR tidak berlaku. Pindai ulang kode yang sedang tampil.']);
-        }
-
-        $studentId = $student->student?->id;
-        $record = $studentId === null ? null : AttendanceRecord::query()
-            ->where('attendance_session_id', $session->id)
-            ->where('student_id', $studentId)
-            ->first();
-
-        if ($record === null) {
-            throw ValidationException::withMessages(['token' => 'Kamu tidak terdaftar di kelas ini.']);
-        }
-
-        $record->update([
-            'status' => AttendanceStatus::Present,
-            'method' => 'qr',
-            'recorded_at' => now(),
-            'recorded_by' => $student->id,
-        ]);
-
-        return $record;
     }
 
     /**

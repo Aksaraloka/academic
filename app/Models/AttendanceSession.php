@@ -46,9 +46,4 @@ class AttendanceSession extends Model
     {
         return $this->hasMany(AttendanceRecord::class);
     }
-
-    public function qrTokens(): HasMany
-    {
-        return $this->hasMany(QrToken::class);
-    }
 }

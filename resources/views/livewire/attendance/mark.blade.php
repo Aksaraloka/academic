@@ -4,9 +4,6 @@
         :subtitle="($session->schedule ? $session->schedule->assignment->subject->name.' · sesi ke-'.$session->schedule->timeSlot->period_number.' · ' : 'Presensi harian · ').$session->date->translatedFormat('j F Y')">
         <x-slot:actions>
             <x-button :href="route('attendance.index')" wire:navigate variant="secondary" icon="arrow-left">Kembali</x-button>
-            @if ($session->mode === \App\Enums\AttendanceMode::Qr && $canEdit)
-                <x-button :href="route('attendance.qr', $session)" wire:navigate variant="secondary" icon="qr-code">Tampilkan QR</x-button>
-            @endif
         </x-slot:actions>
     </x-page-header>
 

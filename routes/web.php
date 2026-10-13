@@ -15,7 +15,6 @@ use App\Livewire\Leaves;
 use App\Livewire\News;
 use App\Livewire\Programs;
 use App\Livewire\Reports;
-use App\Livewire\Scan;
 use App\Livewire\Schedule;
 use App\Livewire\Students;
 use App\Livewire\Survey;
@@ -100,15 +99,10 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin,principal,teacher,duty')->group(function () {
         Route::livewire('/presensi', Attendance\Index::class)->name('attendance.index');
         Route::livewire('/presensi/{session}', Attendance\Mark::class)->name('attendance.mark');
-        Route::livewire('/presensi/{session}/qr', Attendance\Qr::class)->name('attendance.qr');
     });
 
     Route::middleware('role:principal,curriculum,teacher,duty')->group(function () {
         Route::livewire('/check-in', Checkin::class)->name('checkin');
-    });
-
-    Route::middleware('role:student')->group(function () {
-        Route::livewire('/pindai', Scan::class)->name('scan');
     });
 
     Route::middleware('role:admin,principal,curriculum,student')->group(function () {

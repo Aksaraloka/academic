@@ -19,11 +19,11 @@ it('renders every page for its intended roles with seeded data', function (strin
     'curriculum' => ['akademik@aksaraloka.test', ['/beranda', '/jadwal', '/jadwal/atur', '/kelas', '/rekap', '/check-in']],
     'teacher' => ['dosen@aksaraloka.test', ['/beranda', '/jadwal', '/presensi', '/check-in', '/rekap', '/izin']],
     'duty' => ['petugas@aksaraloka.test', ['/beranda', '/presensi', '/check-in', '/jadwal']],
-    'student' => ['mahasiswa@aksaraloka.test', ['/beranda', '/ringkasan', '/jadwal', '/pindai', '/rekap', '/wisuda']],
+    'student' => ['mahasiswa@aksaraloka.test', ['/beranda', '/ringkasan', '/jadwal', '/presensi-saya', '/rekap', '/wisuda']],
     'guardian' => ['ortu@aksaraloka.test', ['/beranda', '/ringkasan', '/jadwal', '/rekap']],
 ]);
 
-it('renders the group page, attendance sheet and QR page', function () {
+it('renders the group page and attendance sheet', function () {
     $admin = User::where('email', 'admin@aksaraloka.test')->firstOrFail();
     $this->actingAs($admin);
 
@@ -32,6 +32,5 @@ it('renders the group page, attendance sheet and QR page', function () {
 
     $this->get(route('groups.show', $group))->assertOk()->assertSee($group->name);
     $this->get(route('attendance.mark', $session))->assertOk();
-    $this->get(route('attendance.qr', $session))->assertOk();
     $this->get(route('reports.export', ['group' => $group->id, 'bulan' => now()->format('Y-m')]))->assertOk();
 });

@@ -15,9 +15,8 @@ use App\Models\Tenant;
 use App\Models\TimeSlot;
 use App\Models\User;
 use App\Services\AttendanceService;
-use App\Services\QrTokenService;
 use Illuminate\Support\Collection;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 
 /**
@@ -99,37 +98,26 @@ it('logs corrections made after the day of the session', function () {
     $this->assertDatabaseHas('audit_logs', ['action' => 'attendance.corrected']);
 });
 
-it('accepts a valid QR scan and rejects expired or foreign tokens', function () {
+it('lets only teachers record attendance and never students themselves', function () {
     $school = schoolWithClass();
+    $this->actingAs($school['user']);
+    $session = app(AttendanceService::class)->openSession($school['schedule'], $school['user']);
+    $session->records()->update(['status' => AttendanceStatus::Absent]);
+
     $studentUser = User::factory()->for($school['tenant'])->role(Role::Student)->create();
     $school['students']->first()->update(['user_id' => $studentUser->id]);
 
-    $this->actingAs($school['user']);
-    $service = app(AttendanceService::class);
-    $session = $service->openSession($school['schedule'], $school['user'], AttendanceMode::Qr);
-    $session->records()->update(['status' => AttendanceStatus::Absent]);
+    $this->actingAs($studentUser)->get(route('attendance.mark', $session))->assertForbidden();
+    $this->actingAs($studentUser)->get(route('attendance.index'))->assertForbidden();
+    $this->actingAs($studentUser)->get('/pindai')->assertNotFound();
+    $this->actingAs($studentUser)->get("/presensi/{$session->id}/qr")->assertNotFound();
 
-    $qr = app(QrTokenService::class);
-    $this->actingAs($studentUser);
-
-    expect(fn () => $service->scanQr($session, $studentUser, 'salah'))->toThrow(ValidationException::class);
-
-    $record = $service->scanQr($session, $studentUser, $qr->tokenFor($session));
-    expect($record->status)->toBe(AttendanceStatus::Present)->and($record->method)->toBe('qr');
-
-    $stale = $qr->tokenFor($session, time() - 120);
-    expect($qr->isValid($session, $stale))->toBeFalse();
+    expect(method_exists(AttendanceService::class, 'scanQr'))->toBeFalse()
+        ->and(Route::has('scan'))->toBeFalse()
+        ->and(Route::has('attendance.qr'))->toBeFalse()
+        ->and($session->records()->where('status', AttendanceStatus::Present)->count())->toBe(0);
 });
 
-it('rejects QR scans from students outside the class', function () {
-    $school = schoolWithClass();
-    $outsider = User::factory()->for($school['tenant'])->role(Role::Student)->create();
-    Student::factory()->create(['tenant_id' => $school['tenant']->id, 'user_id' => $outsider->id]);
-
-    $this->actingAs($school['user']);
-    $service = app(AttendanceService::class);
-    $session = $service->openSession($school['schedule'], $school['user'], AttendanceMode::Qr);
-
-    expect(fn () => $service->scanQr($session, $outsider, app(QrTokenService::class)->tokenFor($session)))
-        ->toThrow(ValidationException::class);
+it('has no QR attendance mode left', function () {
+    expect(collect(AttendanceMode::cases())->pluck('value')->all())->not->toContain('qr');
 });

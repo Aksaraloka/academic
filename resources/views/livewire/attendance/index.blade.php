@@ -20,10 +20,7 @@
                         <x-badge variant="success" icon="check-circle">{{ $session->present_count }}/{{ $session->records_count }} hadir</x-badge>
                         <x-button :href="route('attendance.mark', $session)" wire:navigate size="sm" variant="secondary">Buka</x-button>
                     @elseif ($canOpen && (auth()->user()->isAdmin() || $schedule->assignment->teacher_id === auth()->user()->teacher?->id))
-                        <div class="flex gap-2">
-                            <x-button size="sm" wire:click="open({{ $schedule->id }}, 'manual')" wire:loading.attr="disabled" wire:target="open">Presensi</x-button>
-                            <x-button size="sm" variant="secondary" icon="qr-code" wire:click="open({{ $schedule->id }}, 'qr')" wire:loading.attr="disabled" wire:target="open">QR</x-button>
-                        </div>
+                        <x-button size="sm" wire:click="open({{ $schedule->id }})" wire:loading.attr="disabled" wire:target="open">Mulai presensi</x-button>
                     @else
                         <x-badge variant="warning" icon="clock">Belum diisi</x-badge>
                     @endif

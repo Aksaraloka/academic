@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Attendance;
 
-use App\Enums\AttendanceMode;
 use App\Enums\Role;
 use App\Models\AttendanceSession;
 use App\Models\Schedule;
@@ -15,7 +14,7 @@ use Livewire\Component;
 #[Title('Presensi')]
 class Index extends Component
 {
-    public function open(int $scheduleId, string $mode, AttendanceService $service): mixed
+    public function open(int $scheduleId, AttendanceService $service): mixed
     {
         $user = auth()->user();
         $schedule = Schedule::query()->with('assignment.studyGroup')->findOrFail($scheduleId);
@@ -23,9 +22,9 @@ class Index extends Component
         $ownsSchedule = $user->teacher && $schedule->assignment->teacher_id === $user->teacher->id;
         abort_unless($user->isAdmin() || $ownsSchedule, 403);
 
-        $session = $service->openSession($schedule, $user, AttendanceMode::from($mode));
+        $session = $service->openSession($schedule, $user);
 
-        return $this->redirectRoute($session->mode === AttendanceMode::Qr ? 'attendance.qr' : 'attendance.mark', $session, navigate: true);
+        return $this->redirectRoute('attendance.mark', $session, navigate: true);
     }
 
     public function openDaily(int $groupId, AttendanceService $service): mixed

@@ -135,3 +135,39 @@ it('shows an empty state when no semester is active', function () {
 
     $this->actingAs($this->user)->get('/presensi-saya')->assertOk()->assertSee('Belum ada semester aktif');
 });
+
+it('shows an overall pie chart and a mini pie per course on the presensi page', function () {
+    $response = $this->actingAs($this->user)->get('/presensi-saya');
+
+    $response->assertOk()
+        ->assertSee('Distribusi kehadiran')
+        ->assertSee('Distribusi kehadiran semua mata kuliah', false)
+        ->assertSee('Distribusi kehadiran Kalkulus', false);
+
+    expect(substr_count($response->getContent(), 'role="img" aria-label="Distribusi kehadiran'))->toBe(1 + 3);
+});
+
+it('draws pie slices proportional to the attendance counts with a text legend', function () {
+    $html = (string) $this->blade('<x-pie-chart :slices="$slices" title="Uji" />', ['slices' => [
+        ['label' => 'Hadir', 'value' => 6, 'variant' => 'success'],
+        ['label' => 'Izin', 'value' => 2, 'variant' => 'info'],
+        ['label' => 'Alpa', 'value' => 2, 'variant' => 'danger'],
+        ['label' => 'Sakit', 'value' => 0, 'variant' => 'warning'],
+    ]]);
+
+    expect(substr_count($html, '<path'))->toBe(3)
+        ->and($html)->toContain('Uji: Hadir 6 (60%), Izin 2 (20%), Alpa 2 (20%), Sakit 0 (0%)')
+        ->and($html)->toContain('fill-success')->toContain('fill-info')->toContain('fill-danger')
+        ->and($html)->toContain('60%');
+});
+
+it('draws a full circle for a single slice and an empty circle without data', function () {
+    $single = (string) $this->blade('<x-pie-chart :slices="$slices" />', ['slices' => [
+        ['label' => 'Hadir', 'value' => 5, 'variant' => 'success'],
+        ['label' => 'Alpa', 'value' => 0, 'variant' => 'danger'],
+    ]]);
+    $empty = (string) $this->blade('<x-pie-chart :slices="$slices" />', ['slices' => [['label' => 'Hadir', 'value' => 0, 'variant' => 'success']]]);
+
+    expect($single)->not->toContain('<path')->toContain('fill-success')
+        ->and($empty)->not->toContain('<path')->toContain('belum ada data');
+});

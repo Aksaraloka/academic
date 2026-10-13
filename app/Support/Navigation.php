@@ -67,7 +67,6 @@ class Navigation
                 self::item('Beranda', 'dashboard', 'home'),
                 self::item('Presensi', 'attendance.mine', 'clipboard-document-check', 'attendance.mine'),
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
-                self::item('Pindai QR', 'scan', 'qr-code'),
                 self::item('Ringkasan', 'summary', 'clipboard-document-list'),
                 self::item('Wisuda', 'wisuda.overview', 'academic-cap', 'wisuda.*'),
             ],

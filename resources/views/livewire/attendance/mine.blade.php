@@ -9,11 +9,8 @@
     $letters = ['hadir' => 'H', 'terlambat' => 'T', 'izin' => 'I', 'sakit' => 'S', 'alpa' => 'A'];
 @endphp
 <div class="space-y-6">
-    <x-page-header title="Presensi saya" :subtitle="$term ? 'Analitik kehadiran per mata kuliah · '.$term->name.' '.$term->semester : 'Analitik kehadiran per mata kuliah'">
-        <x-slot:actions>
-            <x-button :href="route('scan')" wire:navigate icon="qr-code">Pindai QR</x-button>
-        </x-slot:actions>
-    </x-page-header>
+    <x-page-header title="Presensi saya" :subtitle="$term ? 'Analitik kehadiran per mata kuliah · '.$term->name.' '.$term->semester : 'Analitik kehadiran per mata kuliah'" />
+    <p class="-mt-3 text-sm text-text-muted">Presensi dicatat oleh dosen di kelas. Kamu tidak perlu mengisi sendiri; bila datamu keliru, sampaikan ke dosen pengampu.</p>
 
     @if (! $student)
         <x-card><x-empty-state icon="identification" title="Akunmu belum tertaut ke data mahasiswa" description="Minta BAAK menautkan akunmu agar presensi tampil di sini." /></x-card>
@@ -50,7 +47,20 @@
             </x-card>
         @endif
 
-        <x-card :title="'Perbandingan kehadiran (batas '.$minPercent.'%)'">
+        @php
+            $slicesFor = fn (array $counts): array => collect($statuses)
+                ->map(fn ($status): array => ['label' => $status->label(), 'value' => $counts[$status->value], 'variant' => $status->variant()])
+                ->all();
+            $overallCounts = collect($statuses)->mapWithKeys(fn ($status): array => [$status->value => $courses->sum(fn (array $course): int => $course['counts'][$status->value])])->all();
+        @endphp
+
+        <div class="grid gap-4 lg:grid-cols-5">
+        <x-card title="Distribusi kehadiran" class="lg:col-span-2">
+            <x-pie-chart :slices="$slicesFor($overallCounts)" size="size-36" title="Distribusi kehadiran semua mata kuliah" />
+            <p class="mt-4 text-xs text-text-muted">Gabungan {{ $overall['held'] }} pertemuan dari {{ $courses->count() }} mata kuliah semester ini.</p>
+        </x-card>
+
+        <x-card :title="'Perbandingan kehadiran (batas '.$minPercent.'%)'" class="lg:col-span-3">
             <ul class="space-y-3" aria-label="Persentase kehadiran per mata kuliah">
                 @foreach ($courses->sortBy(fn ($course) => $course['percent'] ?? 101) as $course)
                     <li wire:key="cmp-{{ $course['assignment']->id }}">
@@ -67,6 +77,7 @@
             </ul>
             <p class="mt-4 flex items-center gap-2 text-xs text-text-muted"><span class="inline-block h-3 w-0.5 rounded bg-text" aria-hidden="true"></span> Garis penanda batas minimal {{ $minPercent }}% untuk mengikuti ujian.</p>
         </x-card>
+        </div>
 
         <section aria-labelledby="per-matkul" class="space-y-4">
             <h2 id="per-matkul" class="text-lg font-semibold">Per mata kuliah</h2>
@@ -88,9 +99,12 @@
                             <x-badge :variant="$levelVariant" :icon="$levelIcon">{{ $levelLabel }}</x-badge>
                         </div>
 
-                        <div class="mt-4 flex items-end justify-between gap-3">
-                            <p class="text-3xl font-bold leading-none tabular-nums">{{ $course['percent'] === null ? '–' : $course['percent'].'%' }}</p>
-                            <p class="text-right text-xs text-text-muted tabular-nums">{{ $course['attended'] }} hadir dari {{ $course['total'] }} pertemuan<br>Target semester {{ $course['planned'] }} pertemuan</p>
+                        <div class="mt-4 flex items-center gap-4">
+                            <x-pie-chart :slices="$slicesFor($course['counts'])" size="size-20" :legend="false" :title="'Distribusi kehadiran '.$course['subject']->name" />
+                            <div class="min-w-0 flex-1">
+                                <p class="text-3xl font-bold leading-none tabular-nums">{{ $course['percent'] === null ? '–' : $course['percent'].'%' }}</p>
+                                <p class="mt-1 text-xs text-text-muted tabular-nums">{{ $course['attended'] }} hadir dari {{ $course['total'] }} pertemuan · target {{ $course['planned'] }} per semester</p>
+                            </div>
                         </div>
 
                         <dl class="mt-4 grid grid-cols-4 gap-2 text-center">
