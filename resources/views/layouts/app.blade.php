@@ -93,7 +93,7 @@
                             <span class="block text-xs leading-tight text-text-muted">{{ $user->role->label() }}</span>
                         </span>
                     </button>
-                    <div x-show="open" x-cloak role="menu" class="absolute right-0 z-30 mt-1 min-w-48 rounded-lg border border-border bg-surface p-1 shadow-sm">
+                    <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" role="menu" class="absolute right-0 z-30 mt-1 min-w-48 origin-top-right rounded-lg border border-border bg-surface p-1 shadow-sm">
                         <a href="{{ route('profile.show') }}" wire:navigate role="menuitem" class="flex min-h-10 w-full items-center gap-2 rounded-md px-3 text-sm hover:bg-surface-muted">
                             <x-icon name="user-circle" class="size-4" /> Profil
                         </a>
@@ -137,8 +137,8 @@
     </nav>
 
     @if ($moreItems)
-        <div x-show="sheet" x-cloak class="fixed inset-0 z-40 flex items-end bg-black/50 lg:hidden" @click.self="sheet = false" role="dialog" aria-modal="true" aria-label="Menu lainnya">
-            <div class="w-full rounded-t-2xl border border-border bg-surface p-5" x-trap.noscroll="sheet">
+        <div x-show="sheet" x-cloak x-transition.opacity.duration.200ms class="fixed inset-0 z-40 flex items-end bg-black/50 lg:hidden" @click.self="sheet = false" role="dialog" aria-modal="true" aria-label="Menu lainnya">
+            <div x-show="sheet" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-y-8 opacity-0" x-transition:enter-end="translate-y-0 opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-y-0 opacity-100" x-transition:leave-end="translate-y-8 opacity-0" class="w-full rounded-t-2xl border border-border bg-surface p-5" x-trap.noscroll="sheet">
                 <div class="mb-3 flex items-center justify-between">
                     <h2 class="text-base font-semibold">Menu lainnya</h2>
                     <button type="button" @click="sheet = false" class="inline-flex size-11 items-center justify-center rounded-lg hover:bg-surface-muted"><x-icon name="x-mark" /><span class="sr-only">Tutup</span></button>
@@ -161,7 +161,7 @@
 
 <div x-data="toaster" @toast.window="push($event.detail)" @if (session('toast')) x-init="push({ message: @js(session('toast')), type: 'success' })" @endif class="pointer-events-none fixed right-3 top-3 z-50 flex w-[min(22rem,calc(100vw-1.5rem))] flex-col gap-2" aria-live="polite">
     <template x-for="t in items" :key="t.id">
-        <div class="pointer-events-auto flex items-start gap-2 rounded-lg border border-border bg-surface p-3 text-sm shadow-lg" role="status">
+        <div class="toast-in pointer-events-auto flex items-start gap-2 rounded-lg border border-border bg-surface p-3 text-sm shadow-lg" role="status">
             <span class="mt-0.5 size-2 shrink-0 rounded-full" :class="{'bg-success': t.type==='success', 'bg-danger': t.type==='error', 'bg-warning': t.type==='warning', 'bg-info': t.type==='info'}"></span>
             <p class="flex-1" x-text="t.message"></p>
             <button type="button" @click="remove(t.id)" class="text-text-muted" aria-label="Tutup">✕</button>

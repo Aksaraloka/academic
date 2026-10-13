@@ -1,4 +1,5 @@
 import './theme';
+import './motion';
 
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('toaster', () => ({

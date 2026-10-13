@@ -40,7 +40,7 @@
     }
 @endphp
 <div {{ $attributes->merge(['class' => 'flex flex-wrap items-center gap-4']) }}>
-    <svg viewBox="0 0 100 100" class="{{ $size }} shrink-0" role="img" aria-label="{{ $title }}: {{ $total > 0 ? $summary : 'belum ada data' }}">
+    <svg viewBox="0 0 100 100" data-pop class="{{ $size }} shrink-0" role="img" aria-label="{{ $title }}: {{ $total > 0 ? $summary : 'belum ada data' }}">
         <title>{{ $title }}</title>
         @if ($total === 0)
             <circle cx="50" cy="50" r="48" class="fill-surface-muted stroke-border" stroke-width="1" />

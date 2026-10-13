@@ -11,7 +11,7 @@
         'md' => 'min-h-11 px-4 text-base',
         'lg' => 'min-h-12 px-6 text-base',
     ];
-    $classes = 'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-medium transition disabled:cursor-not-allowed disabled:opacity-60 '.$variants[$variant].' '.$sizes[$size];
+    $classes = 'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-medium transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 '.$variants[$variant].' '.$sizes[$size];
 @endphp
 @if ($href)
     <a href="{{ $href }}" {{ $attributes->merge(['class' => $classes]) }}>

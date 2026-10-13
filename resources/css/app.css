@@ -142,3 +142,24 @@
         }
     }
 }
+
+/*
+ * Gerak: konten halaman disembunyikan sebentar hanya saat kelas `motion` aktif (diatur skrip di <head> dan motion.js),
+ * dan kelas itu selalu dicabut paling lambat setelah 600 ms agar konten tidak pernah tertahan.
+ */
+@media (prefers-reduced-motion: no-preference) {
+    html.motion #konten > * > * {
+        opacity: 0;
+    }
+
+    @keyframes toast-in {
+        from {
+            opacity: 0;
+            transform: translateX(1rem);
+        }
+    }
+
+    .toast-in {
+        animation: toast-in 0.25s ease-out;
+    }
+}

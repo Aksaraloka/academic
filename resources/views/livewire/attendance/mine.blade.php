@@ -69,7 +69,7 @@
                             <span class="shrink-0 font-semibold tabular-nums">{{ $course['percent'] === null ? 'Belum ada data' : $course['percent'].'%' }}</span>
                         </div>
                         <div class="relative h-3 rounded-full bg-surface-muted" role="progressbar" aria-label="Kehadiran {{ $course['subject']->name }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $course['percent'] ?? 0 }}">
-                            <div class="h-3 rounded-full {{ $course['percent'] !== null && $course['percent'] < $minPercent ? 'bg-danger' : 'bg-primary' }}" style="width: {{ $course['percent'] ?? 0 }}%"></div>
+                            <div class="h-3 rounded-full {{ $course['percent'] !== null && $course['percent'] < $minPercent ? 'bg-danger' : 'bg-primary' }}" style="width: {{ $course['percent'] ?? 0 }}%" data-grow></div>
                             <span class="absolute -inset-y-1 w-0.5 rounded bg-text" style="left: {{ $minPercent }}%" aria-hidden="true"></span>
                         </div>
                     </li>

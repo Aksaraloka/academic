@@ -11,7 +11,7 @@
             <span class="text-xs font-semibold tabular-nums">{{ $percent }}% ({{ $value }}/{{ $max }})</span>
         </div>
         <div class="h-2 rounded-full bg-surface-muted" role="progressbar" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ $label }}">
-            <div class="h-2 rounded-full {{ $percent >= 100 ? 'bg-success' : 'bg-primary' }}" style="width: {{ $percent }}%"></div>
+            <div class="h-2 rounded-full {{ $percent >= 100 ? 'bg-success' : 'bg-primary' }}" style="width: {{ $percent }}%" data-grow></div>
         </div>
     @endif
 </div>
