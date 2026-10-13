@@ -12,6 +12,7 @@
 @php
     $user = auth()->user();
     $items = \App\Support\Navigation::for($user);
+    $term = \App\Models\AcademicTerm::current();
     $primaryItems = array_slice($items, 0, count($items) > 5 ? 4 : 5);
     $moreItems = count($items) > 5 ? array_slice($items, 4) : [];
 @endphp
@@ -47,6 +48,13 @@
                 <p class="truncate text-sm font-semibold">{{ $user->tenant?->name ?? 'Aksaraloka Academic' }}</p>
             </div>
             <div class="flex items-center gap-1">
+                @if ($term)
+                    <p class="mr-1 flex min-h-9 items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5 text-xs font-semibold tabular-nums sm:px-3 sm:text-sm"
+                       title="Tahun ajaran {{ $term->name }} semester {{ $term->semester }} ({{ $term->starts_at->translatedFormat('j M Y') }} – {{ $term->ends_at->translatedFormat('j M Y') }})">
+                        <x-icon name="calendar-days" class="size-4 text-primary" />
+                        <span><span class="sr-only">Tahun ajaran </span>{{ $term->name }}<span class="hidden sm:inline"> · {{ $term->semester }}</span><span class="sr-only sm:hidden"> semester {{ $term->semester }}</span></span>
+                    </p>
+                @endif
                 <x-theme-switcher />
                 <div x-data="{ open: false }" @click.outside="open = false" class="relative">
                     <button type="button" @click="open = !open" class="flex min-h-11 items-center gap-2 rounded-lg px-2 hover:bg-surface-muted" aria-haspopup="menu" :aria-expanded="open">

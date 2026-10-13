@@ -2,6 +2,7 @@
 
 use App\Livewire\News\Index;
 use App\Livewire\News\Manage;
+use App\Models\AcademicTerm;
 use App\Models\News;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
@@ -167,4 +168,16 @@ it('lets an admin flag news for the banner', function () {
         ->call('save')->assertHasNoErrors();
 
     expect(News::where('title', 'Beasiswa Unggulan')->value('is_featured'))->toBeTrue();
+});
+
+it('shows the active academic year and semester in the header on every page', function () {
+    foreach (['/beranda', '/jadwal', '/rekap'] as $path) {
+        $this->actingAs($this->student)->get($path)->assertOk()->assertSee('2026/2027')->assertSee('Ganjil');
+    }
+});
+
+it('omits the academic year badge when no term is active', function () {
+    AcademicTerm::query()->update(['is_active' => false]);
+
+    $this->actingAs($this->student)->get('/beranda')->assertOk()->assertDontSee('Tahun ajaran 2026/2027');
 });
