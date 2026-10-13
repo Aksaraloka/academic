@@ -13,6 +13,7 @@ use App\Livewire\Feedback;
 use App\Livewire\Groups;
 use App\Livewire\Leaves;
 use App\Livewire\News;
+use App\Livewire\Profile;
 use App\Livewire\Programs;
 use App\Livewire\Reports;
 use App\Livewire\Schedule;
@@ -41,6 +42,9 @@ Route::post('/keluar', function () {
 Route::middleware('auth')->group(function () {
     Route::livewire('/beranda', News\Index::class)->name('dashboard');
     Route::livewire('/ringkasan', Dashboard::class)->name('summary');
+
+    Route::livewire('/profil', Profile\Show::class)->name('profile.show');
+    Route::livewire('/profil/ubah', Profile\Edit::class)->name('profile.edit');
 
     Route::livewire('/survei', Survey\Home::class)->name('survey.home');
     Route::livewire('/survei/kuesioner', Survey\Index::class)->name('survey.index');

@@ -140,7 +140,18 @@ SVG;
                     'name' => fake('id_ID')->name(),
                     'nim' => (string) (2410000 + $groupIndex * 100 + $i),
                     'batch_year' => 2024,
+                    'birth_place' => fake('id_ID')->city(),
+                    'birth_date' => fake()->dateTimeBetween('-22 years', '-18 years')->format('Y-m-d'),
                     'gender' => $i % 2 === 0 ? 'P' : 'L',
+                    'religion' => ['Islam', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha'][array_rand([0, 1, 2, 3, 4])],
+                    'nik' => '3273'.fake()->numerify('############'),
+                    'address' => fake('id_ID')->streetAddress(),
+                    'city' => 'Bandung',
+                    'province' => 'Jawa Barat',
+                    'postal_code' => '40'.fake()->numerify('###'),
+                    'phone' => '08'.fake()->numerify('##########'),
+                    'previous_school' => 'SMA Negeri '.random_int(1, 20).' Bandung',
+                    'admission_path' => ['SNBP', 'SNBT', 'Mandiri'][array_rand([0, 1, 2])],
                     'status' => 'aktif',
                     'entry_date' => '2024-09-02',
                 ]);
@@ -153,8 +164,17 @@ SVG;
         $students->first()->update(['user_id' => $studentUser->id]);
 
         $guardianUser = $account('Orang Tua Contoh', 'ortu@aksaraloka.test', Role::Guardian);
-        $guardian = Guardian::create(['tenant_id' => $tenant->id, 'user_id' => $guardianUser->id, 'name' => $guardianUser->name, 'relation' => 'Ibu']);
+        $guardian = Guardian::create([
+            'tenant_id' => $tenant->id, 'user_id' => $guardianUser->id, 'name' => $guardianUser->name, 'relation' => 'Ibu',
+            'occupation' => 'Guru SD', 'education' => 'S1', 'phone' => '081234567890', 'address' => 'Jl. Merdeka No. 12, Bandung',
+        ]);
         $guardian->students()->attach($students->first()->id);
+
+        $father = Guardian::create([
+            'tenant_id' => $tenant->id, 'name' => 'Bambang Hartono', 'relation' => 'Ayah',
+            'occupation' => 'Wiraswasta', 'education' => 'SMA/SMK', 'phone' => '081298765432', 'address' => 'Jl. Merdeka No. 12, Bandung',
+        ]);
+        $father->students()->attach($students->first()->id);
 
         // Jadwal: tiap kelas punya tiga mata kuliah, masing-masing dua kali seminggu, tanpa bentrok dosen.
         $schedules = collect();

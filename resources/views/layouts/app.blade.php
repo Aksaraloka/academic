@@ -94,6 +94,9 @@
                         </span>
                     </button>
                     <div x-show="open" x-cloak role="menu" class="absolute right-0 z-30 mt-1 min-w-48 rounded-lg border border-border bg-surface p-1 shadow-sm">
+                        <a href="{{ route('profile.show') }}" wire:navigate role="menuitem" class="flex min-h-10 w-full items-center gap-2 rounded-md px-3 text-sm hover:bg-surface-muted">
+                            <x-icon name="user-circle" class="size-4" /> Profil
+                        </a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" role="menuitem" class="flex min-h-10 w-full items-center gap-2 rounded-md px-3 text-sm text-danger hover:bg-surface-muted">

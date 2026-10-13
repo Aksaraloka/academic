@@ -11,10 +11,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['tenant_id', 'user_id', 'program_id', 'name', 'nim', 'batch_year', 'birth_date', 'gender', 'address', 'phone', 'photo_path', 'status', 'entry_date'])]
+#[Fillable(['tenant_id', 'user_id', 'program_id', 'name', 'nim', 'batch_year', 'birth_date', 'birth_place', 'gender', 'religion', 'nik', 'nationality', 'address', 'city', 'province', 'postal_code', 'phone', 'photo_path', 'status', 'entry_date', 'previous_school', 'admission_path'])]
 class Student extends Model
 {
     use BelongsToTenant, HasFactory;
+
+    /**
+     * @var array<int, string>
+     */
+    public const RELIGIONS = ['Islam', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Lainnya'];
+
+    /**
+     * @var array<int, string>
+     */
+    public const ADMISSION_PATHS = ['SNBP', 'SNBT', 'Mandiri', 'Beasiswa', 'Pindahan'];
 
     /**
      * @return array<string, string>
@@ -31,6 +41,18 @@ class Student extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * NIK ditampilkan tersamar (4 digit awal dan 4 digit akhir) agar aman dilihat di layar.
+     */
+    public function maskedNik(): ?string
+    {
+        if ($this->nik === null) {
+            return null;
+        }
+
+        return substr($this->nik, 0, 4).str_repeat('•', max(strlen($this->nik) - 8, 0)).substr($this->nik, -4);
     }
 
     public function program(): BelongsTo
