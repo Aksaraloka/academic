@@ -1,6 +1,6 @@
 <div class="space-y-6">
     <x-page-header
-        :title="'Halo, '.explode(' ', auth()->user()->name)[0]"
+        :title="'Ringkasan hari ini'"
         :subtitle="$today->translatedFormat('l, j F Y').' · '.$role->label()" />
 
     @if (isset($overview))

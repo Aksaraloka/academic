@@ -14,13 +14,13 @@ it('renders every page for its intended roles with seeded data', function (strin
         $this->actingAs($user)->get($path)->assertOk();
     }
 })->with([
-    'admin' => ['admin@aksaraloka.test', ['/beranda', '/mahasiswa', '/mahasiswa/baru', '/mahasiswa/impor', '/dosen', '/prodi', '/kelas', '/jadwal', '/jadwal/atur', '/presensi', '/rekap', '/izin']],
+    'admin' => ['admin@aksaraloka.test', ['/beranda', '/ringkasan', '/wisuda', '/wisuda/periode', '/berita/kelola', '/mahasiswa', '/mahasiswa/baru', '/mahasiswa/impor', '/dosen', '/prodi', '/kelas', '/jadwal', '/jadwal/atur', '/presensi', '/rekap', '/izin']],
     'principal' => ['kaprodi@aksaraloka.test', ['/beranda', '/presensi', '/rekap', '/check-in', '/jadwal', '/izin']],
     'curriculum' => ['akademik@aksaraloka.test', ['/beranda', '/jadwal', '/jadwal/atur', '/kelas', '/rekap', '/check-in']],
     'teacher' => ['dosen@aksaraloka.test', ['/beranda', '/jadwal', '/presensi', '/check-in', '/rekap', '/izin']],
     'duty' => ['petugas@aksaraloka.test', ['/beranda', '/presensi', '/check-in', '/jadwal']],
-    'student' => ['mahasiswa@aksaraloka.test', ['/beranda', '/jadwal', '/pindai', '/rekap']],
-    'guardian' => ['ortu@aksaraloka.test', ['/beranda', '/jadwal', '/rekap']],
+    'student' => ['mahasiswa@aksaraloka.test', ['/beranda', '/ringkasan', '/jadwal', '/pindai', '/rekap', '/wisuda']],
+    'guardian' => ['ortu@aksaraloka.test', ['/beranda', '/ringkasan', '/jadwal', '/rekap']],
 ]);
 
 it('renders the group page, attendance sheet and QR page', function () {

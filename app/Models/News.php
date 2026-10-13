@@ -2,19 +2,20 @@
 
 namespace App\Models;
 
-use App\Enums\Role;
+use App\Enums\NewsCategory;
 use App\Models\Concerns\BelongsToTenant;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['tenant_id', 'graduation_period_id', 'created_by', 'title', 'summary', 'body', 'poster_path', 'is_published', 'published_at'])]
-class GraduationNews extends Model
+#[Fillable(['tenant_id', 'graduation_period_id', 'created_by', 'category', 'title', 'summary', 'body', 'poster_path', 'is_published', 'published_at'])]
+class News extends Model
 {
     use BelongsToTenant;
 
-    protected $table = 'graduation_news';
+    protected $table = 'news';
 
     /**
      * @return array<string, string>
@@ -22,6 +23,7 @@ class GraduationNews extends Model
     protected function casts(): array
     {
         return [
+            'category' => NewsCategory::class,
             'is_published' => 'boolean',
             'published_at' => 'datetime',
         ];
@@ -38,11 +40,11 @@ class GraduationNews extends Model
     }
 
     /**
-     * Pengguna yang bukan staf wisuda hanya melihat berita yang sudah terbit.
+     * Semua pengguna melihat berita yang sudah terbit; draf hanya untuk admin.
      */
     public function scopeVisibleTo(Builder $query, User $user): void
     {
-        if (! $user->hasRole(Role::Admin, Role::Principal, Role::Curriculum)) {
+        if (! $user->isAdmin()) {
             $query->published();
         }
     }
@@ -50,5 +52,10 @@ class GraduationNews extends Model
     public function hasPoster(): bool
     {
         return $this->poster_path !== null;
+    }
+
+    public function publishedDate(): CarbonInterface
+    {
+        return $this->published_at ?? $this->created_at;
     }
 }

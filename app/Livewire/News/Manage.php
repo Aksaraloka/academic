@@ -1,22 +1,26 @@
 <?php
 
-namespace App\Livewire\Wisuda;
+namespace App\Livewire\News;
 
-use App\Models\GraduationNews;
+use App\Enums\NewsCategory;
 use App\Models\GraduationPeriod;
+use App\Models\News;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
-#[Title('Kelola berita wisuda')]
-class NewsManage extends Component
+#[Title('Kelola berita')]
+class Manage extends Component
 {
     use WithFileUploads;
 
     public ?int $editingId = null;
 
     public string $title = '';
+
+    public string $category = 'pengumuman';
 
     public string $summary = '';
 
@@ -30,11 +34,12 @@ class NewsManage extends Component
 
     public function edit(int $newsId): void
     {
-        $news = GraduationNews::query()->findOrFail($newsId);
+        $news = News::query()->findOrFail($newsId);
 
         $this->fill([
             'editingId' => $news->id,
             'title' => $news->title,
+            'category' => $news->category->value,
             'summary' => $news->summary,
             'body' => (string) $news->body,
             'graduation_period_id' => (string) $news->graduation_period_id,
@@ -46,6 +51,7 @@ class NewsManage extends Component
     public function cancel(): void
     {
         $this->reset(['editingId', 'title', 'summary', 'body', 'graduation_period_id', 'poster']);
+        $this->category = 'pengumuman';
         $this->is_published = true;
     }
 
@@ -53,20 +59,22 @@ class NewsManage extends Component
     {
         $data = $this->validate([
             'title' => ['required', 'string', 'max:200'],
+            'category' => ['required', Rule::enum(NewsCategory::class)],
             'summary' => ['required', 'string', 'max:300'],
             'body' => ['nullable', 'string', 'max:10000'],
             'graduation_period_id' => ['nullable', 'exists:graduation_periods,id'],
             'is_published' => ['boolean'],
             'poster' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
         ], [], [
-            'title' => 'judul', 'summary' => 'ringkasan', 'body' => 'isi berita',
-            'graduation_period_id' => 'periode', 'poster' => 'poster',
+            'title' => 'judul', 'category' => 'kategori', 'summary' => 'ringkasan', 'body' => 'isi berita',
+            'graduation_period_id' => 'periode wisuda', 'poster' => 'poster',
         ]);
 
-        $news = $this->editingId ? GraduationNews::query()->findOrFail($this->editingId) : new GraduationNews(['created_by' => auth()->id()]);
+        $news = $this->editingId ? News::query()->findOrFail($this->editingId) : new News(['created_by' => auth()->id()]);
 
         $news->fill([
             'title' => $data['title'],
+            'category' => $data['category'],
             'summary' => $data['summary'],
             'body' => $data['body'] ?: null,
             'graduation_period_id' => $data['graduation_period_id'] ?: null,
@@ -76,7 +84,7 @@ class NewsManage extends Component
 
         if ($this->poster) {
             $this->deletePoster($news);
-            $news->poster_path = $this->poster->store('wisuda-posters', 'local');
+            $news->poster_path = $this->poster->store('news-posters', 'local');
         }
 
         $news->save();
@@ -87,7 +95,7 @@ class NewsManage extends Component
 
     public function togglePublished(int $newsId): void
     {
-        $news = GraduationNews::query()->findOrFail($newsId);
+        $news = News::query()->findOrFail($newsId);
         $publish = ! $news->is_published;
 
         $news->update(['is_published' => $publish, 'published_at' => $publish ? ($news->published_at ?? now()) : null]);
@@ -95,7 +103,7 @@ class NewsManage extends Component
 
     public function delete(int $newsId): void
     {
-        $news = GraduationNews::query()->findOrFail($newsId);
+        $news = News::query()->findOrFail($newsId);
         $this->deletePoster($news);
         $news->delete();
 
@@ -106,7 +114,7 @@ class NewsManage extends Component
         $this->dispatch('toast', message: 'Berita dihapus.', type: 'success');
     }
 
-    private function deletePoster(GraduationNews $news): void
+    private function deletePoster(News $news): void
     {
         if ($news->poster_path) {
             Storage::disk('local')->delete($news->poster_path);
@@ -116,9 +124,10 @@ class NewsManage extends Component
 
     public function render()
     {
-        return view('livewire.wisuda.news-manage', [
-            'items' => GraduationNews::query()->with('period')->orderByDesc('created_at')->get(),
+        return view('livewire.news.manage', [
+            'items' => News::query()->orderByDesc('created_at')->get(),
             'periods' => GraduationPeriod::query()->orderByDesc('ceremony_on')->get(),
+            'categories' => NewsCategory::cases(),
         ]);
     }
 }

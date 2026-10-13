@@ -8,10 +8,10 @@ use App\Models\AcademicTerm;
 use App\Models\AttendanceRecord;
 use App\Models\AttendanceSession;
 use App\Models\Faculty;
-use App\Models\GraduationNews;
 use App\Models\GraduationPeriod;
 use App\Models\GraduationRegistration;
 use App\Models\Guardian;
+use App\Models\News;
 use App\Models\Program;
 use App\Models\Room;
 use App\Models\Schedule;
@@ -208,18 +208,26 @@ SVG;
         $adminUser = User::where('email', 'admin@aksaraloka.test')->first();
 
         collect([
-            ['Pendaftaran Wisuda Periode II Dibuka', 'Pendaftaran dibuka hingga '.today()->addDays(20)->translatedFormat('j F Y').'. Lengkapi berkas dan daftar lewat menu Pendaftaran.', 'PENDAFTARAN', true, 1],
-            ['Gladi Bersih dan Pengambilan Toga', 'Gladi bersih wisuda dilaksanakan satu minggu sebelum hari-H di Auditorium Utama.', 'GLADI BERSIH', true, 3],
-            ['Syarat dan Berkas Wisuda', 'Daftar lengkap persyaratan administrasi dan akademik bagi calon wisudawan.', 'PERSYARATAN', true, 6],
-            ['Jadwal Foto Wisudawan', 'Jadwal sesi foto toga per program studi. Datang 15 menit lebih awal.', 'JADWAL FOTO', false, 9],
+            ['program', 'Program Studi Baru: Sains Data dan Kecerdasan Buatan', 'Penerimaan mahasiswa baru program studi S1 Sains Data dibuka mulai semester genap dengan kurikulum berbasis proyek industri.', 'PROGRAM BARU', 1],
+            ['beasiswa', 'Beasiswa Prestasi Akademik 2026/2027 Dibuka', 'Potongan UKT hingga 100% bagi mahasiswa ber-IPK minimal 3,50. Pendaftaran ditutup akhir bulan ini.', 'BEASISWA', 2],
+            ['wisuda', 'Pendaftaran Wisuda Periode II Dibuka', 'Pendaftaran dibuka hingga '.today()->addDays(20)->translatedFormat('j F Y').'. Lengkapi berkas lewat menu Wisuda.', 'WISUDA', 3],
+            ['akademik', 'Jadwal Pengisian KRS Semester Genap', 'Pengisian KRS online dibuka bagi seluruh mahasiswa aktif. Konsultasikan rencana studi dengan dosen wali.', 'AKADEMIK', 4],
+            ['kegiatan', 'Seminar Nasional Teknologi dan Inovasi', 'Seminar terbuka untuk umum menghadirkan pembicara dari industri dan akademisi, gratis bagi mahasiswa.', 'KEGIATAN', 6],
+            ['prestasi', 'Tim Mahasiswa Juara 1 Kompetisi Pemrograman Nasional', 'Selamat kepada tim Teknik Informatika atas prestasi di tingkat nasional.', 'PRESTASI', 8],
+            ['beasiswa', 'Beasiswa Mitra Industri untuk Mahasiswa Semester 5', 'Dukungan biaya studi dan peluang magang bagi mahasiswa terpilih dari program studi rumpun teknik.', 'BEASISWA', 10],
+            ['pengumuman', 'Libur Akademik dan Layanan BAAK', 'Layanan BAAK tutup pada hari libur nasional dan dibuka kembali sesuai jam kerja.', 'PENGUMUMAN', 12],
+            ['program', 'Program Pertukaran Mahasiswa Semester Depan', 'Kesempatan satu semester di universitas mitra dalam dan luar negeri. Cek persyaratan di BAAK.', 'PERTUKARAN', 14],
+            ['kegiatan', 'Gladi Bersih Wisuda', 'Gladi bersih satu minggu sebelum hari-H di Auditorium Utama.', 'GLADI BERSIH', 0],
         ])->each(function (array $row, int $index) use ($tenant, $period, $adminUser): void {
-            $path = "wisuda-posters/seed-{$tenant->id}-{$index}.svg";
-            Storage::disk('local')->put($path, $this->posterSvg($row[0], $row[2]));
+            $path = "news-posters/seed-{$tenant->id}-{$index}.svg";
+            Storage::disk('local')->put($path, $this->posterSvg($row[1], $row[3]));
+            $draft = $row[4] === 0;
 
-            GraduationNews::create([
-                'tenant_id' => $tenant->id, 'graduation_period_id' => $period->id, 'created_by' => $adminUser?->id,
-                'title' => $row[0], 'summary' => $row[1], 'body' => $row[1]."\n\nInformasi lebih lanjut dapat ditanyakan ke BAAK pada jam kerja.",
-                'poster_path' => $path, 'is_published' => $row[3], 'published_at' => $row[3] ? now()->subDays($row[4]) : null,
+            News::create([
+                'tenant_id' => $tenant->id, 'created_by' => $adminUser?->id, 'category' => $row[0],
+                'graduation_period_id' => $row[0] === 'wisuda' ? $period->id : null,
+                'title' => $row[1], 'summary' => $row[2], 'body' => $row[2]."\n\nInformasi lebih lanjut dapat ditanyakan ke BAAK pada jam kerja.",
+                'poster_path' => $path, 'is_published' => ! $draft, 'published_at' => $draft ? null : now()->subDays($row[4]),
             ]);
         });
 

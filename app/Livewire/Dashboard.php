@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Beranda')]
+#[Title('Ringkasan')]
 class Dashboard extends Component
 {
     public function render(AttendanceReport $report)

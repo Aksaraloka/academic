@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('graduation_news', function (Blueprint $table) {
+        Schema::create('news', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->foreignId('graduation_period_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('category')->default('pengumuman');
             $table->string('title');
             $table->string('summary', 300);
             $table->text('body')->nullable();
@@ -24,6 +25,7 @@ return new class extends Migration
             $table->timestamp('published_at')->nullable();
             $table->timestamps();
             $table->index(['tenant_id', 'is_published', 'published_at']);
+            $table->index(['tenant_id', 'category']);
         });
     }
 
@@ -32,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('graduation_news');
+        Schema::dropIfExists('news');
     }
 };

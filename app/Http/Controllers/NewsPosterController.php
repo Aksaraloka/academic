@@ -2,22 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\GraduationNews;
+use App\Models\News;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
 
-class GraduationPosterController extends Controller
+class NewsPosterController extends Controller
 {
     /**
      * Poster disimpan di disk privat dan hanya disajikan lewat rute yang memeriksa hak akses.
      */
-    public function __invoke(GraduationNews $news): Response
+    public function __invoke(News $news): Response
     {
-        abort_unless(GraduationNews::query()->visibleTo(auth()->user())->whereKey($news->id)->exists(), 404);
+        abort_unless(News::query()->visibleTo(auth()->user())->whereKey($news->id)->exists(), 404);
         abort_unless($news->hasPoster() && Storage::disk('local')->exists($news->poster_path), 404);
 
-        $extension = strtolower(pathinfo($news->poster_path, PATHINFO_EXTENSION));
-        $mime = match ($extension) {
+        $mime = match (strtolower(pathinfo($news->poster_path, PATHINFO_EXTENSION))) {
             'svg' => 'image/svg+xml',
             'png' => 'image/png',
             'webp' => 'image/webp',

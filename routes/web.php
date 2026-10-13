@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\GraduationMinutesPrintController;
-use App\Http\Controllers\GraduationPosterController;
+use App\Http\Controllers\NewsPosterController;
 use App\Http\Controllers\ReportExportController;
 use App\Livewire\Attendance;
 use App\Livewire\Auth\Login;
@@ -9,6 +9,7 @@ use App\Livewire\Checkin;
 use App\Livewire\Dashboard;
 use App\Livewire\Groups;
 use App\Livewire\Leaves;
+use App\Livewire\News;
 use App\Livewire\Programs;
 use App\Livewire\Reports;
 use App\Livewire\Scan;
@@ -35,7 +36,15 @@ Route::post('/keluar', function () {
 })->middleware('auth')->name('logout');
 
 Route::middleware('auth')->group(function () {
-    Route::livewire('/beranda', Dashboard::class)->name('dashboard');
+    Route::livewire('/beranda', News\Index::class)->name('dashboard');
+    Route::livewire('/ringkasan', Dashboard::class)->name('summary');
+
+    Route::middleware('role:admin')->group(function () {
+        Route::livewire('/berita/kelola', News\Manage::class)->name('news.manage');
+    });
+
+    Route::livewire('/berita/{news}', News\Show::class)->name('news.show');
+    Route::get('/berita/{news}/poster', NewsPosterController::class)->name('news.poster');
 
     Route::middleware('role:admin,principal,curriculum,teacher,duty')->group(function () {
         Route::livewire('/mahasiswa', Students\Index::class)->name('students.index');
@@ -76,18 +85,11 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('role:admin,principal,curriculum,student')->group(function () {
-        Route::livewire('/wisuda', Wisuda\Home::class)->name('wisuda.home');
-        Route::livewire('/wisuda/pendaftaran', Wisuda\Overview::class)->name('wisuda.overview');
+        Route::livewire('/wisuda', Wisuda\Overview::class)->name('wisuda.overview');
     });
 
     Route::middleware('role:admin')->group(function () {
         Route::livewire('/wisuda/periode', Wisuda\Periods::class)->name('wisuda.periods');
-        Route::livewire('/wisuda/berita/kelola', Wisuda\NewsManage::class)->name('wisuda.news.manage');
-    });
-
-    Route::middleware('role:admin,principal,curriculum,student')->group(function () {
-        Route::livewire('/wisuda/berita/{news}', Wisuda\NewsShow::class)->name('wisuda.news.show');
-        Route::get('/wisuda/berita/{news}/poster', GraduationPosterController::class)->name('wisuda.news.poster');
     });
 
     Route::middleware('role:admin,principal,curriculum')->group(function () {
