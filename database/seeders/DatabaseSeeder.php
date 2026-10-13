@@ -348,8 +348,9 @@ SVG;
             }
         });
 
-        // Riwayat presensi dua minggu terakhir (tanpa hari ini) agar rekap dan syarat ujian 75% terlihat.
-        $dates = collect(range(1, 14))->map(fn (int $back) => today()->subDays($back))->filter(fn ($date) => $date->isWeekday());
+        // Riwayat presensi lima minggu terakhir (tanpa hari ini) agar rekap dan syarat ujian 75% terlihat.
+        $dates = collect(range(1, 35))->map(fn (int $back) => today()->subDays($back))->filter(fn ($date) => $date->isWeekday());
+        $demoStudentId = $students->first()->id;
         $skippers = $students->filter(fn (Student $student, int $index) => $index % 15 === 7)->pluck('id');
 
         foreach ($schedules as $schedule) {
@@ -366,6 +367,8 @@ SVG;
                 foreach ($group->activeStudents as $student) {
                     $roll = random_int(1, 100);
                     $status = match (true) {
+                        $student->id === $demoStudentId && $schedule->assignment->subject->code === 'MK101' && $roll <= 45 => AttendanceStatus::Absent,
+                        $student->id === $demoStudentId && $schedule->assignment->subject->code === 'IF201' && $roll <= 15 => AttendanceStatus::Sick,
                         $skippers->contains($student->id) && $roll <= 60 => AttendanceStatus::Absent,
                         $roll <= 90 => AttendanceStatus::Present,
                         $roll <= 94 => AttendanceStatus::Sick,

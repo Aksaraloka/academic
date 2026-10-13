@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AttendanceStatus;
+use App\Models\AcademicTerm;
 use App\Models\AttendanceRecord;
 use App\Models\AttendanceSession;
 use App\Models\Schedule;
@@ -11,6 +12,8 @@ use App\Models\StudyGroup;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\TeacherCheckin;
+use App\Models\TeachingAssignment;
+use App\Models\TimeSlot;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
@@ -107,6 +110,81 @@ class AttendanceReport
                 'percent' => $total > 0 ? (int) round($attended / $total * 100) : null,
             ];
         });
+    }
+
+    /**
+     * Analitik kehadiran satu mahasiswa per mata kuliah yang diikuti kelasnya pada semester aktif.
+     *
+     * Status memakai proyeksi: jumlah pertemuan satu semester ($plannedMeetings) dipakai untuk menghitung
+     * berapa kali masih boleh tidak hadir sebelum persentase 75% (atau $minPercent) tak mungkin tercapai.
+     *
+     * @return Collection<int, array{
+     *     assignment: TeachingAssignment, subject: Subject, teacher: Teacher, slots: Collection<int, TimeSlot>,
+     *     counts: array<string, int>, total: int, attended: int, missed: int, percent: ?int,
+     *     planned: int, allowed: int, remaining: int, level: string, history: Collection<int, array{date: CarbonInterface, status: AttendanceStatus, note: ?string}>
+     * }>
+     */
+    public function studentCourseAnalytics(Student $student, StudyGroup $group, AcademicTerm $term, int $minPercent, int $plannedMeetings): Collection
+    {
+        $assignments = TeachingAssignment::query()
+            ->with(['subject', 'teacher', 'schedules.timeSlot'])
+            ->where('study_group_id', $group->id)
+            ->where('academic_term_id', $term->id)
+            ->get();
+
+        $scheduleToAssignment = $assignments
+            ->flatMap(fn (TeachingAssignment $assignment) => $assignment->schedules->mapWithKeys(fn (Schedule $schedule) => [$schedule->id => $assignment->id]));
+
+        $records = AttendanceRecord::query()
+            ->with('session:id,date,schedule_id')
+            ->where('student_id', $student->id)
+            ->whereHas('session', fn ($query) => $query
+                ->whereIn('schedule_id', $scheduleToAssignment->keys())
+                ->whereBetween('date', [$term->starts_at->toDateString(), $term->ends_at->toDateString()]))
+            ->get()
+            ->groupBy(fn (AttendanceRecord $record): int => $scheduleToAssignment[$record->session->schedule_id]);
+
+        return $assignments->map(function (TeachingAssignment $assignment) use ($records, $minPercent, $plannedMeetings): array {
+            $rows = $records->get($assignment->id, collect())->sortBy(fn (AttendanceRecord $record) => $record->session->date)->values();
+            $counts = collect(AttendanceStatus::cases())
+                ->mapWithKeys(fn (AttendanceStatus $status): array => [$status->value => $rows->where('status', $status)->count()])
+                ->all();
+
+            $total = $rows->count();
+            $attended = $counts[AttendanceStatus::Present->value] + $counts[AttendanceStatus::Late->value];
+            $missed = $total - $attended;
+            $planned = max($plannedMeetings, $total);
+            $allowed = (int) floor($planned * (100 - $minPercent) / 100);
+            $remaining = max($allowed - $missed, 0);
+
+            $level = match (true) {
+                $total === 0 => 'baru',
+                $missed > $allowed => 'risiko',
+                $remaining <= 1 => 'waspada',
+                default => 'aman',
+            };
+
+            return [
+                'assignment' => $assignment,
+                'subject' => $assignment->subject,
+                'teacher' => $assignment->teacher,
+                'slots' => $assignment->schedules->map->timeSlot->sortBy(fn (TimeSlot $slot) => $slot->day.$slot->starts_at)->values(),
+                'counts' => $counts,
+                'total' => $total,
+                'attended' => $attended,
+                'missed' => $missed,
+                'percent' => $total > 0 ? (int) round($attended / $total * 100) : null,
+                'planned' => $planned,
+                'allowed' => $allowed,
+                'remaining' => $remaining,
+                'level' => $level,
+                'history' => $rows->map(fn (AttendanceRecord $record): array => [
+                    'date' => $record->session->date,
+                    'status' => $record->status,
+                    'note' => $record->note,
+                ]),
+            ];
+        })->sortBy(fn (array $row): string => $row['subject']->name)->values();
     }
 
     /**

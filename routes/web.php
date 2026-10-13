@@ -95,6 +95,8 @@ Route::middleware('auth')->group(function () {
         Route::livewire('/jadwal/atur', Schedule\Manage::class)->name('schedule.manage');
     });
 
+    Route::livewire('/presensi-saya', Attendance\Mine::class)->name('attendance.mine')->middleware('role:student');
+
     Route::middleware('role:admin,principal,teacher,duty')->group(function () {
         Route::livewire('/presensi', Attendance\Index::class)->name('attendance.index');
         Route::livewire('/presensi/{session}', Attendance\Mark::class)->name('attendance.mark');

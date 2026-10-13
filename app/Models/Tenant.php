@@ -26,6 +26,7 @@ class Tenant extends Model
         'checkin_closes' => '16:00',
         'absent_threshold' => 3,
         'min_attendance_percent' => 75,
+        'meetings_per_course' => 16,
         'graduation_min_credits' => 144,
         'graduation_min_gpa' => 2.0,
     ];
