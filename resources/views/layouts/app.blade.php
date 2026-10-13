@@ -13,6 +13,11 @@
     $user = auth()->user();
     $items = \App\Support\Navigation::for($user);
     $term = \App\Models\AcademicTerm::current();
+    $badges = [
+        'feedback.index' => \App\Models\FeedbackTicket::isHandler($user)
+            ? \App\Models\FeedbackTicket::query()->where('status', 'baru')->count()
+            : 0,
+    ];
     $primaryItems = array_slice($items, 0, count($items) > 5 ? 4 : 5);
     $moreItems = count($items) > 5 ? array_slice($items, 4) : [];
 @endphp
@@ -33,6 +38,9 @@
                    class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition {{ $active ? 'bg-primary/15 text-primary' : 'text-text-muted hover:bg-surface-muted' }}">
                     <x-icon :name="$item['icon']" />
                     <span x-show="!collapsed" class="truncate">{{ $item['label'] }}</span>
+                    @if (($badges[$item['route']] ?? 0) > 0)
+                        <span x-show="!collapsed" class="ml-auto rounded-full bg-primary px-2 text-[10px] font-bold leading-5 text-primary-fg"><span class="sr-only">{{ $badges[$item['route']] }} baru</span><span aria-hidden="true">{{ $badges[$item['route']] > 99 ? '99+' : $badges[$item['route']] }}</span></span>
+                    @endif
                 </a>
             @endforeach
         </nav>
@@ -115,6 +123,7 @@
                     @foreach ($moreItems as $item)
                         <a href="{{ route($item['route']) }}" wire:navigate class="flex min-h-12 items-center gap-3 rounded-lg px-3 text-sm font-medium hover:bg-surface-muted">
                             <x-icon :name="$item['icon']" class="text-primary" /> {{ $item['label'] }}
+                            @if (($badges[$item['route']] ?? 0) > 0)<span class="ml-auto rounded-full bg-primary px-2 text-[10px] font-bold leading-5 text-primary-fg">{{ $badges[$item['route']] }}<span class="sr-only"> baru</span></span>@endif
                         </a>
                     @endforeach
                 </div>
@@ -123,7 +132,7 @@
     @endif
 </div>
 
-<div x-data="toaster" @toast.window="push($event.detail)" class="pointer-events-none fixed right-3 top-3 z-50 flex w-[min(22rem,calc(100vw-1.5rem))] flex-col gap-2" aria-live="polite">
+<div x-data="toaster" @toast.window="push($event.detail)" @if (session('toast')) x-init="push({ message: @js(session('toast')), type: 'success' })" @endif class="pointer-events-none fixed right-3 top-3 z-50 flex w-[min(22rem,calc(100vw-1.5rem))] flex-col gap-2" aria-live="polite">
     <template x-for="t in items" :key="t.id">
         <div class="pointer-events-auto flex items-start gap-2 rounded-lg border border-border bg-surface p-3 text-sm shadow-lg" role="status">
             <span class="mt-0.5 size-2 shrink-0 rounded-full" :class="{'bg-success': t.type==='success', 'bg-danger': t.type==='error', 'bg-warning': t.type==='warning', 'bg-info': t.type==='info'}"></span>

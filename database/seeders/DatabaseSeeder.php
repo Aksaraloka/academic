@@ -8,6 +8,8 @@ use App\Models\AcademicTerm;
 use App\Models\AttendanceRecord;
 use App\Models\AttendanceSession;
 use App\Models\Faculty;
+use App\Models\FeedbackReply;
+use App\Models\FeedbackTicket;
 use App\Models\GraduationPeriod;
 use App\Models\GraduationRegistration;
 use App\Models\Guardian;
@@ -232,6 +234,28 @@ SVG;
                 'title' => $row[1], 'summary' => $row[2], 'body' => $row[2]."\n\nInformasi lebih lanjut dapat ditanyakan ke BAAK pada jam kerja.",
                 'poster_path' => $path, 'is_featured' => $index < 3, 'is_published' => ! $draft, 'published_at' => $draft ? null : now()->subDays($row[4]),
             ]);
+        });
+
+        // Masukan dan komplain contoh dengan satu percakapan.
+        $lecturerUser = User::where('email', 'dosen@aksaraloka.test')->first();
+
+        collect([
+            [$studentUser, 'komplain', 'fasilitas', 'AC Ruang 3.01 tidak berfungsi', 'Sudah dua minggu pendingin ruangan di Ruang 3.01 mati sehingga kelas siang sangat panas dan sulit berkonsentrasi.', false, 'diproses', true],
+            [$studentUser, 'masukan', 'akademik', 'Usulan rekaman kuliah untuk mata kuliah praktikum', 'Mohon tersedia rekaman atau materi tambahan agar mahasiswa yang berhalangan hadir bisa mengejar ketertinggalan.', false, 'baru', false],
+            [$guardianUser, 'komplain', 'keuangan', 'Rincian biaya UKT belum jelas', 'Kami kesulitan memahami rincian komponen UKT semester ini. Mohon dijelaskan atau disediakan rinciannya.', false, 'selesai', true],
+            [$lecturerUser, 'masukan', 'aplikasi', 'Tambahkan unduhan rekap presensi per mata kuliah', 'Akan membantu bila rekap kehadiran per mata kuliah bisa diunduh langsung dari halaman presensi.', false, 'baru', false],
+            [$studentUser, 'komplain', 'dosen', 'Jadwal kuliah sering diundur mendadak', 'Beberapa kali perkuliahan diundur tanpa pemberitahuan sehingga mahasiswa menunggu lama.', true, 'baru', false],
+        ])->each(function (array $row) use ($tenant, $adminUser): void {
+            $ticket = FeedbackTicket::create([
+                'tenant_id' => $tenant->id, 'user_id' => $row[0]->id, 'type' => $row[1], 'category' => $row[2],
+                'subject' => $row[3], 'body' => $row[4], 'is_anonymous' => $row[5], 'status' => $row[6],
+                'handled_by' => $row[7] ? $adminUser->id : null, 'resolved_at' => $row[6] === 'selesai' ? now()->subDay() : null,
+            ]);
+            $ticket->update(['number' => sprintf('MK-%d-%04d', now()->year, $ticket->id)]);
+
+            if ($row[7]) {
+                FeedbackReply::create(['feedback_ticket_id' => $ticket->id, 'user_id' => $adminUser->id, 'body' => 'Terima kasih atas laporannya. Tim sarana sudah kami hubungi dan akan memeriksa dalam beberapa hari.']);
+            }
         });
 
         // Riwayat presensi dua minggu terakhir (tanpa hari ini) agar rekap dan syarat ujian 75% terlihat.

@@ -79,6 +79,8 @@ class Navigation
             ],
         };
 
+        $items[] = self::item('Masukan', 'feedback.index', 'chat-bubble-left-right', 'feedback.*');
+
         return $items;
     }
 

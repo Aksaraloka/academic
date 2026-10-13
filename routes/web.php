@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\FeedbackAttachmentController;
 use App\Http\Controllers\GraduationMinutesPrintController;
 use App\Http\Controllers\NewsPosterController;
 use App\Http\Controllers\ReportExportController;
@@ -7,6 +8,7 @@ use App\Livewire\Attendance;
 use App\Livewire\Auth\Login;
 use App\Livewire\Checkin;
 use App\Livewire\Dashboard;
+use App\Livewire\Feedback;
 use App\Livewire\Groups;
 use App\Livewire\Leaves;
 use App\Livewire\News;
@@ -38,6 +40,11 @@ Route::post('/keluar', function () {
 Route::middleware('auth')->group(function () {
     Route::livewire('/beranda', News\Index::class)->name('dashboard');
     Route::livewire('/ringkasan', Dashboard::class)->name('summary');
+
+    Route::livewire('/masukan', Feedback\Index::class)->name('feedback.index');
+    Route::livewire('/masukan/baru', Feedback\Create::class)->name('feedback.create');
+    Route::livewire('/masukan/{ticket}', Feedback\Show::class)->name('feedback.show');
+    Route::get('/masukan/{ticket}/lampiran', FeedbackAttachmentController::class)->name('feedback.attachment');
 
     Route::middleware('role:admin')->group(function () {
         Route::livewire('/berita/kelola', News\Manage::class)->name('news.manage');
