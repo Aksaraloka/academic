@@ -7,6 +7,65 @@
         @endif
     </x-page-header>
 
+    @if ($banner->isNotEmpty())
+        <section aria-roledescription="carousel" aria-label="Berita utama"
+            x-data="{
+                active: 0,
+                count: {{ $banner->count() }},
+                paused: false,
+                timer: null,
+                init() {
+                    if (this.count < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
+                    this.timer = setInterval(() => { if (!this.paused) { this.next(); } }, 6000);
+                },
+                destroy() { clearInterval(this.timer); },
+                next() { this.active = (this.active + 1) % this.count; },
+                prev() { this.active = (this.active - 1 + this.count) % this.count; },
+            }"
+            @mouseenter="paused = true" @mouseleave="paused = false" @focusin="paused = true" @focusout="paused = false"
+            class="relative overflow-hidden rounded-card border border-border bg-brand">
+            <div class="relative aspect-[16/10] sm:aspect-[16/8] lg:aspect-[21/8]">
+                @foreach ($banner as $slide)
+                    <a href="{{ route('news.show', $slide) }}" wire:navigate wire:key="slide-{{ $slide->id }}"
+                       role="group" aria-roledescription="slide" aria-label="{{ $loop->iteration }} dari {{ $banner->count() }}"
+                       x-show="active === {{ $loop->index }}" @if (! $loop->first) x-cloak @endif
+                       x-transition.opacity.duration.400ms
+                       class="absolute inset-0 block">
+                        @if ($slide->hasPoster())
+                            <img src="{{ route('news.poster', $slide) }}" alt="" @if (! $loop->first) loading="lazy" @endif decoding="async" class="size-full object-cover">
+                        @else
+                            <div class="size-full bg-brand"></div>
+                        @endif
+                        <div class="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 via-black/50 to-transparent px-4 pb-10 pt-12 text-white sm:px-6 sm:pb-12">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="rounded-full bg-white px-2.5 py-0.5 text-xs font-semibold text-black">{{ $slide->category->label() }}</span>
+                                <span class="text-xs font-medium tabular-nums opacity-90">{{ $slide->publishedDate()->translatedFormat('j F Y') }}</span>
+                            </div>
+                            <h2 class="mt-2 line-clamp-2 text-lg font-bold sm:text-2xl">{{ $slide->title }}</h2>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+
+            @if ($banner->count() > 1)
+                <button type="button" @click="prev()" class="absolute left-2 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70">
+                    <x-icon name="arrow-left" /><span class="sr-only">Berita sebelumnya</span>
+                </button>
+                <button type="button" @click="next()" class="absolute right-2 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70">
+                    <x-icon name="arrow-left" class="rotate-180" /><span class="sr-only">Berita berikutnya</span>
+                </button>
+                <div class="absolute inset-x-0 bottom-1 flex justify-center">
+                    @foreach ($banner as $slide)
+                        <button type="button" @click="active = {{ $loop->index }}" wire:key="dot-{{ $slide->id }}" class="inline-flex size-8 items-center justify-center" :aria-current="active === {{ $loop->index }}">
+                            <span class="size-2.5 rounded-full border border-white transition" :class="active === {{ $loop->index }} ? 'bg-white' : 'bg-white/30'"></span>
+                            <span class="sr-only">Slide {{ $loop->iteration }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            @endif
+        </section>
+    @endif
+
     <div class="space-y-3">
         <div class="relative">
             <label for="cari-berita" class="sr-only">Cari berita</label>
@@ -37,55 +96,29 @@
                 </x-empty-state>
             </x-card>
         @else
-            @php $featured = $news->onFirstPage() && ! $filtered ? $news->first() : null; @endphp
-
-            @if ($featured)
-                <a href="{{ route('news.show', $featured) }}" wire:navigate wire:key="featured-{{ $featured->id }}"
-                   class="group grid overflow-hidden rounded-card border border-border bg-surface transition hover:border-primary md:grid-cols-5">
-                    <div class="relative aspect-[4/5] overflow-hidden bg-brand md:col-span-2 md:aspect-auto md:min-h-80">
-                        @if ($featured->hasPoster())
-                            <img src="{{ route('news.poster', $featured) }}" alt="Poster: {{ $featured->title }}" decoding="async" class="size-full object-cover">
-                        @else
-                            <div class="flex size-full items-end p-5 text-xl font-bold text-brand-fg">{{ $featured->title }}</div>
-                        @endif
-                    </div>
-                    <div class="flex flex-col justify-center gap-3 p-5 md:col-span-3 md:p-8">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <x-badge :variant="$featured->category->variant()">{{ $featured->category->label() }}</x-badge>
-                            @unless ($featured->is_published)<x-badge variant="warning" icon="eye-slash">Draf</x-badge>@endunless
-                            <span class="text-xs text-text-muted">{{ $featured->publishedDate()->translatedFormat('j F Y') }}</span>
-                        </div>
-                        <h3 class="text-2xl font-bold sm:text-3xl">{{ $featured->title }}</h3>
-                        <p class="text-base text-text-muted">{{ $featured->summary }}</p>
-                        <span class="inline-flex items-center gap-1 text-sm font-semibold text-primary">Baca selengkapnya <x-icon name="arrow-left" class="size-4 rotate-180" /></span>
-                    </div>
-                </a>
-            @endif
-
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($news as $item)
-                    @continue($featured && $item->is($featured))
-                    <a href="{{ route('news.show', $item) }}" wire:navigate wire:key="news-{{ $item->id }}"
-                       class="group block overflow-hidden rounded-card border border-border bg-surface transition hover:border-primary">
-                        <div class="relative aspect-[4/5] w-full overflow-hidden bg-brand">
+                    <article wire:key="news-{{ $item->id }}" class="flex flex-col overflow-hidden rounded-card border border-border bg-surface transition hover:border-primary">
+                        <a href="{{ route('news.show', $item) }}" wire:navigate class="relative block aspect-video overflow-hidden bg-brand" tabindex="-1" aria-hidden="true">
                             @if ($item->hasPoster())
-                                <img src="{{ route('news.poster', $item) }}" alt="Poster: {{ $item->title }}" loading="lazy" decoding="async" class="size-full object-cover transition group-hover:scale-[1.02]">
+                                <img src="{{ route('news.poster', $item) }}" alt="" loading="lazy" decoding="async" class="size-full object-cover">
                             @else
-                                <div class="flex size-full items-end p-4 text-lg font-bold text-brand-fg">{{ $item->title }}</div>
+                                <span class="flex size-full items-end p-4 text-lg font-bold text-brand-fg">{{ $item->title }}</span>
                             @endif
+                            <span class="absolute bottom-0 left-0 bg-black/75 px-3 py-1.5 text-xs font-semibold uppercase tabular-nums text-white">{{ $item->publishedDate()->translatedFormat('j M Y') }}</span>
                             @unless ($item->is_published)
-                                <x-badge variant="warning" icon="eye-slash" class="absolute left-3 top-3">Draf</x-badge>
+                                <x-badge variant="warning" icon="eye-slash" class="absolute right-3 top-3">Draf</x-badge>
                             @endunless
+                        </a>
+                        <div class="flex flex-1 flex-col gap-2 p-4">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-primary">{{ $item->category->label() }}</p>
+                            <h3 class="text-sm font-semibold uppercase leading-snug">
+                                <a href="{{ route('news.show', $item) }}" wire:navigate class="line-clamp-3 hover:text-primary">{{ $item->title }}</a>
+                            </h3>
+                            <p class="line-clamp-2 text-sm text-text-muted">{{ $item->summary }}</p>
+                            <a href="{{ route('news.show', $item) }}" wire:navigate class="mt-auto inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:underline" aria-label="Baca selengkapnya: {{ $item->title }}">Baca selengkapnya</a>
                         </div>
-                        <div class="p-4">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <x-badge :variant="$item->category->variant()">{{ $item->category->label() }}</x-badge>
-                                <span class="text-xs text-text-muted">{{ $item->publishedDate()->translatedFormat('j M Y') }}</span>
-                            </div>
-                            <h3 class="mt-2 line-clamp-2 text-base font-semibold">{{ $item->title }}</h3>
-                            <p class="mt-1 line-clamp-2 text-sm text-text-muted">{{ $item->summary }}</p>
-                        </div>
-                    </a>
+                    </article>
                 @endforeach
             </div>
 

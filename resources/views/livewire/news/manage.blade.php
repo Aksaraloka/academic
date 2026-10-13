@@ -37,7 +37,7 @@
                     </x-field>
                 </div>
                 <div class="sm:col-span-2">
-                    <x-field label="Poster" name="poster" hint="JPG, PNG, atau WebP, maksimal 3 MB. Rasio 4:5 paling pas.">
+                    <x-field label="Poster" name="poster" hint="JPG, PNG, atau WebP, maksimal 3 MB. Lanskap 16:9 (mis. 1280×720) paling pas.">
                         <input id="poster" type="file" wire:model="poster" accept="image/jpeg,image/png,image/webp" class="input">
                     </x-field>
                 </div>
@@ -49,6 +49,10 @@
                 <label class="flex min-h-11 items-center gap-2 text-sm sm:col-span-2">
                     <input type="checkbox" wire:model="is_published" class="size-5 accent-primary">
                     Terbitkan (terlihat oleh seluruh sivitas akademika)
+                </label>
+                <label class="flex min-h-11 items-center gap-2 text-sm sm:col-span-2">
+                    <input type="checkbox" wire:model="is_featured" class="size-5 accent-primary">
+                    Tampilkan di banner utama beranda (maksimal 5 berita terbaru)
                 </label>
             </div>
             <div class="mt-4 flex flex-wrap gap-2">

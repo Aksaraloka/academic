@@ -29,30 +29,33 @@ use Illuminate\Support\Facades\Storage;
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Poster contoh berformat SVG (rasio 4:5) bertema merah Aksaraloka.
+     * Poster contoh berformat SVG lanskap 16:9 bertema merah Aksaraloka.
      */
-    private function posterSvg(string $title, string $badge): string
+    private function posterSvg(string $title, string $badge, int $variant = 0): string
     {
-        $lines = array_map(fn (string $line): string => htmlspecialchars($line, ENT_XML1), explode("\n", wordwrap($title, 18, "\n", true)));
+        $lines = array_map(fn (string $line): string => htmlspecialchars($line, ENT_XML1), explode("\n", wordwrap($title, 26, "\n", true)));
         $text = '';
 
         foreach ($lines as $index => $line) {
-            $y = 520 + $index * 72;
-            $text .= "<text x=\"60\" y=\"{$y}\" font-family=\"Arial, sans-serif\" font-size=\"58\" font-weight=\"700\" fill=\"#ffffff\">{$line}</text>";
+            $y = 330 + $index * 78;
+            $text .= "<text x=\"80\" y=\"{$y}\" font-family=\"Arial, sans-serif\" font-size=\"64\" font-weight=\"700\" fill=\"#ffffff\">{$line}</text>";
         }
 
         $badge = htmlspecialchars($badge, ENT_XML1);
+        [$from, $to] = [['#c62828', '#7f1d1d'], ['#9f1f1f', '#450a0a'], ['#b91c1c', '#7c2d12']][$variant % 3];
+        $badgeWidth = 60 + strlen($badge) * 20;
 
         return <<<SVG
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c62828"/><stop offset="1" stop-color="#7f1d1d"/></linearGradient></defs>
-  <rect width="800" height="1000" fill="url(#g)"/>
-  <circle cx="680" cy="140" r="220" fill="#ffffff" fill-opacity="0.10"/>
-  <circle cx="90" cy="930" r="160" fill="#ffffff" fill-opacity="0.08"/>
-  <rect x="60" y="120" width="330" height="56" rx="28" fill="#ffffff"/>
-  <text x="90" y="158" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#7f1d1d">{$badge}</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{$from}"/><stop offset="1" stop-color="{$to}"/></linearGradient></defs>
+  <rect width="1280" height="720" fill="url(#g)"/>
+  <circle cx="1100" cy="130" r="260" fill="#ffffff" fill-opacity="0.10"/>
+  <circle cx="1220" cy="640" r="170" fill="#ffffff" fill-opacity="0.08"/>
+  <circle cx="60" cy="700" r="120" fill="#ffffff" fill-opacity="0.06"/>
+  <rect x="80" y="110" width="{$badgeWidth}" height="58" rx="29" fill="#ffffff"/>
+  <text x="110" y="149" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#7f1d1d">{$badge}</text>
   {$text}
-  <text x="60" y="900" font-family="Arial, sans-serif" font-size="30" fill="#ffffff" fill-opacity="0.9">Wisuda Aksaraloka Academic</text>
+  <text x="80" y="650" font-family="Arial, sans-serif" font-size="30" fill="#ffffff" fill-opacity="0.9">Aksaraloka Academic</text>
 </svg>
 SVG;
     }
@@ -220,14 +223,14 @@ SVG;
             ['kegiatan', 'Gladi Bersih Wisuda', 'Gladi bersih satu minggu sebelum hari-H di Auditorium Utama.', 'GLADI BERSIH', 0],
         ])->each(function (array $row, int $index) use ($tenant, $period, $adminUser): void {
             $path = "news-posters/seed-{$tenant->id}-{$index}.svg";
-            Storage::disk('local')->put($path, $this->posterSvg($row[1], $row[3]));
+            Storage::disk('local')->put($path, $this->posterSvg($row[1], $row[3], $index));
             $draft = $row[4] === 0;
 
             News::create([
                 'tenant_id' => $tenant->id, 'created_by' => $adminUser?->id, 'category' => $row[0],
                 'graduation_period_id' => $row[0] === 'wisuda' ? $period->id : null,
                 'title' => $row[1], 'summary' => $row[2], 'body' => $row[2]."\n\nInformasi lebih lanjut dapat ditanyakan ke BAAK pada jam kerja.",
-                'poster_path' => $path, 'is_published' => ! $draft, 'published_at' => $draft ? null : now()->subDays($row[4]),
+                'poster_path' => $path, 'is_featured' => $index < 3, 'is_published' => ! $draft, 'published_at' => $draft ? null : now()->subDays($row[4]),
             ]);
         });
 

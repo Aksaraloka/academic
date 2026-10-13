@@ -34,9 +34,19 @@ class Index extends Component
     public function render()
     {
         $user = auth()->user();
+        $filtered = $this->category !== '' || $this->search !== '';
+
+        // Banner utama: berita unggulan yang sudah terbit. Disembunyikan saat pencarian atau filter aktif.
+        $banner = $filtered ? collect() : News::query()
+            ->published()
+            ->where('is_featured', true)
+            ->orderByDesc('published_at')
+            ->limit(5)
+            ->get();
 
         $news = News::query()
             ->visibleTo($user)
+            ->when($banner->isNotEmpty(), fn ($query) => $query->whereNotIn('id', $banner->pluck('id')))
             ->when(NewsCategory::tryFrom($this->category), fn ($query, NewsCategory $category) => $query->where('category', $category))
             ->when($this->search !== '', fn ($query) => $query->where(fn ($inner) => $inner
                 ->where('title', 'like', "%{$this->search}%")
@@ -47,10 +57,11 @@ class Index extends Component
             ->paginate(9);
 
         return view('livewire.news.index', [
+            'banner' => $banner,
             'news' => $news,
             'categories' => NewsCategory::cases(),
             'isAdmin' => $user->isAdmin(),
-            'filtered' => $this->category !== '' || $this->search !== '',
+            'filtered' => $filtered,
         ]);
     }
 }

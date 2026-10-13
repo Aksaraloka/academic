@@ -130,3 +130,41 @@ it('links a wisuda news item to registration for students while it is open', fun
 
     $this->actingAs($this->student)->get(route('news.show', $news))->assertOk()->assertSee('Daftar wisuda');
 });
+
+it('shows featured published news in the banner and keeps them out of the grid', function () {
+    $component = Livewire::actingAs($this->student)->test(Index::class);
+
+    $banner = $component->viewData('banner');
+    $grid = $component->viewData('news');
+
+    expect($banner->pluck('title')->all())->toBe([
+        'Program Studi Baru: Sains Data dan Kecerdasan Buatan',
+        'Beasiswa Prestasi Akademik 2026/2027 Dibuka',
+        'Pendaftaran Wisuda Periode II Dibuka',
+    ])->and($grid->pluck('id')->intersect($banner->pluck('id')))->toBeEmpty();
+
+    $this->actingAs($this->student)->get('/beranda')->assertSee('aria-roledescription="carousel"', false)->assertSee('Baca selengkapnya');
+});
+
+it('drops the banner while searching or filtering and lists every match', function () {
+    $component = Livewire::actingAs($this->student)->test(Index::class)->call('setCategory', 'program');
+
+    expect($component->viewData('banner'))->toBeEmpty()
+        ->and($component->viewData('news')->pluck('title')->all())->toContain('Program Studi Baru: Sains Data dan Kecerdasan Buatan', 'Program Pertukaran Mahasiswa Semester Depan');
+});
+
+it('never shows an unpublished featured item in the banner', function () {
+    News::where('title', 'Gladi Bersih Wisuda')->update(['is_featured' => true]);
+
+    $banner = Livewire::actingAs($this->admin)->test(Index::class)->viewData('banner');
+
+    expect($banner->pluck('title')->all())->not->toContain('Gladi Bersih Wisuda');
+});
+
+it('lets an admin flag news for the banner', function () {
+    Livewire::actingAs($this->admin)->test(Manage::class)
+        ->set('title', 'Beasiswa Unggulan')->set('category', 'beasiswa')->set('summary', 'Kuota terbatas.')->set('is_featured', true)
+        ->call('save')->assertHasNoErrors();
+
+    expect(News::where('title', 'Beasiswa Unggulan')->value('is_featured'))->toBeTrue();
+});

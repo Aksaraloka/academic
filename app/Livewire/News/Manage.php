@@ -30,6 +30,8 @@ class Manage extends Component
 
     public bool $is_published = true;
 
+    public bool $is_featured = false;
+
     public $poster;
 
     public function edit(int $newsId): void
@@ -44,6 +46,7 @@ class Manage extends Component
             'body' => (string) $news->body,
             'graduation_period_id' => (string) $news->graduation_period_id,
             'is_published' => $news->is_published,
+            'is_featured' => $news->is_featured,
         ]);
         $this->poster = null;
     }
@@ -53,6 +56,7 @@ class Manage extends Component
         $this->reset(['editingId', 'title', 'summary', 'body', 'graduation_period_id', 'poster']);
         $this->category = 'pengumuman';
         $this->is_published = true;
+        $this->is_featured = false;
     }
 
     public function save(): void
@@ -64,6 +68,7 @@ class Manage extends Component
             'body' => ['nullable', 'string', 'max:10000'],
             'graduation_period_id' => ['nullable', 'exists:graduation_periods,id'],
             'is_published' => ['boolean'],
+            'is_featured' => ['boolean'],
             'poster' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
         ], [], [
             'title' => 'judul', 'category' => 'kategori', 'summary' => 'ringkasan', 'body' => 'isi berita',
@@ -79,6 +84,7 @@ class Manage extends Component
             'body' => $data['body'] ?: null,
             'graduation_period_id' => $data['graduation_period_id'] ?: null,
             'is_published' => $data['is_published'],
+            'is_featured' => $data['is_featured'],
             'published_at' => $data['is_published'] ? ($news->published_at ?? now()) : null,
         ]);
 

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['tenant_id', 'graduation_period_id', 'created_by', 'category', 'title', 'summary', 'body', 'poster_path', 'is_published', 'published_at'])]
+#[Fillable(['tenant_id', 'graduation_period_id', 'created_by', 'category', 'title', 'summary', 'body', 'poster_path', 'is_published', 'is_featured', 'published_at'])]
 class News extends Model
 {
     use BelongsToTenant;
@@ -25,6 +25,7 @@ class News extends Model
         return [
             'category' => NewsCategory::class,
             'is_published' => 'boolean',
+            'is_featured' => 'boolean',
             'published_at' => 'datetime',
         ];
     }

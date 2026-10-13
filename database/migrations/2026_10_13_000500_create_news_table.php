@@ -22,6 +22,7 @@ return new class extends Migration
             $table->text('body')->nullable();
             $table->string('poster_path')->nullable();
             $table->boolean('is_published')->default(false);
+            $table->boolean('is_featured')->default(false);
             $table->timestamp('published_at')->nullable();
             $table->timestamps();
             $table->index(['tenant_id', 'is_published', 'published_at']);
