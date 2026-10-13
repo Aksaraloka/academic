@@ -18,8 +18,9 @@
             ? \App\Models\FeedbackTicket::query()->where('status', 'baru')->count()
             : 0,
     ];
-    $primaryItems = array_slice($items, 0, count($items) > 5 ? 4 : 5);
-    $moreItems = count($items) > 5 ? array_slice($items, 4) : [];
+    $flat = \App\Support\Navigation::flatten($items);
+    $primaryItems = array_slice($flat, 0, count($flat) > 5 ? 4 : 5);
+    $moreItems = count($flat) > 5 ? array_slice($flat, 4) : [];
 @endphp
 <a href="#konten" class="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-3 focus:py-2">Lewati ke konten</a>
 
@@ -32,6 +33,26 @@
         </div>
         <nav class="flex-1 space-y-1 overflow-y-auto p-3">
             @foreach ($items as $item)
+                @if (isset($item['children']))
+                    @php $groupActive = request()->routeIs($item['match']); @endphp
+                    <div x-data="{ open: {{ $groupActive ? 'true' : 'false' }} }">
+                        <button type="button" @click="collapsed ? (collapsed = false, open = true) : open = !open" :aria-expanded="open"
+                                title="{{ $item['label'] }}"
+                                class="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition {{ $groupActive ? 'bg-primary/15 text-primary' : 'text-text-muted hover:bg-surface-muted' }}">
+                            <x-icon :name="$item['icon']" />
+                            <span x-show="!collapsed" class="truncate">{{ $item['label'] }}</span>
+                            <x-icon name="chevron-down" class="ml-auto size-4 transition" x-show="!collapsed" ::class="open && 'rotate-180'" />
+                        </button>
+                        <div x-show="open && !collapsed" x-cloak class="mt-1 space-y-1 border-l border-border pl-3 ml-5">
+                            @foreach ($item['children'] as $child)
+                                @php $childActive = request()->routeIs($child['match']); @endphp
+                                <a href="{{ route($child['route']) }}" wire:navigate @if ($childActive) aria-current="page" @endif
+                                   class="flex min-h-10 items-center rounded-lg px-3 text-sm transition {{ $childActive ? 'bg-primary/15 font-medium text-primary' : 'text-text-muted hover:bg-surface-muted' }}">{{ $child['label'] }}</a>
+                            @endforeach
+                        </div>
+                    </div>
+                    @continue
+                @endif
                 @php $active = request()->routeIs($item['match']); @endphp
                 <a href="{{ route($item['route']) }}" wire:navigate @if ($active) aria-current="page" @endif
                    title="{{ $item['label'] }}"
@@ -121,7 +142,10 @@
                 </div>
                 <div class="space-y-1">
                     @foreach ($moreItems as $item)
-                        <a href="{{ route($item['route']) }}" wire:navigate class="flex min-h-12 items-center gap-3 rounded-lg px-3 text-sm font-medium hover:bg-surface-muted">
+                        @if (isset($item['group']) && ($moreItems[$loop->index - 1]['group'] ?? null) !== $item['group'])
+                            <p class="flex items-center gap-2 px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-text-muted"><x-icon :name="$item['group_icon']" class="size-4" /> {{ $item['group'] }}</p>
+                        @endif
+                        <a href="{{ route($item['route']) }}" wire:navigate class="flex min-h-12 items-center gap-3 rounded-lg px-3 text-sm font-medium hover:bg-surface-muted {{ isset($item['group']) ? 'ml-4' : '' }}">
                             <x-icon :name="$item['icon']" class="text-primary" /> {{ $item['label'] }}
                             @if (($badges[$item['route']] ?? 0) > 0)<span class="ml-auto rounded-full bg-primary px-2 text-[10px] font-bold leading-5 text-primary-fg">{{ $badges[$item['route']] }}<span class="sr-only"> baru</span></span>@endif
                         </a>

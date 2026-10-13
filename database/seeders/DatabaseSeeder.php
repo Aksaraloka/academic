@@ -20,6 +20,9 @@ use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\StudyGroup;
 use App\Models\Subject;
+use App\Models\Survey;
+use App\Models\SurveyAnswer;
+use App\Models\SurveyResponse;
 use App\Models\Teacher;
 use App\Models\TeachingAssignment;
 use App\Models\Tenant;
@@ -235,6 +238,93 @@ SVG;
                 'poster_path' => $path, 'is_featured' => $index < 3, 'is_published' => ! $draft, 'published_at' => $draft ? null : now()->subDays($row[4]),
             ]);
         });
+
+        // Survey contoh: kepuasan layanan (anonim, sudah ada responden), evaluasi dosen, survey dosen, dan satu draf.
+        $extraStudents = collect(range(1, 12))->map(fn (int $n): User => User::create([
+            'tenant_id' => $tenant->id, 'name' => "Mahasiswa Contoh {$n}", 'email' => "mhs{$n}@aksaraloka.test", 'role' => Role::Student, 'password' => 'password',
+        ]));
+
+        $surveyDefinitions = [
+            [
+                'title' => 'Evaluasi Layanan Akademik Semester Ganjil 2026/2027', 'category' => 'kepuasan', 'audience' => ['student'],
+                'opens_on' => today()->subDays(3), 'closes_on' => today()->addDays(14), 'anonymous' => true, 'published' => true, 'responses' => 9,
+                'description' => 'Penilaianmu membantu BAAK memperbaiki layanan. Waktu pengisian sekitar 3 menit.',
+                'questions' => [
+                    ['rating', 'Kemudahan pengurusan administrasi akademik', null, true],
+                    ['rating', 'Kecepatan respons petugas BAAK', null, true],
+                    ['rating', 'Kejelasan informasi jadwal dan perkuliahan', null, true],
+                    ['rating', 'Kenyamanan fasilitas ruang kuliah', null, true],
+                    ['pilihan', 'Layanan mana yang paling perlu ditingkatkan?', ['Administrasi akademik', 'Fasilitas kelas', 'Perpustakaan', 'Aplikasi Aksaraloka'], true],
+                    ['pilihan_ganda', 'Kanal informasi apa yang kamu gunakan?', ['Aplikasi Aksaraloka', 'Grup WhatsApp', 'Papan pengumuman', 'Media sosial kampus'], true],
+                    ['teks', 'Saran untuk perbaikan layanan', null, false],
+                ],
+            ],
+            [
+                'title' => 'Evaluasi Dosen Semester Ganjil 2026/2027', 'category' => 'evaluasi_dosen', 'audience' => ['student'],
+                'opens_on' => today()->subDays(1), 'closes_on' => today()->addDays(20), 'anonymous' => true, 'published' => true, 'responses' => 4,
+                'description' => 'Penilaian terhadap proses pembelajaran. Jawaban anonim dan hanya dibaca dalam bentuk rekap.',
+                'questions' => [
+                    ['rating', 'Dosen menjelaskan materi dengan jelas', null, true],
+                    ['rating', 'Dosen hadir dan mulai kuliah tepat waktu', null, true],
+                    ['rating', 'Dosen terbuka terhadap pertanyaan mahasiswa', null, true],
+                    ['rating', 'Penilaian tugas dan ujian dilakukan adil', null, true],
+                    ['teks', 'Komentar untuk dosen', null, false],
+                ],
+            ],
+            [
+                'title' => 'Survey Kepuasan Dosen terhadap Sistem Akademik', 'category' => 'kepuasan', 'audience' => ['teacher', 'curriculum'],
+                'opens_on' => today()->subDays(2), 'closes_on' => today()->addDays(10), 'anonymous' => false, 'published' => true, 'responses' => 0,
+                'description' => 'Bantu kami menyempurnakan fitur presensi, jadwal, dan rekap untuk dosen.',
+                'questions' => [
+                    ['rating', 'Kemudahan mengisi presensi kelas', null, true],
+                    ['rating', 'Kemudahan melihat jadwal mengajar', null, true],
+                    ['pilihan', 'Fitur apa yang paling kamu butuhkan?', ['Rekap per mata kuliah', 'Notifikasi mahasiswa alpa', 'Unggah materi', 'Penilaian'], true],
+                ],
+            ],
+            [
+                'title' => 'Survey Fasilitas Kampus', 'category' => 'umum', 'audience' => ['student', 'teacher'],
+                'opens_on' => today()->addDays(7), 'closes_on' => today()->addDays(21), 'anonymous' => false, 'published' => false, 'responses' => 0,
+                'description' => null,
+                'questions' => [
+                    ['rating', 'Kebersihan fasilitas kampus', null, true],
+                    ['teks', 'Fasilitas yang perlu ditambah', null, false],
+                ],
+            ],
+        ];
+
+        foreach ($surveyDefinitions as $definition) {
+            $survey = Survey::create([
+                'tenant_id' => $tenant->id, 'created_by' => $adminUser->id, 'category' => $definition['category'], 'title' => $definition['title'],
+                'description' => $definition['description'], 'audience' => $definition['audience'], 'opens_on' => $definition['opens_on'],
+                'closes_on' => $definition['closes_on'], 'is_anonymous' => $definition['anonymous'], 'is_published' => $definition['published'],
+            ]);
+
+            $questions = collect($definition['questions'])->map(fn (array $row, int $position) => $survey->questions()->create([
+                'position' => $position, 'type' => $row[0], 'text' => $row[1], 'options' => $row[2], 'is_required' => $row[3],
+            ]));
+
+            foreach ($extraStudents->take($definition['responses']) as $respondent) {
+                $response = SurveyResponse::create([
+                    'survey_id' => $survey->id, 'user_id' => $definition['anonymous'] ? null : $respondent->id,
+                    'respondent_hash' => hash_hmac('sha256', "survey:{$survey->id}:user:{$respondent->id}", (string) config('app.key')),
+                    'submitted_at' => now()->subHours(random_int(1, 70)),
+                ]);
+
+                foreach ($questions as $question) {
+                    $value = match ($question->type->value) {
+                        'rating' => (string) random_int(3, 5),
+                        'pilihan' => $question->options[array_rand($question->options)],
+                        'pilihan_ganda' => array_values(array_intersect_key($question->options, array_flip((array) array_rand($question->options, 2)))),
+                        default => ['Tolong tambah stopkontak di kelas.', 'Layanan sudah baik, pertahankan.', 'Jadwal sebaiknya lebih awal diumumkan.'][array_rand([0, 1, 2])],
+                    };
+
+                    SurveyAnswer::create([
+                        'survey_response_id' => $response->id, 'survey_question_id' => $question->id,
+                        'answer' => is_array($value) ? null : $value, 'choices' => is_array($value) ? $value : null,
+                    ]);
+                }
+            }
+        }
 
         // Masukan dan komplain contoh dengan satu percakapan.
         $lecturerUser = User::where('email', 'dosen@aksaraloka.test')->first();

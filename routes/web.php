@@ -4,6 +4,7 @@ use App\Http\Controllers\FeedbackAttachmentController;
 use App\Http\Controllers\GraduationMinutesPrintController;
 use App\Http\Controllers\NewsPosterController;
 use App\Http\Controllers\ReportExportController;
+use App\Http\Controllers\SurveyExportController;
 use App\Livewire\Attendance;
 use App\Livewire\Auth\Login;
 use App\Livewire\Checkin;
@@ -17,6 +18,7 @@ use App\Livewire\Reports;
 use App\Livewire\Scan;
 use App\Livewire\Schedule;
 use App\Livewire\Students;
+use App\Livewire\Survey;
 use App\Livewire\Teachers;
 use App\Livewire\Wisuda;
 use App\Services\StudentImporter;
@@ -40,6 +42,22 @@ Route::post('/keluar', function () {
 Route::middleware('auth')->group(function () {
     Route::livewire('/beranda', News\Index::class)->name('dashboard');
     Route::livewire('/ringkasan', Dashboard::class)->name('summary');
+
+    Route::livewire('/survei', Survey\Home::class)->name('survey.home');
+    Route::livewire('/survei/kuesioner', Survey\Index::class)->name('survey.index');
+    Route::livewire('/survei/bantuan', Survey\Help::class)->name('survey.help');
+
+    Route::middleware('role:admin')->group(function () {
+        Route::livewire('/survei/kelola/baru', Survey\Form::class)->name('survey.create');
+        Route::livewire('/survei/{survey}/ubah', Survey\Form::class)->name('survey.edit');
+    });
+
+    Route::middleware('role:admin,principal')->group(function () {
+        Route::livewire('/survei/{survey}/hasil', Survey\Results::class)->name('survey.results');
+        Route::get('/survei/{survey}/hasil/ekspor', SurveyExportController::class)->name('survey.export');
+    });
+
+    Route::livewire('/survei/{survey}/isi', Survey\Fill::class)->name('survey.fill');
 
     Route::livewire('/masukan', Feedback\Index::class)->name('feedback.index');
     Route::livewire('/masukan/baru', Feedback\Create::class)->name('feedback.create');

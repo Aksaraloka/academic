@@ -79,9 +79,44 @@ class Navigation
             ],
         };
 
+        $items[] = [
+            'label' => 'Survey',
+            'icon' => 'chart-pie',
+            'match' => 'survey.*',
+            'children' => [
+                self::item('Beranda', 'survey.home', 'home'),
+                self::item('Kuesioner', 'survey.index', 'clipboard-document-list', 'survey.index'),
+                self::item('Bantuan', 'survey.help', 'question-mark-circle'),
+            ],
+        ];
         $items[] = self::item('Masukan', 'feedback.index', 'chat-bubble-left-right', 'feedback.*');
 
         return $items;
+    }
+
+    /**
+     * Ratakan grup menu menjadi daftar datar (untuk navigasi HP); anak grup membawa nama grupnya.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    public static function flatten(array $items): array
+    {
+        $flat = [];
+
+        foreach ($items as $item) {
+            if (isset($item['children'])) {
+                foreach ($item['children'] as $child) {
+                    $flat[] = $child + ['group' => $item['label'], 'group_icon' => $item['icon']];
+                }
+
+                continue;
+            }
+
+            $flat[] = $item;
+        }
+
+        return $flat;
     }
 
     /**
