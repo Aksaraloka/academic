@@ -23,6 +23,7 @@ class Navigation
                 self::item('Dosen', 'teachers.index', 'identification', 'teachers.*'),
                 self::item('Kelas', 'groups.index', 'user-group', 'groups.*'),
                 self::item('Prodi', 'programs.index', 'building-library', 'programs.*'),
+                self::item('Wisuda', 'wisuda.home', 'academic-cap', 'wisuda.*'),
                 self::item('Rekap', 'reports.index', 'chart-bar', 'reports.*'),
                 self::item('Izin', 'leaves.index', 'envelope', 'leaves.*'),
             ],
@@ -32,6 +33,7 @@ class Navigation
                 self::item('Rekap', 'reports.index', 'chart-bar', 'reports.*'),
                 self::item('Check-in', 'checkin', 'map-pin'),
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
+                self::item('Wisuda', 'wisuda.home', 'academic-cap', 'wisuda.*'),
                 self::item('Izin', 'leaves.index', 'envelope', 'leaves.*'),
             ],
             Role::Curriculum => [
@@ -40,6 +42,7 @@ class Navigation
                 self::item('Kelas', 'groups.index', 'user-group', 'groups.*'),
                 self::item('Rekap', 'reports.index', 'chart-bar', 'reports.*'),
                 self::item('Check-in', 'checkin', 'map-pin'),
+                self::item('Wisuda', 'wisuda.home', 'academic-cap', 'wisuda.*'),
             ],
             Role::Teacher => [
                 self::item('Beranda', 'dashboard', 'home'),
@@ -60,6 +63,7 @@ class Navigation
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
                 self::item('Pindai QR', 'scan', 'qr-code'),
                 self::item('Kehadiran', 'reports.index', 'chart-bar', 'reports.*'),
+                self::item('Wisuda', 'wisuda.home', 'academic-cap', 'wisuda.*'),
             ],
             Role::Guardian => [
                 self::item('Beranda', 'dashboard', 'home'),

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\GraduationMinutesPrintController;
+use App\Http\Controllers\GraduationPosterController;
 use App\Http\Controllers\ReportExportController;
 use App\Livewire\Attendance;
 use App\Livewire\Auth\Login;
@@ -13,6 +15,7 @@ use App\Livewire\Scan;
 use App\Livewire\Schedule;
 use App\Livewire\Students;
 use App\Livewire\Teachers;
+use App\Livewire\Wisuda;
 use App\Services\StudentImporter;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -70,6 +73,31 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:student')->group(function () {
         Route::livewire('/pindai', Scan::class)->name('scan');
+    });
+
+    Route::middleware('role:admin,principal,curriculum,student')->group(function () {
+        Route::livewire('/wisuda', Wisuda\Home::class)->name('wisuda.home');
+        Route::livewire('/wisuda/pendaftaran', Wisuda\Overview::class)->name('wisuda.overview');
+    });
+
+    Route::middleware('role:admin')->group(function () {
+        Route::livewire('/wisuda/periode', Wisuda\Periods::class)->name('wisuda.periods');
+        Route::livewire('/wisuda/berita/kelola', Wisuda\NewsManage::class)->name('wisuda.news.manage');
+    });
+
+    Route::middleware('role:admin,principal,curriculum,student')->group(function () {
+        Route::livewire('/wisuda/berita/{news}', Wisuda\NewsShow::class)->name('wisuda.news.show');
+        Route::get('/wisuda/berita/{news}/poster', GraduationPosterController::class)->name('wisuda.news.poster');
+    });
+
+    Route::middleware('role:admin,principal,curriculum')->group(function () {
+        Route::livewire('/wisuda/{period}/pendaftar', Wisuda\Registrations::class)->name('wisuda.registrations');
+        Route::livewire('/wisuda/{period}/berita-acara', Wisuda\Minutes::class)->name('wisuda.minutes');
+        Route::get('/wisuda/{period}/berita-acara/cetak', GraduationMinutesPrintController::class)->name('wisuda.minutes.print');
+    });
+
+    Route::middleware('role:student')->group(function () {
+        Route::livewire('/wisuda/{period}/daftar', Wisuda\Register::class)->name('wisuda.register');
     });
 
     Route::livewire('/rekap', Reports\Index::class)->name('reports.index');

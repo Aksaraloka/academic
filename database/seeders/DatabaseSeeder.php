@@ -8,6 +8,9 @@ use App\Models\AcademicTerm;
 use App\Models\AttendanceRecord;
 use App\Models\AttendanceSession;
 use App\Models\Faculty;
+use App\Models\GraduationNews;
+use App\Models\GraduationPeriod;
+use App\Models\GraduationRegistration;
 use App\Models\Guardian;
 use App\Models\Program;
 use App\Models\Room;
@@ -21,9 +24,39 @@ use App\Models\Tenant;
 use App\Models\TimeSlot;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 class DatabaseSeeder extends Seeder
 {
+    /**
+     * Poster contoh berformat SVG (rasio 4:5) bertema merah Aksaraloka.
+     */
+    private function posterSvg(string $title, string $badge): string
+    {
+        $lines = array_map(fn (string $line): string => htmlspecialchars($line, ENT_XML1), explode("\n", wordwrap($title, 18, "\n", true)));
+        $text = '';
+
+        foreach ($lines as $index => $line) {
+            $y = 520 + $index * 72;
+            $text .= "<text x=\"60\" y=\"{$y}\" font-family=\"Arial, sans-serif\" font-size=\"58\" font-weight=\"700\" fill=\"#ffffff\">{$line}</text>";
+        }
+
+        $badge = htmlspecialchars($badge, ENT_XML1);
+
+        return <<<SVG
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c62828"/><stop offset="1" stop-color="#7f1d1d"/></linearGradient></defs>
+  <rect width="800" height="1000" fill="url(#g)"/>
+  <circle cx="680" cy="140" r="220" fill="#ffffff" fill-opacity="0.10"/>
+  <circle cx="90" cy="930" r="160" fill="#ffffff" fill-opacity="0.08"/>
+  <rect x="60" y="120" width="330" height="56" rx="28" fill="#ffffff"/>
+  <text x="90" y="158" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#7f1d1d">{$badge}</text>
+  {$text}
+  <text x="60" y="900" font-family="Arial, sans-serif" font-size="30" fill="#ffffff" fill-opacity="0.9">Wisuda Aksaraloka Academic</text>
+</svg>
+SVG;
+    }
+
     /**
      * Data contoh universitas (kata sandi semua akun: "password").
      */
@@ -136,6 +169,59 @@ class DatabaseSeeder extends Seeder
                 }
             }
         }
+
+        // Periode wisuda yang sedang dibuka, dengan calon wisudawan angkatan 2022.
+        $period = GraduationPeriod::create([
+            'tenant_id' => $tenant->id, 'name' => 'Wisuda Periode II Tahun 2026',
+            'registration_opens_on' => today()->subDays(14), 'registration_closes_on' => today()->addDays(20),
+            'ceremony_on' => today()->addDays(60), 'venue' => 'Auditorium Utama', 'quota' => 100, 'is_published' => true,
+        ]);
+
+        $candidates = collect([
+            ['Anindya Putri Lestari', 'approved', 3.72, 146],
+            ['Rizky Fadillah', 'approved', 3.41, 148],
+            ['Dewi Kartika Sari', 'approved', 3.88, 150],
+            ['Muhammad Fajar Nugroho', 'submitted', 3.15, 145],
+            ['Siti Nurhaliza', 'submitted', 3.56, 147],
+            ['Yoga Pratama', 'rejected', 3.02, 146],
+        ])->map(function (array $row, int $index) use ($tenant, $informatics, $period, $teachers): void {
+            $student = Student::create([
+                'tenant_id' => $tenant->id, 'program_id' => $informatics->id, 'name' => $row[0],
+                'nim' => (string) (2210000 + $index + 1), 'batch_year' => 2022, 'gender' => $index % 2 === 0 ? 'P' : 'L',
+                'status' => 'aktif', 'entry_date' => '2022-09-05',
+            ]);
+
+            GraduationRegistration::create([
+                'tenant_id' => $tenant->id, 'graduation_period_id' => $period->id, 'student_id' => $student->id,
+                'thesis_title' => 'Rancang Bangun Sistem Informasi '.['Akademik', 'Perpustakaan', 'Klinik', 'Koperasi', 'Pertanian', 'Parkir'][$index].' Berbasis Web',
+                'gpa' => $row[2], 'credits_earned' => $row[3], 'defense_date' => today()->subDays(10 + $index),
+                'gown_size' => ['S', 'M', 'L', 'M', 'S', 'XL'][$index],
+                'status' => match ($row[1]) {
+                    'approved' => 'disetujui', 'rejected' => 'ditolak', default => 'diajukan'
+                },
+                'rejection_reason' => $row[1] === 'rejected' ? 'Transkrip belum dilegalisir.' : null,
+                'verified_by' => $row[1] === 'submitted' ? null : $teachers[2]->user_id,
+                'verified_at' => $row[1] === 'submitted' ? null : now(),
+            ]);
+        });
+
+        $adminUser = User::where('email', 'admin@aksaraloka.test')->first();
+
+        collect([
+            ['Pendaftaran Wisuda Periode II Dibuka', 'Pendaftaran dibuka hingga '.today()->addDays(20)->translatedFormat('j F Y').'. Lengkapi berkas dan daftar lewat menu Pendaftaran.', 'PENDAFTARAN', true, 1],
+            ['Gladi Bersih dan Pengambilan Toga', 'Gladi bersih wisuda dilaksanakan satu minggu sebelum hari-H di Auditorium Utama.', 'GLADI BERSIH', true, 3],
+            ['Syarat dan Berkas Wisuda', 'Daftar lengkap persyaratan administrasi dan akademik bagi calon wisudawan.', 'PERSYARATAN', true, 6],
+            ['Jadwal Foto Wisudawan', 'Jadwal sesi foto toga per program studi. Datang 15 menit lebih awal.', 'JADWAL FOTO', false, 9],
+        ])->each(function (array $row, int $index) use ($tenant, $period, $adminUser): void {
+            $path = "wisuda-posters/seed-{$tenant->id}-{$index}.svg";
+            Storage::disk('local')->put($path, $this->posterSvg($row[0], $row[2]));
+
+            GraduationNews::create([
+                'tenant_id' => $tenant->id, 'graduation_period_id' => $period->id, 'created_by' => $adminUser?->id,
+                'title' => $row[0], 'summary' => $row[1], 'body' => $row[1]."\n\nInformasi lebih lanjut dapat ditanyakan ke BAAK pada jam kerja.",
+                'poster_path' => $path, 'is_published' => $row[3], 'published_at' => $row[3] ? now()->subDays($row[4]) : null,
+            ]);
+        });
 
         // Riwayat presensi dua minggu terakhir (tanpa hari ini) agar rekap dan syarat ujian 75% terlihat.
         $dates = collect(range(1, 14))->map(fn (int $back) => today()->subDays($back))->filter(fn ($date) => $date->isWeekday());
