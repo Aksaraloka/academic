@@ -48,6 +48,7 @@ class Index extends Component
         return view('livewire.feedback.index', [
             'tickets' => $tickets,
             'isHandler' => $isHandler,
+            'helpdeskUrl' => $user->tenant?->helpdeskUrl($user),
             'counts' => $counts,
             'statuses' => FeedbackStatus::cases(),
             'types' => FeedbackType::cases(),

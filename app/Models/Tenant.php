@@ -27,6 +27,7 @@ class Tenant extends Model
         'absent_threshold' => 3,
         'min_attendance_percent' => 75,
         'meetings_per_course' => 16,
+        'helpdesk_whatsapp' => null,
         'graduation_min_credits' => 144,
         'graduation_min_gpa' => 2.0,
     ];
@@ -45,6 +46,44 @@ class Tenant extends Model
     public function setting(string $key): mixed
     {
         return $this->settings[$key] ?? self::DEFAULT_SETTINGS[$key] ?? null;
+    }
+
+    /**
+     * Nomor WhatsApp helpdesk dalam format internasional tanpa tanda (mis. 6281234567890); null bila belum diatur.
+     * Nomor lokal berawalan 0 atau 8 diubah ke kode negara 62.
+     */
+    public function helpdeskNumber(): ?string
+    {
+        $digits = preg_replace('/\D+/', '', (string) ($this->setting('helpdesk_whatsapp') ?: config('services.helpdesk.whatsapp')));
+
+        if ($digits === '') {
+            return null;
+        }
+
+        $digits = match (true) {
+            str_starts_with($digits, '0') => '62'.substr($digits, 1),
+            str_starts_with($digits, '8') => '62'.$digits,
+            default => $digits,
+        };
+
+        return strlen($digits) >= 9 && strlen($digits) <= 15 ? $digits : null;
+    }
+
+    /**
+     * Tautan wa.me ke helpdesk dengan pesan awal berisi nama dan peran pengirim.
+     */
+    public function helpdeskUrl(User $user): ?string
+    {
+        $number = $this->helpdeskNumber();
+
+        if ($number === null) {
+            return null;
+        }
+
+        $identity = $user->name.' ('.$user->role->label().($user->student ? ', NIM '.$user->student->nim : '').')';
+        $message = "Halo Helpdesk {$this->name}, saya {$identity}. Saya membutuhkan bantuan terkait: ";
+
+        return 'https://wa.me/'.$number.'?text='.rawurlencode($message);
     }
 
     public function usesDailyAttendance(): bool

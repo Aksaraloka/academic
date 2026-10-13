@@ -101,7 +101,7 @@ SVG;
             'name' => 'Universitas Aksara Nusantara',
             'subdomain' => 'aksara-nusantara',
             'level' => 'campus',
-            'settings' => ['attendance_mode' => 'per_hour', 'min_attendance_percent' => 75, 'absent_threshold' => 3],
+            'settings' => ['attendance_mode' => 'per_hour', 'min_attendance_percent' => 75, 'absent_threshold' => 3, 'helpdesk_whatsapp' => '081234567800'],
         ]);
 
         $account = fn (string $name, string $email, Role $role): User => User::create([

@@ -28,6 +28,11 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Nomor WhatsApp helpdesk bawaan; tiap kampus bisa menimpanya lewat pengaturan helpdesk_whatsapp.
+    'helpdesk' => [
+        'whatsapp' => env('HELPDESK_WHATSAPP'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

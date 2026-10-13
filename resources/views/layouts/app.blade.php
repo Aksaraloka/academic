@@ -18,6 +18,7 @@
             ? \App\Models\FeedbackTicket::query()->where('status', 'baru')->count()
             : 0,
     ];
+    $helpdeskUrl = $user->tenant?->helpdeskUrl($user);
     $flat = \App\Support\Navigation::flatten($items);
     $primaryItems = array_slice($flat, 0, count($flat) > 5 ? 4 : 5);
     $moreItems = count($flat) > 5 ? array_slice($flat, 4) : [];
@@ -64,6 +65,17 @@
                     @endif
                 </a>
             @endforeach
+
+            @if ($helpdeskUrl)
+                <div class="mt-2 border-t border-border pt-2">
+                        <a href="{{ $helpdeskUrl }}" target="_blank" rel="noopener noreferrer" title="Hubungi Helpdesk lewat WhatsApp"
+                           class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-success transition hover:bg-success/15">
+                            <x-icon name="phone" />
+                            <span x-show="!collapsed" class="truncate">Hubungi Helpdesk<span class="block text-[11px] font-normal text-text-muted">via WhatsApp</span></span>
+                            <span class="sr-only">(membuka WhatsApp di tab baru)</span>
+                        </a>
+                </div>
+            @endif
         </nav>
         <button type="button" @click="collapsed = !collapsed" class="m-3 hidden min-h-11 items-center justify-center rounded-lg text-text-muted hover:bg-surface-muted lg:flex">
             <x-icon name="bars-3" /><span class="sr-only">Ciutkan menu</span>
@@ -153,6 +165,12 @@
                             @if (($badges[$item['route']] ?? 0) > 0)<span class="ml-auto rounded-full bg-primary px-2 text-[10px] font-bold leading-5 text-primary-fg">{{ $badges[$item['route']] }}<span class="sr-only"> baru</span></span>@endif
                         </a>
                     @endforeach
+
+                    @if ($helpdeskUrl)
+                        <a href="{{ $helpdeskUrl }}" target="_blank" rel="noopener noreferrer" class="mt-2 flex min-h-12 items-center gap-3 rounded-lg border-t border-border px-3 pt-2 text-sm font-medium text-success hover:bg-success/15">
+                            <x-icon name="phone" /> Hubungi Helpdesk via WhatsApp <span class="sr-only">(membuka WhatsApp di tab baru)</span>
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>

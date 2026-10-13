@@ -1,6 +1,9 @@
 <div class="space-y-6">
     <x-page-header title="Masukan dan komplain" :subtitle="$isHandler ? 'Tanggapi masukan dan komplain dari sivitas akademika.' : 'Sampaikan saran atau keluhanmu. Kami baca setiap pesan.'">
         <x-slot:actions>
+            @if ($helpdeskUrl)
+                <x-button :href="$helpdeskUrl" target="_blank" rel="noopener noreferrer" variant="secondary" icon="phone">Helpdesk via WhatsApp</x-button>
+            @endif
             <x-button :href="route('feedback.create')" wire:navigate icon="plus">Kirim masukan</x-button>
         </x-slot:actions>
     </x-page-header>
