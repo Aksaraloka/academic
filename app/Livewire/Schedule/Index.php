@@ -3,15 +3,10 @@
 namespace App\Livewire\Schedule;
 
 use App\Enums\Role;
-use App\Models\AcademicTerm;
 use App\Models\Room;
-use App\Models\Schedule;
 use App\Models\StudyGroup;
-use App\Models\StudyGroupMember;
 use App\Models\Teacher;
-use App\Models\TimeSlot;
-use Carbon\Carbon;
-use Illuminate\Support\Collection;
+use App\Services\ScheduleBoard;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -30,23 +25,19 @@ class Index extends Component
     #[Url(as: 'id')]
     public string $targetId = '';
 
-    public function mount(): void
+    public function mount(ScheduleBoard $board): void
     {
-        $terms = $this->terms();
-
-        if ($this->termId === '' || ! $terms->has((int) $this->termId)) {
-            $this->termId = (string) ($terms->first(fn (AcademicTerm $term): bool => $term->is_active)?->id ?? $terms->first()?->id ?? '');
-        }
+        $this->termId = (string) ($board->resolveTerm($board->terms(), $this->termId)?->id ?? '');
 
         if ($this->targetId === '') {
-            $this->resolveDefaultTarget();
+            $this->resolveDefaultTarget($board);
         }
     }
 
-    public function updatedTermId(): void
+    public function updatedTermId(ScheduleBoard $board): void
     {
         $this->targetId = '';
-        $this->resolveDefaultTarget();
+        $this->resolveDefaultTarget($board);
     }
 
     public function updatedView(): void
@@ -54,56 +45,19 @@ class Index extends Component
         $this->targetId = '';
     }
 
-    /**
-     * Semua semester milik kampus, terbaru lebih dulu, berkunci id.
-     *
-     * @return Collection<int, AcademicTerm>
-     */
-    private function terms(): Collection
+    private function resolveDefaultTarget(ScheduleBoard $board): void
     {
-        return AcademicTerm::query()->orderByDesc('starts_at')->get()->keyBy('id');
+        $default = $board->defaultTarget(auth()->user(), (int) $this->termId, $this->view);
+
+        $this->view = $default['view'];
+        $this->targetId = $default['id'];
     }
 
-    /**
-     * Pilihan awal menurut peran: dosen melihat jadwalnya, mahasiswa dan orang tua melihat kelas anaknya
-     * pada semester terpilih (kelas berbeda tiap semester), staf melihat kelas pertama.
-     */
-    private function resolveDefaultTarget(): void
+    public function render(ScheduleBoard $board)
     {
         $user = auth()->user();
-        $termId = (int) $this->termId;
-
-        if ($user->hasRole(Role::Teacher, Role::Duty) && $user->teacher) {
-            $this->view = 'teacher';
-            $this->targetId = (string) $user->teacher->id;
-
-            return;
-        }
-
-        $student = $user->hasRole(Role::Student) ? $user->student : ($user->hasRole(Role::Guardian) ? $user->guardian?->students()->first() : null);
-
-        if ($student) {
-            $this->view = 'group';
-            $this->targetId = (string) (StudyGroupMember::query()
-                ->where('student_id', $student->id)
-                ->whereHas('studyGroup', fn ($query) => $query->where('academic_term_id', $termId))
-                ->latest('joined_at')
-                ->value('study_group_id') ?? '');
-
-            return;
-        }
-
-        if ($this->view === 'group') {
-            $this->targetId = (string) (StudyGroup::query()->where('academic_term_id', $termId)->orderBy('name')->value('id') ?? '');
-        }
-    }
-
-    public function render()
-    {
-        $user = auth()->user();
-        $terms = $this->terms();
+        $terms = $board->terms();
         $term = $terms->get((int) $this->termId);
-        $canPickTarget = $user->role->isStaff();
 
         $options = match ($this->view) {
             'teacher' => Teacher::query()->orderBy('name')->pluck('name', 'id'),
@@ -111,52 +65,20 @@ class Index extends Component
             default => StudyGroup::query()->where('academic_term_id', $term?->id)->orderBy('name')->pluck('name', 'id'),
         };
 
-        $schedules = collect();
-
-        if ($term && $this->targetId !== '') {
-            $schedules = Schedule::query()
-                ->with(['assignment.teacher', 'assignment.subject', 'assignment.studyGroup', 'timeSlot', 'room'])
-                ->whereHas('assignment', fn ($query) => $query->where('academic_term_id', $term->id))
-                ->when($this->view === 'teacher', fn ($query) => $query->whereHas('assignment', fn ($inner) => $inner->where('teacher_id', $this->targetId)))
-                ->when($this->view === 'room', fn ($query) => $query->where('room_id', $this->targetId))
-                ->when($this->view === 'group', fn ($query) => $query->whereHas('assignment', fn ($inner) => $inner->where('study_group_id', $this->targetId)))
-                ->get();
-        }
-
-        $slots = TimeSlot::query()->where('is_break', false)->orderBy('day')->orderBy('period_number')->get();
-        $periods = $slots->groupBy('period_number')->map(fn (Collection $group): TimeSlot => $group->sortBy('day')->first())->sortKeys();
-
-        // Hari kuliah Senin sampai Sabtu selalu ditampilkan.
-        $days = collect(TimeSlot::DAYS);
-
-        $grid = $schedules->groupBy(fn (Schedule $schedule): string => $schedule->timeSlot->period_number.'-'.$schedule->timeSlot->day);
-        $byDay = $schedules->sortBy(fn (Schedule $schedule): string => $schedule->timeSlot->starts_at)->groupBy(fn (Schedule $schedule): int => $schedule->timeSlot->day);
-
-        $minutes = $schedules->sum(fn (Schedule $schedule): int => Carbon::parse($schedule->timeSlot->starts_at)->diffInMinutes(Carbon::parse($schedule->timeSlot->ends_at)));
-
+        $data = $board->build($term, $this->view, $this->targetId);
         $todayDay = now()->dayOfWeekIso;
-        $initialDay = $days->has($todayDay) ? $todayDay : ($byDay->keys()->sort()->first() ?? $days->keys()->first() ?? 1);
 
-        return view('livewire.schedule.index', [
+        return view('livewire.schedule.index', $data + [
             'terms' => $terms,
             'term' => $term,
             'termIsActive' => (bool) $term?->is_active,
             'options' => $options,
-            'canPickTarget' => $canPickTarget,
+            'canPickTarget' => $user->role->isStaff(),
             'canManage' => $user->hasRole(Role::Admin, Role::Curriculum),
-            'days' => $days,
-            'periods' => $periods,
-            'grid' => $grid,
-            'byDay' => $byDay,
-            'subjects' => $schedules->map(fn (Schedule $schedule) => $schedule->assignment)->unique('subject_id')->sortBy(fn ($assignment) => $assignment->subject->name)->values(),
-            'stats' => [
-                'meetings' => $schedules->count(),
-                'courses' => $schedules->pluck('assignment.subject_id')->unique()->count(),
-                'minutes' => $minutes,
-            ],
             'todayDay' => $todayDay,
-            'initialDay' => $initialDay,
+            'initialDay' => $data['days']->has($todayDay) ? $todayDay : ($data['byDay']->keys()->sort()->first() ?? 1),
             'nowTime' => now()->format('H:i:s'),
+            'exportQuery' => array_filter(['semester' => $this->termId, 'lihat' => $this->view, 'id' => $this->targetId], fn ($value) => $value !== ''),
         ]);
     }
 }

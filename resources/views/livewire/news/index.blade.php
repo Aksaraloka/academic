@@ -1,12 +1,4 @@
 <div class="space-y-6">
-    <x-page-header :title="'Halo, '.explode(' ', auth()->user()->name)[0]" :subtitle="now()->translatedFormat('l, j F Y').' · Kabar terbaru dari '.(auth()->user()->tenant?->name ?? 'kampus')">
-        @if ($isAdmin)
-            <x-slot:actions>
-                <x-button :href="route('news.manage')" wire:navigate icon="pencil-square">Kelola berita</x-button>
-            </x-slot:actions>
-        @endif
-    </x-page-header>
-
     @if ($banner->isNotEmpty())
         <section aria-roledescription="carousel" aria-label="Berita utama"
             x-data="{
@@ -67,10 +59,15 @@
     @endif
 
     <div class="space-y-3">
-        <div class="relative">
-            <label for="cari-berita" class="sr-only">Cari berita</label>
-            <x-icon name="magnifying-glass" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-            <input id="cari-berita" type="search" wire:model.live.debounce.300ms="search" class="input pl-10" placeholder="Cari berita, beasiswa, atau program">
+        <div class="flex flex-wrap items-center gap-3">
+            <div class="relative min-w-0 flex-1">
+                <label for="cari-berita" class="sr-only">Cari berita</label>
+                <x-icon name="magnifying-glass" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                <input id="cari-berita" type="search" wire:model.live.debounce.300ms="search" class="input pl-10" placeholder="Cari berita, beasiswa, atau program">
+            </div>
+            @if ($isAdmin)
+                <x-button :href="route('news.manage')" wire:navigate icon="pencil-square" variant="secondary">Kelola berita</x-button>
+            @endif
         </div>
 
         <nav aria-label="Kategori berita" class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">

@@ -181,3 +181,9 @@ it('omits the academic year badge when no term is active', function () {
 
     $this->actingAs($this->student)->get('/beranda')->assertOk()->assertDontSee('Tahun ajaran 2026/2027');
 });
+
+it('no longer shows the greeting header on the home page but keeps the admin shortcut', function () {
+    $this->actingAs($this->student)->get('/beranda')->assertOk()->assertDontSee('Halo,')->assertDontSee('Kabar terbaru dari')->assertDontSee('Kelola berita');
+
+    $this->actingAs($this->admin)->get('/beranda')->assertOk()->assertDontSee('Halo,')->assertSee('Kelola berita');
+});

@@ -23,9 +23,14 @@
 @endphp
 <div class="space-y-6">
     <x-page-header title="Jadwal" :subtitle="$term ? 'Jadwal kuliah mingguan · '.$term->name.' semester '.$term->semester : 'Jadwal kuliah mingguan'">
-        @if ($canManage && $termIsActive)
+        @if (($canManage && $termIsActive) || $stats['meetings'] > 0)
             <x-slot:actions>
-                <x-button :href="route('schedule.manage')" wire:navigate icon="pencil-square">Atur jadwal</x-button>
+                @if ($stats['meetings'] > 0)
+                    <x-button :href="route('schedule.export', $exportQuery)" variant="secondary" icon="arrow-down-tray" download>Unduh PDF</x-button>
+                @endif
+                @if ($canManage && $termIsActive)
+                    <x-button :href="route('schedule.manage')" wire:navigate icon="pencil-square">Atur jadwal</x-button>
+                @endif
             </x-slot:actions>
         @endif
     </x-page-header>

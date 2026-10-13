@@ -4,6 +4,7 @@ use App\Http\Controllers\FeedbackAttachmentController;
 use App\Http\Controllers\GraduationMinutesPrintController;
 use App\Http\Controllers\NewsPosterController;
 use App\Http\Controllers\ReportExportController;
+use App\Http\Controllers\ScheduleExportController;
 use App\Http\Controllers\SurveyExportController;
 use App\Livewire\Attendance;
 use App\Livewire\Auth\Login;
@@ -93,6 +94,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::livewire('/jadwal', Schedule\Index::class)->name('schedule.index');
+    Route::get('/jadwal/unduh', ScheduleExportController::class)->name('schedule.export');
 
     Route::middleware('role:admin,curriculum')->group(function () {
         Route::livewire('/jadwal/atur', Schedule\Manage::class)->name('schedule.manage');

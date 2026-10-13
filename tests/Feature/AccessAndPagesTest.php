@@ -33,7 +33,7 @@ it('logs in with valid credentials and rejects invalid ones', function () {
 it('renders the dashboard for every role', function (Role $role) {
     $user = User::factory()->role($role)->create();
 
-    $this->actingAs($user)->get('/beranda')->assertOk()->assertSee('Halo');
+    $this->actingAs($user)->get('/beranda')->assertOk()->assertSee('Berita terbaru');
 })->with(Role::cases());
 
 it('blocks roles from pages they may not open', function () {
