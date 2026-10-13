@@ -1,0 +1,144 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/plus-jakarta-sans';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme static {
+    --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
+    --color-bg: #f8fafc;
+    --color-surface: #ffffff;
+    --color-surface-muted: #f1f5f9;
+    --color-border: #e2e8f0;
+    --color-text: #0f172a;
+    --color-text-muted: #475569;
+    --color-primary: #c62828;
+    --color-primary-fg: #ffffff;
+    --color-brand: #9f1f1f;
+    --color-brand-fg: #ffffff;
+    --color-success: #166534;
+    --color-warning: #92400e;
+    --color-danger: #991b1b;
+    --color-info: #1d4ed8;
+    --radius-card: 0.75rem;
+}
+
+.dark {
+    color-scheme: dark;
+    --color-bg: #000000;
+    --color-surface: #0b0b0d;
+    --color-surface-muted: #17171a;
+    --color-border: #2c2c31;
+    --color-text: #f4f4f5;
+    --color-text-muted: #a1a1aa;
+    --color-primary: #ef4444;
+    --color-primary-fg: #000000;
+    --color-brand: #7f1d1d;
+    --color-brand-fg: #ffffff;
+    --color-success: #4ade80;
+    --color-warning: #fbbf24;
+    --color-danger: #f87171;
+    --color-info: #60a5fa;
+}
+
+@layer base {
+    html {
+        font-size: 16px;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+        @apply bg-bg font-sans text-text antialiased;
+    }
+
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-primary;
+    }
+
+    button:not(:disabled),
+    [role='button']:not([aria-disabled='true']),
+    [role='menuitem'],
+    [role='radio'],
+    summary,
+    label:has(> input[type='checkbox']),
+    label:has(> input[type='radio']),
+    input[type='checkbox'],
+    input[type='radio'],
+    input[type='submit']:not(:disabled),
+    select:not(:disabled) {
+        cursor: pointer;
+    }
+
+    button:disabled,
+    [aria-disabled='true'] {
+        cursor: not-allowed;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}
+
+@layer components {
+    .input {
+        @apply block min-h-11 w-full rounded-lg border border-border bg-surface px-3 py-2 text-base text-text placeholder:text-text-muted;
+    }
+
+    .input[aria-invalid='true'] {
+        @apply border-danger;
+    }
+
+    .input:disabled {
+        @apply cursor-not-allowed bg-surface-muted opacity-70;
+    }
+
+    .skeleton {
+        @apply animate-pulse rounded-md bg-surface-muted;
+    }
+
+    .table-responsive {
+        @apply w-full text-left text-sm;
+    }
+
+    .table-responsive thead th {
+        @apply px-4 py-3 text-xs font-semibold tracking-wide text-text-muted uppercase;
+    }
+
+    .table-responsive tbody tr {
+        @apply border-t border-border;
+    }
+
+    .table-responsive tbody td {
+        @apply px-4 py-3;
+    }
+
+    @media (max-width: 639px) {
+        .table-responsive thead {
+            @apply sr-only;
+        }
+
+        .table-responsive tbody tr {
+            @apply block px-4 py-3;
+        }
+
+        .table-responsive tbody td {
+            @apply flex items-start justify-between gap-3 px-0 py-1;
+        }
+
+        .table-responsive tbody td::before {
+            content: attr(data-label);
+            @apply shrink-0 text-xs font-medium text-text-muted;
+        }
+    }
+}
