@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['tenant_id', 'user_id', 'program_id', 'name', 'nim', 'batch_year', 'birth_date', 'birth_place', 'gender', 'religion', 'nik', 'nationality', 'address', 'city', 'province', 'postal_code', 'phone', 'photo_path', 'status', 'entry_date', 'previous_school', 'admission_path'])]
+#[Fillable(['tenant_id', 'user_id', 'program_id', 'name', 'nim', 'batch_year', 'birth_date', 'birth_place', 'gender', 'religion', 'nik', 'nationality', 'address', 'city', 'province', 'postal_code', 'phone', 'photo_path', 'status', 'entry_date', 'previous_school', 'admission_path', 'is_domicile_same', 'residence_type', 'domicile_address', 'domicile_city', 'domicile_province', 'domicile_postal_code'])]
 class Student extends Model
 {
     use BelongsToTenant, HasFactory;
@@ -27,12 +27,18 @@ class Student extends Model
     public const ADMISSION_PATHS = ['SNBP', 'SNBT', 'Mandiri', 'Beasiswa', 'Pindahan'];
 
     /**
+     * @var array<int, string>
+     */
+    public const RESIDENCE_TYPES = ['Bersama orang tua', 'Kos/kontrakan', 'Asrama', 'Rumah saudara/wali', 'Lainnya'];
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
             'birth_date' => 'date',
+            'is_domicile_same' => 'boolean',
             'entry_date' => 'date',
             'status' => StudentStatus::class,
         ];
@@ -53,6 +59,31 @@ class Student extends Model
         }
 
         return substr($this->nik, 0, 4).str_repeat('•', max(strlen($this->nik) - 8, 0)).substr($this->nik, -4);
+    }
+
+    /**
+     * Alamat domisili yang berlaku: sama dengan KTP bila ditandai sama atau belum diisi.
+     *
+     * @return array{address: ?string, city: ?string, province: ?string, postal_code: ?string}
+     */
+    public function currentAddress(): array
+    {
+        if ($this->is_domicile_same || blank($this->domicile_address)) {
+            return ['address' => $this->address, 'city' => $this->city, 'province' => $this->province, 'postal_code' => $this->postal_code];
+        }
+
+        return ['address' => $this->domicile_address, 'city' => $this->domicile_city, 'province' => $this->domicile_province, 'postal_code' => $this->domicile_postal_code];
+    }
+
+    /**
+     * Perantau: tinggal di kota yang berbeda dari kota pada KTP.
+     */
+    public function isMigrant(): bool
+    {
+        return ! $this->is_domicile_same
+            && filled($this->domicile_city)
+            && filled($this->city)
+            && mb_strtolower(trim($this->domicile_city)) !== mb_strtolower(trim($this->city));
     }
 
     public function program(): BelongsTo

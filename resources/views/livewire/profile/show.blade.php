@@ -15,6 +15,7 @@
                 <x-badge variant="primary">{{ $user->role->label() }}</x-badge>
                 @if ($student)
                     <x-badge :variant="$student->status->variant()">{{ $student->status->label() }}</x-badge>
+                    @if ($student->isMigrant())<x-badge variant="info" icon="map-pin">Perantau</x-badge>@endif
                     <span class="text-sm tabular-nums text-text-muted">NIM {{ $student->nim }}</span>
                     @if ($student->program)<span class="text-sm text-text-muted">· {{ $student->program->label() }}</span>@endif
                 @elseif ($teacher)
@@ -38,15 +39,36 @@
                 ]" />
             </x-card>
 
-            <x-card title="Kontak dan alamat">
+            <x-card title="Kontak">
                 <x-info-list class="sm:grid-cols-1" :items="[
                     'Email' => $user->email,
-                    'Telepon' => $student->phone ?? $user->phone,
+                    'Telepon / WhatsApp' => $student->phone ?? $user->phone,
+                ]" />
+            </x-card>
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-2">
+            <x-card title="Alamat sesuai KTP">
+                <x-info-list class="sm:grid-cols-1" :items="[
                     'Alamat' => $student->address,
                     'Kota/kabupaten' => $student->city,
                     'Provinsi' => $student->province,
                     'Kode pos' => $student->postal_code,
                 ]" />
+            </x-card>
+
+            <x-card title="Alamat domisili">
+                @if ($student->is_domicile_same)
+                    <p class="text-sm text-text-muted">Sama dengan alamat sesuai KTP.</p>
+                @else
+                    <x-info-list class="sm:grid-cols-1" :items="[
+                        'Jenis tempat tinggal' => $student->residence_type,
+                        'Alamat' => $student->domicile_address,
+                        'Kota/kabupaten' => $student->domicile_city,
+                        'Provinsi' => $student->domicile_province,
+                        'Kode pos' => $student->domicile_postal_code,
+                    ]" />
+                @endif
             </x-card>
         </div>
 

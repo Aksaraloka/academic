@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Profile;
 
+use App\Models\Student;
 use App\Services\AuditLogger;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -14,13 +16,17 @@ class Edit extends Component
 {
     public string $phone = '';
 
-    public string $address = '';
+    public bool $is_domicile_same = true;
 
-    public string $city = '';
+    public string $residence_type = '';
 
-    public string $province = '';
+    public string $domicile_address = '';
 
-    public string $postal_code = '';
+    public string $domicile_city = '';
+
+    public string $domicile_province = '';
+
+    public string $domicile_postal_code = '';
 
     public string $current_password = '';
 
@@ -36,15 +42,20 @@ class Edit extends Component
         $this->phone = (string) ($student?->phone ?? $user->phone);
 
         if ($student) {
-            $this->address = (string) $student->address;
-            $this->city = (string) $student->city;
-            $this->province = (string) $student->province;
-            $this->postal_code = (string) $student->postal_code;
+            $this->fill([
+                'is_domicile_same' => $student->is_domicile_same,
+                'residence_type' => (string) $student->residence_type,
+                'domicile_address' => (string) $student->domicile_address,
+                'domicile_city' => (string) $student->domicile_city,
+                'domicile_province' => (string) $student->domicile_province,
+                'domicile_postal_code' => (string) $student->domicile_postal_code,
+            ]);
         }
     }
 
     /**
-     * Mahasiswa hanya mengubah kontak dan alamat; identitas dan data akademik dikelola BAAK.
+     * Mahasiswa mengubah telepon dan alamat domisili (mis. pindah kos). Alamat KTP, identitas, dan data akademik
+     * dikelola BAAK.
      */
     public function saveContact(AuditLogger $audit): void
     {
@@ -55,25 +66,34 @@ class Edit extends Component
 
         if ($student) {
             $rules += [
-                'address' => ['nullable', 'string', 'max:500'],
-                'city' => ['nullable', 'string', 'max:100'],
-                'province' => ['nullable', 'string', 'max:100'],
-                'postal_code' => ['nullable', 'digits_between:4,10'],
+                'is_domicile_same' => ['boolean'],
+                'residence_type' => ['nullable', Rule::in(Student::RESIDENCE_TYPES)],
+                'domicile_address' => [Rule::requiredIf(! $this->is_domicile_same), 'nullable', 'string', 'max:500'],
+                'domicile_city' => [Rule::requiredIf(! $this->is_domicile_same), 'nullable', 'string', 'max:100'],
+                'domicile_province' => ['nullable', 'string', 'max:100'],
+                'domicile_postal_code' => ['nullable', 'digits_between:4,10'],
             ];
         }
 
         $data = collect($this->validate($rules, [], [
-            'phone' => 'telepon', 'address' => 'alamat', 'city' => 'kota/kabupaten', 'province' => 'provinsi', 'postal_code' => 'kode pos',
+            'phone' => 'telepon', 'residence_type' => 'jenis tempat tinggal', 'domicile_address' => 'alamat domisili',
+            'domicile_city' => 'kota/kabupaten', 'domicile_province' => 'provinsi', 'domicile_postal_code' => 'kode pos',
         ]))->map(fn ($value) => $value === '' ? null : $value);
 
         $user->update(['phone' => $data['phone']]);
 
         if ($student) {
-            $student->update($data->all());
+            $attributes = $data->all();
+
+            if ($attributes['is_domicile_same']) {
+                $attributes = array_merge($attributes, ['domicile_address' => null, 'domicile_city' => null, 'domicile_province' => null, 'domicile_postal_code' => null]);
+            }
+
+            $student->update($attributes);
             $audit->logChanges('student.contact_updated', $student);
         }
 
-        $this->dispatch('toast', message: 'Kontak diperbarui.', type: 'success');
+        $this->dispatch('toast', message: 'Kontak dan alamat diperbarui.', type: 'success');
     }
 
     public function savePassword(): void
@@ -106,6 +126,11 @@ class Edit extends Component
 
     public function render()
     {
-        return view('livewire.profile.edit', ['isStudent' => auth()->user()->student !== null]);
+        $student = auth()->user()->student;
+
+        return view('livewire.profile.edit', [
+            'student' => $student,
+            'residenceTypes' => Student::RESIDENCE_TYPES,
+        ]);
     }
 }

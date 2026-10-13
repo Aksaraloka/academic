@@ -66,6 +66,33 @@ SVG;
     }
 
     /**
+     * Alamat KTP dan domisili contoh. Mahasiswa perantau punya KTP di luar Bandung dan tinggal di kos.
+     *
+     * @return array<string, mixed>
+     */
+    private function residence(bool $migrant): array
+    {
+        if (! $migrant) {
+            return [
+                'city' => 'Bandung', 'province' => 'Jawa Barat', 'postal_code' => '40'.fake()->numerify('###'),
+                'is_domicile_same' => true,
+            ];
+        }
+
+        [$city, $province, $postal] = [
+            ['Medan', 'Sumatera Utara', '20111'], ['Padang', 'Sumatera Barat', '25111'], ['Makassar', 'Sulawesi Selatan', '90111'],
+            ['Pontianak', 'Kalimantan Barat', '78111'], ['Denpasar', 'Bali', '80111'],
+        ][array_rand([0, 1, 2, 3, 4])];
+
+        return [
+            'city' => $city, 'province' => $province, 'postal_code' => $postal,
+            'is_domicile_same' => false, 'residence_type' => 'Kos/kontrakan',
+            'domicile_address' => 'Jl. '.fake('id_ID')->streetName().' No. '.random_int(1, 90).' (kos), Dago',
+            'domicile_city' => 'Bandung', 'domicile_province' => 'Jawa Barat', 'domicile_postal_code' => '40135',
+        ];
+    }
+
+    /**
      * Data contoh universitas (kata sandi semua akun: "password").
      */
     public function run(): void
@@ -146,9 +173,7 @@ SVG;
                     'religion' => ['Islam', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha'][array_rand([0, 1, 2, 3, 4])],
                     'nik' => '3273'.fake()->numerify('############'),
                     'address' => fake('id_ID')->streetAddress(),
-                    'city' => 'Bandung',
-                    'province' => 'Jawa Barat',
-                    'postal_code' => '40'.fake()->numerify('###'),
+                    ...$this->residence($i % 4 === 1),
                     'phone' => '08'.fake()->numerify('##########'),
                     'previous_school' => 'SMA Negeri '.random_int(1, 20).' Bandung',
                     'admission_path' => ['SNBP', 'SNBT', 'Mandiri'][array_rand([0, 1, 2])],

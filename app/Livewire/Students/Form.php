@@ -45,6 +45,18 @@ class Form extends Component
 
     public string $postal_code = '';
 
+    public bool $is_domicile_same = true;
+
+    public string $residence_type = '';
+
+    public string $domicile_address = '';
+
+    public string $domicile_city = '';
+
+    public string $domicile_province = '';
+
+    public string $domicile_postal_code = '';
+
     public string $phone = '';
 
     public string $status = 'aktif';
@@ -86,6 +98,12 @@ class Form extends Component
             'city' => (string) $student->city,
             'province' => (string) $student->province,
             'postal_code' => (string) $student->postal_code,
+            'is_domicile_same' => $student->is_domicile_same,
+            'residence_type' => (string) $student->residence_type,
+            'domicile_address' => (string) $student->domicile_address,
+            'domicile_city' => (string) $student->domicile_city,
+            'domicile_province' => (string) $student->domicile_province,
+            'domicile_postal_code' => (string) $student->domicile_postal_code,
             'phone' => (string) $student->phone,
             'status' => $student->status->value,
             'entry_date' => $student->entry_date?->toDateString() ?? '',
@@ -168,6 +186,12 @@ class Form extends Component
             'city' => ['nullable', 'string', 'max:100'],
             'province' => ['nullable', 'string', 'max:100'],
             'postal_code' => ['nullable', 'digits_between:4,10'],
+            'is_domicile_same' => ['boolean'],
+            'residence_type' => ['nullable', Rule::in(Student::RESIDENCE_TYPES)],
+            'domicile_address' => [Rule::requiredIf(! $this->is_domicile_same), 'nullable', 'string', 'max:500'],
+            'domicile_city' => [Rule::requiredIf(! $this->is_domicile_same), 'nullable', 'string', 'max:100'],
+            'domicile_province' => ['nullable', 'string', 'max:100'],
+            'domicile_postal_code' => ['nullable', 'digits_between:4,10'],
             'phone' => ['nullable', 'string', 'max:30'],
             'status' => ['required', Rule::enum(StudentStatus::class)],
             'entry_date' => ['nullable', 'date'],
@@ -203,6 +227,11 @@ class Form extends Component
             'city' => 'kota/kabupaten',
             'province' => 'provinsi',
             'postal_code' => 'kode pos',
+            'residence_type' => 'jenis tempat tinggal',
+            'domicile_address' => 'alamat domisili',
+            'domicile_city' => 'kota/kabupaten domisili',
+            'domicile_province' => 'provinsi domisili',
+            'domicile_postal_code' => 'kode pos domisili',
             'phone' => 'telepon',
             'entry_date' => 'tanggal masuk',
             'previous_school' => 'asal sekolah',
@@ -223,6 +252,10 @@ class Form extends Component
 
         $data = collect($validated)->map(fn ($value) => $value === '' ? null : $value)->all();
         $data['nationality'] ??= 'Indonesia';
+
+        if ($data['is_domicile_same']) {
+            $data = array_merge($data, ['domicile_address' => null, 'domicile_city' => null, 'domicile_province' => null, 'domicile_postal_code' => null]);
+        }
 
         DB::transaction(function () use ($data, $parents, $audit): void {
             if ($this->student) {
@@ -282,6 +315,7 @@ class Form extends Component
         return view('livewire.students.form', [
             'programs' => Program::query()->orderBy('name')->get(),
             'religions' => Student::RELIGIONS,
+            'residenceTypes' => Student::RESIDENCE_TYPES,
             'paths' => Student::ADMISSION_PATHS,
             'educations' => Guardian::EDUCATION_LEVELS,
         ]);

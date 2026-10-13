@@ -40,10 +40,10 @@
             </div>
         </x-card>
 
-        <x-card title="Kontak dan alamat">
+        <x-card title="Alamat sesuai KTP">
             <div class="grid gap-4 sm:grid-cols-2">
                 <div class="sm:col-span-2">
-                    <x-field label="Alamat" name="address">
+                    <x-field label="Alamat sesuai KTP" name="address">
                         <textarea id="address" wire:model="address" rows="2" class="input"></textarea>
                     </x-field>
                 </div>
@@ -51,6 +51,35 @@
                 <x-field label="Provinsi" name="province"><input id="province" type="text" wire:model="province" class="input"></x-field>
                 <x-field label="Kode pos" name="postal_code"><input id="postal_code" type="text" wire:model="postal_code" class="input" inputmode="numeric" maxlength="10"></x-field>
                 <x-field label="Telepon" name="phone"><input id="phone" type="tel" wire:model="phone" class="input" inputmode="tel"></x-field>
+            </div>
+        </x-card>
+
+        <x-card title="Alamat domisili">
+            <div class="space-y-4">
+                <label class="flex min-h-11 items-start gap-2 text-sm">
+                    <input type="checkbox" wire:model.live="is_domicile_same" class="mt-0.5 size-5 shrink-0 accent-primary">
+                    <span>Sama dengan alamat KTP <span class="block text-xs text-text-muted">Hilangkan centang bila mahasiswa tinggal di tempat lain, misalnya kos bagi mahasiswa perantau.</span></span>
+                </label>
+
+                @unless ($is_domicile_same)
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <x-field label="Jenis tempat tinggal" name="residence_type">
+                            <select id="residence_type" wire:model="residence_type" class="input">
+                                <option value="">Pilih</option>
+                                @foreach ($residenceTypes as $option)<option value="{{ $option }}">{{ $option }}</option>@endforeach
+                            </select>
+                        </x-field>
+                        <div class="hidden sm:block"></div>
+                        <div class="sm:col-span-2">
+                            <x-field label="Alamat domisili" name="domicile_address" required>
+                                <textarea id="domicile_address" wire:model="domicile_address" rows="2" class="input" @error('domicile_address') aria-invalid="true" @enderror></textarea>
+                            </x-field>
+                        </div>
+                        <x-field label="Kota/kabupaten" name="domicile_city" required><input id="domicile_city" type="text" wire:model="domicile_city" class="input" @error('domicile_city') aria-invalid="true" @enderror></x-field>
+                        <x-field label="Provinsi" name="domicile_province"><input id="domicile_province" type="text" wire:model="domicile_province" class="input"></x-field>
+                        <x-field label="Kode pos" name="domicile_postal_code"><input id="domicile_postal_code" type="text" wire:model="domicile_postal_code" class="input" inputmode="numeric" maxlength="10"></x-field>
+                    </div>
+                @endunless
             </div>
         </x-card>
 

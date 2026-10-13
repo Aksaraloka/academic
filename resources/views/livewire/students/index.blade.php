@@ -49,7 +49,7 @@
                 <tbody>
                     @foreach ($students as $student)
                         <tr wire:key="student-{{ $student->id }}" class="hover:bg-surface-muted">
-                            <td data-label="Nama" class="font-medium">{{ $student->name }}</td>
+                            <td data-label="Nama" class="font-medium">{{ $student->name }} @if ($student->isMigrant())<x-badge variant="info" class="ml-1">Perantau</x-badge>@endif</td>
                             <td data-label="NIM" class="tabular-nums text-text-muted">{{ $student->nim ?? '–' }}</td>
                             <td data-label="Program studi" class="text-text-muted">{{ $student->program?->label() ?? '–' }}</td>
                             <td data-label="Angkatan" class="tabular-nums text-text-muted">{{ $student->batch_year ?? '–' }}</td>

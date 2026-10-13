@@ -35,7 +35,7 @@ it('shows the complete student profile including academic data and parents', fun
     $this->student->refresh();
 
     $this->actingAs($this->user)->get('/profil')->assertOk()
-        ->assertSee('Data pribadi')->assertSee('Kontak dan alamat')->assertSee('Data akademik')->assertSee('Data orang tua / wali')
+        ->assertSee('Data pribadi')->assertSee('Alamat sesuai KTP')->assertSee('Alamat domisili')->assertSee('Data akademik')->assertSee('Data orang tua / wali')
         ->assertSee($this->student->name)->assertSee($this->student->nim)
         ->assertSee('Teknik Informatika')->assertSee('Fakultas Teknik')->assertSee('TI-2024-A')->assertSee('Budi Santoso')
         ->assertSee($this->student->birth_place)->assertSee($this->student->religion)->assertSee($this->student->previous_school)
@@ -72,22 +72,110 @@ it('shows lecturer and guardian profiles', function () {
         ->assertSee('Anak')->assertSee($this->student->name)->assertSee($this->student->nim)->assertSee('Guru SD');
 });
 
-it('lets a student update contact details but not identity fields', function () {
+it('lets a student update phone and domicile but not identity or KTP address', function () {
     $nim = $this->student->nim;
     $name = $this->student->name;
+    $ktp = $this->student->only(['address', 'city', 'province', 'postal_code']);
 
     Livewire::actingAs($this->user)->test(Edit::class)
-        ->set('phone', '081311112222')->set('address', 'Jl. Baru No. 5')->set('city', 'Cimahi')->set('province', 'Jawa Barat')->set('postal_code', '40511')
+        ->set('phone', '081311112222')->set('is_domicile_same', false)->set('residence_type', 'Kos/kontrakan')
+        ->set('domicile_address', 'Jl. Baru No. 5 (kos)')->set('domicile_city', 'Cimahi')->set('domicile_province', 'Jawa Barat')->set('domicile_postal_code', '40511')
         ->call('saveContact')->assertHasNoErrors();
 
     $this->student->refresh();
-    expect($this->student->phone)->toBe('081311112222')->and($this->student->city)->toBe('Cimahi')->and($this->student->nim)->toBe($nim)->and($this->student->name)->toBe($name)
+    expect($this->student->phone)->toBe('081311112222')
+        ->and($this->student->domicile_city)->toBe('Cimahi')
+        ->and($this->student->is_domicile_same)->toBeFalse()
+        ->and($this->student->only(['address', 'city', 'province', 'postal_code']))->toBe($ktp)
+        ->and($this->student->nim)->toBe($nim)->and($this->student->name)->toBe($name)
         ->and($this->user->refresh()->phone)->toBe('081311112222');
     $this->assertDatabaseHas('audit_logs', ['action' => 'student.contact_updated']);
 });
 
-it('validates contact fields', function () {
-    Livewire::actingAs($this->user)->test(Edit::class)->set('postal_code', 'ABCDE')->call('saveContact')->assertHasErrors('postal_code');
+it('requires an address and city when the domicile differs from the KTP', function () {
+    Livewire::actingAs($this->user)->test(Edit::class)
+        ->set('is_domicile_same', false)->set('domicile_address', '')->set('domicile_city', '')
+        ->call('saveContact')->assertHasErrors(['domicile_address', 'domicile_city']);
+
+    Livewire::actingAs($this->user)->test(Edit::class)->set('domicile_postal_code', 'ABCDE')->call('saveContact')->assertHasErrors('domicile_postal_code');
+});
+
+it('clears the domicile fields when the student marks it the same as KTP', function () {
+    expect($this->student->is_domicile_same)->toBeFalse();
+
+    Livewire::actingAs($this->user)->test(Edit::class)->set('is_domicile_same', true)->call('saveContact')->assertHasNoErrors();
+
+    $this->student->refresh();
+    expect($this->student->is_domicile_same)->toBeTrue()->and($this->student->domicile_address)->toBeNull()->and($this->student->domicile_city)->toBeNull();
+});
+
+it('shows KTP and domicile addresses separately on the profile', function () {
+    $this->student->refresh();
+
+    $response = $this->actingAs($this->user)->get('/profil')->assertOk()
+        ->assertSee('Alamat sesuai KTP')->assertSee('Alamat domisili')
+        ->assertSee($this->student->address)->assertSee($this->student->city)
+        ->assertSee($this->student->domicile_address)->assertSee('Kos/kontrakan')->assertSee('Perantau');
+
+    expect($this->student->city)->not->toBe('Bandung')->and($this->student->domicile_city)->toBe('Bandung');
+});
+
+it('says so when the domicile is the same as the KTP', function () {
+    $this->student->update(['is_domicile_same' => true]);
+
+    $this->actingAs($this->user)->get('/profil')->assertSee('Sama dengan alamat sesuai KTP')->assertDontSee('Perantau');
+});
+
+it('detects migrants by differing cities', function () {
+    $student = $this->student->refresh();
+
+    expect($student->isMigrant())->toBeTrue();
+
+    $student->forceFill(['domicile_city' => ' '.$student->city.' '])->save();
+    expect($student->refresh()->isMigrant())->toBeFalse();
+
+    $student->forceFill(['is_domicile_same' => true, 'domicile_city' => 'Bandung'])->save();
+    expect($student->refresh()->isMigrant())->toBeFalse();
+});
+
+it('resolves the current address from domicile or KTP', function () {
+    $student = $this->student->refresh();
+
+    expect($student->currentAddress()['city'])->toBe('Bandung');
+
+    $student->update(['is_domicile_same' => true]);
+    expect($student->refresh()->currentAddress()['city'])->toBe($student->city);
+});
+
+it('flags migrants in the admin student list', function () {
+    $this->actingAs($this->admin)->get('/mahasiswa')->assertOk()->assertSee('Perantau');
+});
+
+it('lets an admin save a migrant student with a separate domicile', function () {
+    Livewire::actingAs($this->admin)->test(Form::class)
+        ->set('name', 'Rahma Nasution')->set('nim', '2499002')->set('city', 'Medan')->set('province', 'Sumatera Utara')->set('address', 'Jl. Sisingamangaraja 1')
+        ->set('is_domicile_same', false)->set('domicile_address', '')->call('save')->assertHasErrors(['domicile_address', 'domicile_city']);
+
+    Livewire::actingAs($this->admin)->test(Form::class)
+        ->set('name', 'Rahma Nasution')->set('nim', '2499002')->set('city', 'Medan')->set('province', 'Sumatera Utara')->set('address', 'Jl. Sisingamangaraja 1')
+        ->set('is_domicile_same', false)->set('residence_type', 'Asrama')->set('domicile_address', 'Asrama Putri Kampus')->set('domicile_city', 'Bandung')
+        ->call('save')->assertHasNoErrors();
+
+    $student = Student::where('nim', '2499002')->firstOrFail();
+    expect($student->isMigrant())->toBeTrue()->and($student->residence_type)->toBe('Asrama')->and($student->currentAddress()['address'])->toBe('Asrama Putri Kampus');
+});
+
+it('wipes stale domicile data when an admin marks it the same as KTP', function () {
+    Livewire::actingAs($this->admin)->test(Form::class, ['student' => $this->student])
+        ->assertSet('is_domicile_same', false)->set('is_domicile_same', true)->call('save')->assertHasNoErrors();
+
+    $this->student->refresh();
+    expect($this->student->domicile_address)->toBeNull()->and($this->student->domicile_city)->toBeNull();
+});
+
+it('rejects an unknown residence type', function () {
+    Livewire::actingAs($this->admin)->test(Form::class)
+        ->set('name', 'X')->set('nim', '1')->set('residence_type', 'Hotel bintang')->call('save')->assertHasErrors('residence_type');
 });
 
 it('changes the password only with the correct current password', function () {
