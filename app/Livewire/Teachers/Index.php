@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Guru')]
+#[Title('Dosen')]
 class Index extends Component
 {
     public bool $showForm = false;
@@ -66,7 +66,7 @@ class Index extends Component
         });
 
         $this->reset(['showForm', 'name', 'email', 'nip', 'employment_status']);
-        $this->dispatch('toast', message: 'Guru ditambahkan. Atur ulang kata sandinya lewat tautan lupa sandi.', type: 'success');
+        $this->dispatch('toast', message: 'Dosen ditambahkan. Atur ulang kata sandinya lewat tautan lupa sandi.', type: 'success');
     }
 
     public function render()

@@ -15,12 +15,12 @@ enum Role: string
     public function label(): string
     {
         return match ($this) {
-            self::Admin => 'Admin / TU',
-            self::Principal => 'Kepala sekolah',
-            self::Curriculum => 'Wakasek kurikulum',
-            self::Teacher => 'Guru / Dosen',
-            self::Duty => 'Guru piket',
-            self::Student => 'Siswa / Mahasiswa',
+            self::Admin => 'Admin / BAAK',
+            self::Principal => 'Kaprodi / Pimpinan',
+            self::Curriculum => 'Wakil dekan akademik',
+            self::Teacher => 'Dosen',
+            self::Duty => 'Petugas presensi',
+            self::Student => 'Mahasiswa',
             self::Guardian => 'Orang tua',
         };
     }

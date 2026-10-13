@@ -7,6 +7,7 @@ use App\Livewire\Checkin;
 use App\Livewire\Dashboard;
 use App\Livewire\Groups;
 use App\Livewire\Leaves;
+use App\Livewire\Programs;
 use App\Livewire\Reports;
 use App\Livewire\Scan;
 use App\Livewire\Schedule;
@@ -34,20 +35,21 @@ Route::middleware('auth')->group(function () {
     Route::livewire('/beranda', Dashboard::class)->name('dashboard');
 
     Route::middleware('role:admin,principal,curriculum,teacher,duty')->group(function () {
-        Route::livewire('/siswa', Students\Index::class)->name('students.index');
-        Route::livewire('/rombel', Groups\Index::class)->name('groups.index');
-        Route::livewire('/rombel/{group}', Groups\Show::class)->name('groups.show');
+        Route::livewire('/mahasiswa', Students\Index::class)->name('students.index');
+        Route::livewire('/kelas', Groups\Index::class)->name('groups.index');
+        Route::livewire('/kelas/{group}', Groups\Show::class)->name('groups.show');
     });
 
     Route::middleware('role:admin')->group(function () {
-        Route::get('/siswa/templat', fn () => response(StudentImporter::template(), 200, [
+        Route::get('/mahasiswa/templat', fn () => response(StudentImporter::template(), 200, [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="templat-siswa.csv"',
+            'Content-Disposition' => 'attachment; filename="templat-mahasiswa.csv"',
         ]))->name('students.template');
-        Route::livewire('/siswa/baru', Students\Form::class)->name('students.create');
-        Route::livewire('/siswa/impor', Students\Import::class)->name('students.import');
-        Route::livewire('/siswa/{student}/ubah', Students\Form::class)->name('students.edit');
-        Route::livewire('/guru', Teachers\Index::class)->name('teachers.index');
+        Route::livewire('/mahasiswa/baru', Students\Form::class)->name('students.create');
+        Route::livewire('/mahasiswa/impor', Students\Import::class)->name('students.import');
+        Route::livewire('/mahasiswa/{student}/ubah', Students\Form::class)->name('students.edit');
+        Route::livewire('/dosen', Teachers\Index::class)->name('teachers.index');
+        Route::livewire('/prodi', Programs\Index::class)->name('programs.index');
     });
 
     Route::livewire('/jadwal', Schedule\Index::class)->name('schedule.index');

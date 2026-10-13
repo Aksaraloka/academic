@@ -1,12 +1,12 @@
 <div class="mx-auto max-w-2xl space-y-6">
-    <x-page-header title="Impor siswa" subtitle="Unggah berkas CSV. Kamu bisa memeriksa hasilnya sebelum disimpan.">
+    <x-page-header title="Impor mahasiswa" subtitle="Unggah berkas CSV. Kamu bisa memeriksa hasilnya sebelum disimpan.">
         <x-slot:actions>
             <x-button :href="route('students.index')" wire:navigate variant="secondary" icon="arrow-left">Kembali</x-button>
         </x-slot:actions>
     </x-page-header>
 
     <x-card title="1. Siapkan berkas">
-        <p class="text-sm text-text-muted">Kolom yang dipakai: <span class="font-medium text-text">{{ implode(', ', \App\Services\StudentImporter::COLUMNS) }}</span>. Kolom <em>nis</em> dan <em>nama</em> wajib. Isi <em>rombel</em> (mis. 7A) agar siswa langsung ditempatkan.</p>
+        <p class="text-sm text-text-muted">Kolom yang dipakai: <span class="font-medium text-text">{{ implode(', ', \App\Services\StudentImporter::COLUMNS) }}</span>. Kolom <em>nim</em> dan <em>nama</em> wajib. Isi <em>prodi</em> sesuai nama program studi dan <em>kelas</em> (mis. TI-2024-A) agar mahasiswa langsung ditempatkan.</p>
         <div class="mt-3">
             <x-button :href="route('students.template')" variant="secondary" size="sm" icon="arrow-down-tray">Unduh templat</x-button>
         </div>
@@ -36,13 +36,13 @@
                 @endif
 
                 @if ($preview['valid'])
-                    <x-button wire:click="confirm" wire:loading.attr="disabled" wire:target="confirm" icon="check">Impor {{ count($preview['valid']) }} siswa</x-button>
+                    <x-button wire:click="confirm" wire:loading.attr="disabled" wire:target="confirm" icon="check">Impor {{ count($preview['valid']) }} mahasiswa</x-button>
                 @endif
             </div>
         @endif
 
         @if ($imported)
-            <p class="mt-4 text-sm font-medium text-success" role="status">{{ $imported }} siswa berhasil diimpor.</p>
+            <p class="mt-4 text-sm font-medium text-success" role="status">{{ $imported }} mahasiswa berhasil diimpor.</p>
         @endif
     </x-card>
 </div>

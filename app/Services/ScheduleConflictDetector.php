@@ -8,7 +8,7 @@ use App\Models\TeachingAssignment;
 class ScheduleConflictDetector
 {
     /**
-     * Cari bentrok guru, rombel, dan ruang untuk penempatan jadwal (A-15).
+     * Cari bentrok dosen, kelas, dan ruang untuk penempatan jadwal (A-15).
      *
      * @return array<int, string> daftar pesan bentrok; kosong berarti aman
      */
@@ -30,7 +30,7 @@ class ScheduleConflictDetector
             }
 
             if ($other->study_group_id === $assignment->study_group_id) {
-                $conflicts[] = "Rombel {$other->studyGroup->name} sudah punya pelajaran {$other->subject->name} pada jam ini.";
+                $conflicts[] = "Kelas {$other->studyGroup->name} sudah punya kuliah {$other->subject->name} pada jam ini.";
             }
 
             if ($roomId !== null && $existing->room_id === $roomId) {

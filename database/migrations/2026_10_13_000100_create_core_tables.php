@@ -11,13 +11,31 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::create('faculties', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
+            $table->string('name');
+            $table->timestamps();
+        });
+
+        Schema::create('programs', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('faculty_id')->constrained()->cascadeOnDelete();
+            $table->string('name');
+            $table->string('code', 20)->nullable();
+            $table->string('degree', 10)->default('S1');
+            $table->timestamps();
+        });
+
         Schema::create('students', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('program_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
-            $table->string('nis')->nullable();
-            $table->string('nisn')->nullable();
+            $table->string('nim')->nullable();
+            $table->unsignedSmallInteger('batch_year')->nullable();
             $table->date('birth_date')->nullable();
             $table->string('gender', 1)->nullable();
             $table->text('address')->nullable();
@@ -26,7 +44,7 @@ return new class extends Migration
             $table->string('status')->default('aktif');
             $table->date('entry_date')->nullable();
             $table->timestamps();
-            $table->unique(['tenant_id', 'nis']);
+            $table->unique(['tenant_id', 'nim']);
             $table->index(['tenant_id', 'status']);
         });
 
@@ -36,7 +54,7 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
             $table->string('nip')->nullable();
-            $table->string('nuptk')->nullable();
+            $table->string('nidn')->nullable();
             $table->string('employment_status')->nullable();
             $table->timestamps();
             $table->unique(['tenant_id', 'nip']);
@@ -83,6 +101,7 @@ return new class extends Migration
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->foreignId('academic_term_id')->constrained()->cascadeOnDelete();
             $table->foreignId('grade_level_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('program_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('homeroom_teacher_id')->nullable()->constrained('teachers')->nullOnDelete();
             $table->string('name');
             $table->timestamps();
@@ -104,6 +123,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('code')->nullable();
             $table->unsignedTinyInteger('credits')->nullable();
+            $table->unsignedTinyInteger('semester')->nullable();
+            $table->foreignId('program_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamps();
         });
 
@@ -124,7 +145,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        foreach (['audit_logs', 'subjects', 'study_group_members', 'study_groups', 'grade_levels', 'academic_terms', 'guardian_student', 'guardians', 'teachers', 'students'] as $table) {
+        foreach (['audit_logs', 'subjects', 'study_group_members', 'study_groups', 'grade_levels', 'academic_terms', 'guardian_student', 'guardians', 'teachers', 'students', 'programs', 'faculties'] as $table) {
             Schema::dropIfExists($table);
         }
     }

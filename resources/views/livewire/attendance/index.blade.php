@@ -2,7 +2,7 @@
     <x-page-header title="Presensi" :subtitle="now()->translatedFormat('l, j F Y')" />
 
     @if ($tenant->usesPerHourAttendance())
-        <x-card title="Per jam pelajaran" :padding="false">
+        <x-card title="Pertemuan kuliah hari ini" :padding="false">
             @forelse ($schedules as $schedule)
                 @php
                     $session = $sessionsBySchedule->get($schedule->id);
@@ -13,7 +13,7 @@
                     <div class="min-w-0 flex-1">
                         <p class="truncate text-sm font-medium">{{ $schedule->assignment->studyGroup->name }} · {{ $schedule->assignment->subject->name }}</p>
                         <p class="truncate text-xs {{ $isNow ? 'font-semibold text-warning' : 'text-text-muted' }}">
-                            Jam ke-{{ $schedule->timeSlot->period_number }} · {{ $schedule->timeSlot->timeRange() }} · {{ $schedule->assignment->teacher->name }}
+                            Sesi ke-{{ $schedule->timeSlot->period_number }} · {{ $schedule->timeSlot->timeRange() }} · {{ $schedule->assignment->teacher->name }}
                         </p>
                     </div>
                     @if ($session)
@@ -29,7 +29,7 @@
                     @endif
                 </div>
             @empty
-                <x-empty-state icon="calendar-days" title="Tidak ada jam pelajaran hari ini" description="Jadwal yang jatuh hari ini akan muncul di sini." />
+                <x-empty-state icon="calendar-days" title="Tidak ada sesi kuliah hari ini" description="Jadwal yang jatuh hari ini akan muncul di sini." />
             @endforelse
         </x-card>
     @endif
@@ -50,7 +50,7 @@
                     @endif
                 </div>
             @empty
-                <x-empty-state icon="user-group" title="Tidak ada kelas untuk diisi" description="Presensi harian dilakukan oleh wali kelas." />
+                <x-empty-state icon="user-group" title="Tidak ada kelas untuk diisi" description="Presensi harian dilakukan oleh dosen wali." />
             @endforelse
         </x-card>
     @endif

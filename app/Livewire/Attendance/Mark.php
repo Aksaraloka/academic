@@ -29,7 +29,7 @@ class Mark extends Component
     }
 
     /**
-     * Ketuk siswa: Hadir menjadi Alpa, status lain kembali ke Hadir (P-02).
+     * Ketuk mahasiswa: Hadir menjadi Alpa, status lain kembali ke Hadir (P-02).
      */
     public function toggleAbsent(int $studentId): void
     {

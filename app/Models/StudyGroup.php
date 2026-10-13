@@ -12,13 +12,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['tenant_id', 'academic_term_id', 'grade_level_id', 'homeroom_teacher_id', 'name'])]
+#[Fillable(['tenant_id', 'academic_term_id', 'grade_level_id', 'program_id', 'homeroom_teacher_id', 'name'])]
 class StudyGroup extends Model
 {
     use BelongsToTenant, HasFactory;
 
     /**
-     * Rombel yang boleh dilihat: semua untuk admin/pimpinan, kelas binaan dan kelas ajar untuk guru.
+     * Kelas yang boleh dilihat: semua untuk admin/pimpinan, kelas perwalian dan kelas ajar untuk dosen.
      */
     public function scopeVisibleTo(Builder $query, User $user): void
     {
@@ -38,6 +38,11 @@ class StudyGroup extends Model
         return $this->belongsTo(AcademicTerm::class);
     }
 
+    public function program(): BelongsTo
+    {
+        return $this->belongsTo(Program::class);
+    }
+
     public function gradeLevel(): BelongsTo
     {
         return $this->belongsTo(GradeLevel::class);
@@ -48,13 +53,18 @@ class StudyGroup extends Model
         return $this->belongsTo(Teacher::class, 'homeroom_teacher_id');
     }
 
+    public function teachingAssignments(): HasMany
+    {
+        return $this->hasMany(TeachingAssignment::class);
+    }
+
     public function members(): HasMany
     {
         return $this->hasMany(StudyGroupMember::class);
     }
 
     /**
-     * Siswa yang saat ini masih tercatat di rombel.
+     * Mahasiswa yang saat ini masih tercatat di kelas.
      */
     public function activeStudents(): BelongsToMany
     {

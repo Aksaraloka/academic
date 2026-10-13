@@ -1,13 +1,13 @@
 <div class="space-y-6">
-    <x-page-header title="Guru" subtitle="Data guru dan dosen.">
+    <x-page-header title="Dosen" subtitle="Data dosen dan dosen.">
         <x-slot:actions>
-            <x-button wire:click="$toggle('showForm')" icon="plus">Tambah guru</x-button>
+            <x-button wire:click="$toggle('showForm')" icon="plus">Tambah dosen</x-button>
         </x-slot:actions>
     </x-page-header>
 
     @if ($showForm)
         <form wire:submit="save">
-            <x-card title="Guru baru">
+            <x-card title="Dosen baru">
                 <div class="grid gap-4 sm:grid-cols-2">
                     <x-field label="Nama lengkap" name="name" required>
                         <input id="name" type="text" wire:model="name" class="input" @error('name') aria-invalid="true" @enderror>
@@ -15,7 +15,7 @@
                     <x-field label="Email" name="email" required>
                         <input id="email" type="email" wire:model="email" class="input" @error('email') aria-invalid="true" @enderror>
                     </x-field>
-                    <x-field label="NIP / NUPTK / NIDN" name="nip">
+                    <x-field label="NIDN / NIP" name="nip">
                         <input id="nip" type="text" wire:model="nip" class="input">
                     </x-field>
                     <x-field label="Status kepegawaian" name="employment_status">
@@ -32,7 +32,7 @@
 
     <x-card :padding="false">
         @if ($teachers->isEmpty())
-            <x-empty-state icon="identification" title="Belum ada guru" description="Tambahkan guru agar bisa ditugaskan ke rombel dan jadwal." />
+            <x-empty-state icon="identification" title="Belum ada dosen" description="Tambahkan dosen agar bisa ditugaskan ke kelas dan jadwal." />
         @else
             <ul class="divide-y divide-border">
                 @foreach ($teachers as $teacher)

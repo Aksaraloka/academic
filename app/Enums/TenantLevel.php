@@ -10,7 +10,7 @@ enum TenantLevel: string
     public function label(): string
     {
         return match ($this) {
-            self::School => 'Sekolah',
+            self::School => 'Kampus',
             self::Campus => 'Kampus',
         };
     }

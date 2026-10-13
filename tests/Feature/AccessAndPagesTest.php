@@ -40,40 +40,40 @@ it('blocks roles from pages they may not open', function () {
     $student = User::factory()->role(Role::Student)->create();
     $teacher = User::factory()->role(Role::Teacher)->create();
 
-    $this->actingAs($student)->get('/siswa')->assertForbidden();
+    $this->actingAs($student)->get('/mahasiswa')->assertForbidden();
     $this->actingAs($student)->get('/presensi')->assertForbidden();
-    $this->actingAs($teacher)->get('/siswa/baru')->assertForbidden();
+    $this->actingAs($teacher)->get('/mahasiswa/baru')->assertForbidden();
     $this->actingAs($teacher)->get('/jadwal/atur')->assertForbidden();
 });
 
 it('scopes students to the signed-in tenant', function () {
     $admin = User::factory()->role(Role::Admin)->create();
-    Student::factory()->create(['tenant_id' => $admin->tenant_id, 'name' => 'Siswa Sendiri']);
-    Student::factory()->create(['name' => 'Siswa Sekolah Lain']);
+    Student::factory()->create(['tenant_id' => $admin->tenant_id, 'name' => 'Mahasiswa Sendiri']);
+    Student::factory()->create(['name' => 'Mahasiswa Kampus Lain']);
 
-    $this->actingAs($admin)->get('/siswa')->assertSee('Siswa Sendiri')->assertDontSee('Siswa Sekolah Lain');
+    $this->actingAs($admin)->get('/mahasiswa')->assertSee('Mahasiswa Sendiri')->assertDontSee('Mahasiswa Kampus Lain');
 });
 
 it('imports students from a CSV and reports bad rows', function () {
     $admin = User::factory()->role(Role::Admin)->create();
-    Student::factory()->create(['tenant_id' => $admin->tenant_id, 'nis' => '1001']);
+    Student::factory()->create(['tenant_id' => $admin->tenant_id, 'nim' => '1001']);
 
-    $csv = "nis,nisn,nama,jenis_kelamin,tanggal_lahir,alamat,telepon,rombel\n"
-        ."1001,,Duplikat Lama,L,,,,\n"
-        ."2001,0011,Siswa Baru,P,2012-01-02,,,\n"
-        ."2001,,Duplikat Dalam Berkas,L,,,,\n"
-        .",,Tanpa NIS,L,,,,\n";
+    $csv = "nim,nama,jenis_kelamin,tanggal_lahir,alamat,telepon,prodi,angkatan,kelas\n"
+        ."1001,Duplikat Lama,L,,,,,,\n"
+        ."2001,Mahasiswa Baru,P,2005-01-02,,,Teknik Informatika,2024,\n"
+        ."2001,Duplikat Dalam Berkas,L,,,,,,\n"
+        .",Tanpa NIM,L,,,,,,\n";
 
-    $file = UploadedFile::fake()->createWithContent('siswa.csv', $csv);
+    $file = UploadedFile::fake()->createWithContent('mahasiswa.csv', $csv);
 
     Livewire::actingAs($admin)->test(Import::class)
         ->set('file', $file)
-        ->assertSet('preview.valid.0.nama', 'Siswa Baru')
+        ->assertSet('preview.valid.0.nama', 'Mahasiswa Baru')
         ->assertCount('preview.errors', 3)
         ->call('confirm')
         ->assertDispatched('toast');
 
-    expect(Student::query()->where('nis', '2001')->exists())->toBeTrue();
+    expect(Student::query()->where('nim', '2001')->exists())->toBeTrue();
 });
 
 it('keeps tenants separated when creating records', function () {
@@ -81,7 +81,7 @@ it('keeps tenants separated when creating records', function () {
     $admin = User::factory()->for($tenantA)->role(Role::Admin)->create();
 
     $this->actingAs($admin);
-    $student = Student::create(['name' => 'Baru', 'nis' => '9']);
+    $student = Student::create(['name' => 'Baru', 'nim' => '9']);
 
     expect($student->tenant_id)->toBe($tenantA->id);
 });

@@ -37,7 +37,7 @@ class Index extends Component
     }
 
     /**
-     * Siswa yang boleh dicatat izinnya oleh pengguna ini (wali kelas atau admin).
+     * Mahasiswa yang boleh dicatat izinnya oleh pengguna ini (dosen wali atau admin).
      */
     private function recordableStudents()
     {
@@ -79,7 +79,7 @@ class Index extends Component
 
         $this->validate($rules, [], [
             'type' => 'jenis', 'starts_on' => 'tanggal mulai', 'ends_on' => 'tanggal selesai',
-            'reason' => 'alasan', 'attachment' => 'lampiran', 'studentId' => 'siswa',
+            'reason' => 'alasan', 'attachment' => 'lampiran', 'studentId' => 'mahasiswa',
         ]);
 
         abort_unless($forStudent || $isTeacherOwn, 403);
@@ -98,7 +98,7 @@ class Index extends Component
         ]);
 
         $this->reset(['showForm', 'studentId', 'reason', 'attachment']);
-        $this->dispatch('toast', message: $forStudent ? 'Izin siswa dicatat.' : 'Pengajuan dikirim.', type: 'success');
+        $this->dispatch('toast', message: $forStudent ? 'Izin mahasiswa dicatat.' : 'Pengajuan dikirim.', type: 'success');
     }
 
     public function decide(int $leaveId, string $decision): void

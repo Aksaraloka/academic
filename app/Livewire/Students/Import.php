@@ -7,7 +7,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
-#[Title('Impor siswa')]
+#[Title('Impor mahasiswa')]
 class Import extends Component
 {
     use WithFileUploads;
@@ -35,7 +35,7 @@ class Import extends Component
         $this->preview = null;
         $this->file = null;
 
-        $this->dispatch('toast', message: "{$this->imported} siswa berhasil diimpor.", type: 'success');
+        $this->dispatch('toast', message: "{$this->imported} mahasiswa berhasil diimpor.", type: 'success');
     }
 
     public function render()

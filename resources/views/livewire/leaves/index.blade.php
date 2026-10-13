@@ -1,5 +1,5 @@
 <div class="space-y-6">
-    <x-page-header title="Izin dan sakit" subtitle="Catatan izin siswa dan pengajuan izin guru.">
+    <x-page-header title="Izin dan sakit" subtitle="Catatan izin mahasiswa dan pengajuan izin dosen.">
         @if ($recordable->isNotEmpty() || $canRequestOwn)
             <x-slot:actions>
                 <x-button wire:click="$toggle('showForm')" icon="plus">Catat izin</x-button>
@@ -13,9 +13,9 @@
                 <div class="grid gap-4 sm:grid-cols-2">
                     @if ($recordable->isNotEmpty())
                         <div class="sm:col-span-2">
-                            <x-field label="Siswa" name="studentId" :hint="$canRequestOwn ? 'Kosongkan bila ini izin untuk dirimu sendiri.' : null">
+                            <x-field label="Mahasiswa" name="studentId" :hint="$canRequestOwn ? 'Kosongkan bila ini izin untuk dirimu sendiri.' : null">
                                 <select id="studentId" wire:model.live="studentId" class="input">
-                                    <option value="">{{ $canRequestOwn ? 'Izin saya sendiri' : 'Pilih siswa' }}</option>
+                                    <option value="">{{ $canRequestOwn ? 'Izin saya sendiri' : 'Pilih mahasiswa' }}</option>
                                     @foreach ($recordable as $student)<option value="{{ $student->id }}">{{ $student->name }}</option>@endforeach
                                 </select>
                             </x-field>
@@ -55,7 +55,7 @@
                 <x-icon name="envelope" class="text-primary" />
                 <div class="min-w-0 flex-1">
                     <p class="truncate text-sm font-medium">
-                        {{ $leave->subject_type === 'student' ? ($studentNames[$leave->subject_id] ?? 'Siswa') : $leave->requester->name }}
+                        {{ $leave->subject_type === 'student' ? ($studentNames[$leave->subject_id] ?? 'Mahasiswa') : $leave->requester->name }}
                         · {{ $leave->type->label() }}
                     </p>
                     <p class="truncate text-xs text-text-muted">
@@ -72,7 +72,7 @@
                 @endif
             </div>
         @empty
-            <x-empty-state icon="envelope" title="Belum ada catatan izin" description="Izin siswa yang kamu catat dan pengajuan izin guru akan tampil di sini." />
+            <x-empty-state icon="envelope" title="Belum ada catatan izin" description="Izin mahasiswa yang kamu catat dan pengajuan izin dosen akan tampil di sini." />
         @endforelse
     </x-card>
 </div>

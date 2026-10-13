@@ -1,5 +1,5 @@
 <div class="mx-auto max-w-2xl space-y-6">
-    <x-page-header :title="$student ? 'Ubah siswa' : 'Tambah siswa'" />
+    <x-page-header :title="$student ? 'Ubah mahasiswa' : 'Tambah mahasiswa'" />
 
     <form wire:submit="save" class="space-y-4">
         <x-card title="Identitas">
@@ -9,11 +9,19 @@
                         <input id="name" type="text" wire:model="name" class="input" @error('name') aria-invalid="true" @enderror>
                     </x-field>
                 </div>
-                <x-field label="NIS / NIM" name="nis" required>
-                    <input id="nis" type="text" wire:model="nis" class="input" inputmode="numeric" @error('nis') aria-invalid="true" @enderror>
+                <x-field label="NIM" name="nim" required>
+                    <input id="nim" type="text" wire:model="nim" class="input" inputmode="numeric" @error('nim') aria-invalid="true" @enderror>
                 </x-field>
-                <x-field label="NISN" name="nisn">
-                    <input id="nisn" type="text" wire:model="nisn" class="input" inputmode="numeric">
+                <x-field label="Program studi" name="program_id">
+                    <select id="program_id" wire:model="program_id" class="input">
+                        <option value="">Belum ditentukan</option>
+                        @foreach ($programs as $program)
+                            <option value="{{ $program->id }}">{{ $program->label() }}</option>
+                        @endforeach
+                    </select>
+                </x-field>
+                <x-field label="Angkatan" name="batch_year">
+                    <input id="batch_year" type="number" wire:model="batch_year" class="input" inputmode="numeric" min="1990" max="2100">
                 </x-field>
                 <x-field label="Tanggal lahir" name="birth_date">
                     <input id="birth_date" type="date" wire:model="birth_date" class="input">

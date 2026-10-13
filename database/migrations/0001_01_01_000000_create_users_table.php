@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('subdomain')->unique();
-            $table->string('level')->default('school');
+            $table->string('level')->default('campus');
             $table->string('timezone')->default('Asia/Jakarta');
             $table->json('settings')->nullable();
             $table->timestamps();

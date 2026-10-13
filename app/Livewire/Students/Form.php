@@ -3,22 +3,25 @@
 namespace App\Livewire\Students;
 
 use App\Enums\StudentStatus;
+use App\Models\Program;
 use App\Models\Student;
 use App\Services\AuditLogger;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Data siswa')]
+#[Title('Data mahasiswa')]
 class Form extends Component
 {
     public ?Student $student = null;
 
     public string $name = '';
 
-    public string $nis = '';
+    public string $nim = '';
 
-    public string $nisn = '';
+    public string $program_id = '';
+
+    public string $batch_year = '';
 
     public string $birth_date = '';
 
@@ -38,8 +41,9 @@ class Form extends Component
             $this->student = $student;
             $this->fill([
                 'name' => $student->name,
-                'nis' => (string) $student->nis,
-                'nisn' => (string) $student->nisn,
+                'nim' => (string) $student->nim,
+                'program_id' => (string) $student->program_id,
+                'batch_year' => (string) $student->batch_year,
                 'birth_date' => $student->birth_date?->toDateString() ?? '',
                 'gender' => (string) $student->gender,
                 'address' => (string) $student->address,
@@ -50,6 +54,7 @@ class Form extends Component
         } else {
             $this->student = null;
             $this->entry_date = today()->toDateString();
+            $this->batch_year = (string) today()->year;
         }
     }
 
@@ -60,10 +65,11 @@ class Form extends Component
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'nis' => ['required', 'string', 'max:30', Rule::unique('students', 'nis')
+            'nim' => ['required', 'string', 'max:30', Rule::unique('students', 'nim')
                 ->where('tenant_id', auth()->user()->tenant_id)
                 ->ignore($this->student?->id)],
-            'nisn' => ['nullable', 'string', 'max:20'],
+            'program_id' => ['nullable', 'exists:programs,id'],
+            'batch_year' => ['nullable', 'integer', 'between:1990,2100'],
             'birth_date' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', Rule::in(['L', 'P'])],
             'address' => ['nullable', 'string', 'max:500'],
@@ -80,8 +86,9 @@ class Form extends Component
     {
         return [
             'name' => 'nama',
-            'nis' => 'NIS',
-            'nisn' => 'NISN',
+            'nim' => 'NIM',
+            'program_id' => 'program studi',
+            'batch_year' => 'angkatan',
             'birth_date' => 'tanggal lahir',
             'gender' => 'jenis kelamin',
             'address' => 'alamat',
@@ -104,12 +111,14 @@ class Form extends Component
             $audit->log('student.created', $this->student, [], $data);
         }
 
-        session()->flash('toast', 'Data siswa disimpan.');
+        session()->flash('toast', 'Data mahasiswa disimpan.');
         $this->redirectRoute('students.index', navigate: true);
     }
 
     public function render()
     {
-        return view('livewire.students.form');
+        return view('livewire.students.form', [
+            'programs' => Program::query()->orderBy('name')->get(),
+        ]);
     }
 }

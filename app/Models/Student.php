@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['tenant_id', 'user_id', 'name', 'nis', 'nisn', 'birth_date', 'gender', 'address', 'phone', 'photo_path', 'status', 'entry_date'])]
+#[Fillable(['tenant_id', 'user_id', 'program_id', 'name', 'nim', 'batch_year', 'birth_date', 'gender', 'address', 'phone', 'photo_path', 'status', 'entry_date'])]
 class Student extends Model
 {
     use BelongsToTenant, HasFactory;
@@ -33,6 +33,11 @@ class Student extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function program(): BelongsTo
+    {
+        return $this->belongsTo(Program::class);
+    }
+
     public function guardians(): BelongsToMany
     {
         return $this->belongsToMany(Guardian::class);
@@ -49,7 +54,7 @@ class Student extends Model
     }
 
     /**
-     * Rombel aktif pada tahun ajaran yang sedang berjalan.
+     * Kelas aktif pada tahun ajaran yang sedang berjalan.
      */
     public function currentGroup(): ?StudyGroup
     {

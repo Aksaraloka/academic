@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['tenant_id', 'user_id', 'name', 'nip', 'nuptk', 'employment_status'])]
+#[Fillable(['tenant_id', 'user_id', 'name', 'nip', 'nidn', 'employment_status'])]
 class Teacher extends Model
 {
     use BelongsToTenant, HasFactory;

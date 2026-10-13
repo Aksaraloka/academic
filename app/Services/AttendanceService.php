@@ -23,7 +23,7 @@ class AttendanceService
     ) {}
 
     /**
-     * Buka sesi presensi dari jadwal hari ini; semua siswa aktif diberi status Hadir (P-01, P-02).
+     * Buka sesi presensi dari jadwal hari ini; semua mahasiswa aktif diberi status Hadir (P-01, P-02).
      */
     public function openSession(Schedule $schedule, User $opener, AttendanceMode $mode = AttendanceMode::Manual): AttendanceSession
     {
@@ -33,7 +33,7 @@ class AttendanceService
     }
 
     /**
-     * Buka sesi presensi harian oleh wali kelas (P-06).
+     * Buka sesi presensi harian oleh dosen wali (P-06).
      */
     public function openDailySession(StudyGroup $group, User $opener): AttendanceSession
     {
@@ -84,7 +84,7 @@ class AttendanceService
     }
 
     /**
-     * Siswa memindai QR guru dari akunnya sendiri (P-03). Token divalidasi server.
+     * Mahasiswa memindai QR dosen dari akunnya sendiri (P-03). Token divalidasi server.
      */
     public function scanQr(AttendanceSession $session, User $student, string $token): AttendanceRecord
     {
@@ -113,7 +113,7 @@ class AttendanceService
     }
 
     /**
-     * Guru boleh mengoreksi sampai akhir hari; setelahnya hanya wali kelas atau admin (P-04).
+     * Dosen boleh mengoreksi sampai akhir hari; setelahnya hanya dosen wali atau admin (P-04).
      */
     public function canEdit(AttendanceSession $session, User $actor): bool
     {
@@ -174,7 +174,7 @@ class AttendanceService
     }
 
     /**
-     * Siswa dengan izin/sakit yang disetujui hari ini otomatis berstatus Izin/Sakit (P-14).
+     * Mahasiswa dengan izin/sakit yang disetujui hari ini otomatis berstatus Izin/Sakit (P-14).
      *
      * @return array<int, AttendanceStatus>
      */

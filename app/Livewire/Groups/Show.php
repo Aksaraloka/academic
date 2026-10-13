@@ -8,7 +8,7 @@ use App\Models\StudyGroupMember;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Rombel')]
+#[Title('Kelas')]
 class Show extends Component
 {
     public StudyGroup $group;
@@ -35,7 +35,7 @@ class Show extends Component
         }
 
         $this->reset('selected');
-        $this->dispatch('toast', message: $ids->count().' siswa ditempatkan.', type: 'success');
+        $this->dispatch('toast', message: $ids->count().' mahasiswa ditempatkan.', type: 'success');
     }
 
     public function remove(int $studentId): void
@@ -43,7 +43,7 @@ class Show extends Component
         abort_unless(auth()->user()->isAdmin(), 403);
 
         $this->group->members()->where('student_id', $studentId)->whereNull('left_at')->update(['left_at' => today()]);
-        $this->dispatch('toast', message: 'Siswa dikeluarkan dari rombel. Riwayat tetap tersimpan.', type: 'success');
+        $this->dispatch('toast', message: 'Mahasiswa dikeluarkan dari kelas. Riwayat tetap tersimpan.', type: 'success');
     }
 
     private function leaveCurrentGroup(int $studentId): void

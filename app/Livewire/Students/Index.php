@@ -8,7 +8,7 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-#[Title('Siswa')]
+#[Title('Mahasiswa')]
 class Index extends Component
 {
     use WithPagination;
@@ -34,10 +34,11 @@ class Index extends Component
         $students = Student::query()
             ->when($this->search !== '', fn ($query) => $query->where(function ($inner): void {
                 $inner->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('nis', 'like', "%{$this->search}%")
-                    ->orWhere('nisn', 'like', "%{$this->search}%");
+                    ->orWhere('nim', 'like', "%{$this->search}%")
+                    ->orWhereHas('program', fn ($program) => $program->where('name', 'like', "%{$this->search}%"));
             }))
             ->when($this->status !== '', fn ($query) => $query->where('status', $this->status))
+            ->with('program')
             ->orderBy('name')
             ->paginate(20);
 

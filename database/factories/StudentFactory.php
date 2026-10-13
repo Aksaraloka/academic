@@ -19,8 +19,8 @@ class StudentFactory extends Factory
         return [
             'tenant_id' => Tenant::factory(),
             'name' => fake()->name(),
-            'nis' => (string) fake()->unique()->numerify('######'),
-            'nisn' => fake()->numerify('00########'),
+            'nim' => (string) fake()->unique()->numerify('######'),
+            'batch_year' => 2024,
             'birth_date' => fake()->dateTimeBetween('-16 years', '-12 years')->format('Y-m-d'),
             'gender' => fake()->randomElement(['L', 'P']),
             'status' => 'aktif',

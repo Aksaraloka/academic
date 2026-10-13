@@ -29,6 +29,12 @@ class Manage extends Component
 
     public string $newSubject = '';
 
+    public string $newSubjectCode = '';
+
+    public string $newSubjectCredits = '3';
+
+    public string $newSubjectSemester = '';
+
     public string $newRoom = '';
 
     /** @var array<int, string> */
@@ -51,14 +57,26 @@ class Manage extends Component
             }
         }
 
-        $this->dispatch('toast', message: 'Jam pelajaran standar dibuat.', type: 'success');
+        $this->dispatch('toast', message: 'Sesi kuliah standar dibuat.', type: 'success');
     }
 
     public function addSubject(): void
     {
-        $data = $this->validate(['newSubject' => ['required', 'string', 'max:100']], [], ['newSubject' => 'nama mapel']);
-        Subject::create(['name' => $data['newSubject']]);
-        $this->reset('newSubject');
+        $data = $this->validate([
+            'newSubject' => ['required', 'string', 'max:100'],
+            'newSubjectCode' => ['nullable', 'string', 'max:20'],
+            'newSubjectCredits' => ['required', 'integer', 'between:1,12'],
+            'newSubjectSemester' => ['nullable', 'integer', 'between:1,14'],
+        ], [], ['newSubject' => 'nama mata kuliah', 'newSubjectCode' => 'kode', 'newSubjectCredits' => 'SKS', 'newSubjectSemester' => 'semester']);
+
+        Subject::create([
+            'name' => $data['newSubject'],
+            'code' => $data['newSubjectCode'] ?: null,
+            'credits' => $data['newSubjectCredits'],
+            'semester' => $data['newSubjectSemester'] ?: null,
+        ]);
+
+        $this->reset(['newSubject', 'newSubjectCode', 'newSubjectSemester']);
     }
 
     public function addRoom(): void
@@ -77,8 +95,8 @@ class Manage extends Component
             'timeSlotId' => ['required', 'exists:time_slots,id'],
             'roomId' => ['nullable', 'exists:rooms,id'],
         ], [], [
-            'groupId' => 'rombel', 'teacherId' => 'guru', 'subjectId' => 'mata pelajaran',
-            'timeSlotId' => 'jam pelajaran', 'roomId' => 'ruang',
+            'groupId' => 'kelas', 'teacherId' => 'dosen', 'subjectId' => 'mata kuliah',
+            'timeSlotId' => 'sesi kuliah', 'roomId' => 'ruang',
         ]);
 
         $group = StudyGroup::findOrFail($this->groupId);

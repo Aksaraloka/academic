@@ -96,7 +96,7 @@ class TeacherCheckinService
 
         if ($distance > (float) $tenant->setting('geofence_radius')) {
             throw ValidationException::withMessages([
-                'location' => 'Kamu berada di luar area sekolah ('.round($distance).' m dari titik pusat).',
+                'location' => 'Kamu berada di luar area kampus ('.round($distance).' m dari titik pusat).',
             ]);
         }
     }

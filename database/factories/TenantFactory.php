@@ -16,9 +16,9 @@ class TenantFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => 'SMP '.fake()->company(),
+            'name' => 'Universitas '.fake()->company(),
             'subdomain' => fake()->unique()->slug(2),
-            'level' => 'school',
+            'level' => 'campus',
             'timezone' => 'Asia/Jakarta',
             'settings' => null,
         ];

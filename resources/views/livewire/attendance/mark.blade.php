@@ -1,7 +1,7 @@
 <div class="space-y-6">
     <x-page-header
         :title="$session->studyGroup->name"
-        :subtitle="($session->schedule ? $session->schedule->assignment->subject->name.' · jam ke-'.$session->schedule->timeSlot->period_number.' · ' : 'Presensi harian · ').$session->date->translatedFormat('j F Y')">
+        :subtitle="($session->schedule ? $session->schedule->assignment->subject->name.' · sesi ke-'.$session->schedule->timeSlot->period_number.' · ' : 'Presensi harian · ').$session->date->translatedFormat('j F Y')">
         <x-slot:actions>
             <x-button :href="route('attendance.index')" wire:navigate variant="secondary" icon="arrow-left">Kembali</x-button>
             @if ($session->mode === \App\Enums\AttendanceMode::Qr && $canEdit)
@@ -17,7 +17,7 @@
     </div>
 
     @unless ($canEdit)
-        <p class="rounded-lg border border-border bg-surface-muted p-3 text-sm text-text-muted" role="status">Kamu hanya bisa melihat presensi ini. Koreksi setelah hari berlalu dilakukan oleh wali kelas atau admin.</p>
+        <p class="rounded-lg border border-border bg-surface-muted p-3 text-sm text-text-muted" role="status">Kamu hanya bisa melihat presensi ini. Koreksi setelah hari berlalu dilakukan oleh dosen wali atau admin.</p>
     @endunless
 
     <x-card :padding="false">
@@ -43,7 +43,7 @@
                 </select>
             </div>
         @empty
-            <x-empty-state icon="users" title="Rombel ini belum punya siswa" description="Tempatkan siswa di halaman Rombel terlebih dahulu." />
+            <x-empty-state icon="users" title="Kelas ini belum punya mahasiswa" description="Tempatkan mahasiswa di halaman Kelas terlebih dahulu." />
         @endforelse
     </x-card>
 

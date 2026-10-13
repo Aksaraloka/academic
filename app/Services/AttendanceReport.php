@@ -8,6 +8,7 @@ use App\Models\AttendanceSession;
 use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\StudyGroup;
+use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\TeacherCheckin;
 use Carbon\CarbonInterface;
@@ -34,7 +35,7 @@ class AttendanceReport
     }
 
     /**
-     * Ringkasan presensi siswa untuk hari tertentu (P-19).
+     * Ringkasan presensi mahasiswa untuk hari tertentu (P-19).
      *
      * @return array{present: int, total: int, percent: ?int, scheduled: int, opened: int, unfilled: int}
      */
@@ -63,7 +64,7 @@ class AttendanceReport
     }
 
     /**
-     * Guru yang belum check-in pada tanggal tertentu.
+     * Dosen yang belum check-in pada tanggal tertentu.
      *
      * @return Collection<int, Teacher>
      */
@@ -75,19 +76,17 @@ class AttendanceReport
     }
 
     /**
-     * Rekap per siswa dalam satu rombel pada rentang tanggal (P-17).
+     * Rekap per mahasiswa dalam satu kelas pada rentang tanggal (P-17).
      *
      * @return Collection<int, array{student: Student, counts: array<string, int>, total: int, percent: ?int}>
      */
-    public function groupRecap(StudyGroup $group, CarbonInterface $from, CarbonInterface $to): Collection
+    public function groupRecap(StudyGroup $group, CarbonInterface $from, CarbonInterface $to, ?int $subjectId = null): Collection
     {
         $students = $group->activeStudents()->orderBy('students.name')->get();
 
         $records = AttendanceRecord::query()
             ->whereIn('student_id', $students->pluck('id'))
-            ->whereHas('session', fn ($query) => $query
-                ->where('study_group_id', $group->id)
-                ->whereBetween('date', [$from->toDateString(), $to->toDateString()]))
+            ->whereHas('session', fn ($query) => $this->sessionScope($query, $group, $from, $to, $subjectId))
             ->get()
             ->groupBy('student_id');
 
@@ -111,7 +110,7 @@ class AttendanceReport
     }
 
     /**
-     * Riwayat kehadiran satu siswa.
+     * Riwayat kehadiran satu mahasiswa.
      *
      * @return array{counts: array<string, int>, total: int, percent: ?int}
      */
@@ -132,18 +131,50 @@ class AttendanceReport
     }
 
     /**
-     * Siswa dengan alpa >= ambang pada rentang tanggal (P-15), dihitung per hari berbeda.
+     * Persentase kehadiran satu mahasiswa per mata kuliah, dasar syarat mengikuti ujian (P-16).
+     *
+     * @return Collection<int, array{subject: Subject, attended: int, total: int, percent: ?int}>
+     */
+    public function studentBySubject(int $studentId): Collection
+    {
+        return AttendanceRecord::query()
+            ->with('session.schedule.assignment.subject')
+            ->where('student_id', $studentId)
+            ->whereHas('session', fn ($query) => $query->whereNotNull('schedule_id'))
+            ->get()
+            ->groupBy(fn (AttendanceRecord $record): int => $record->session->schedule->assignment->subject_id)
+            ->map(function (Collection $rows): array {
+                $attended = $rows->filter(fn ($row) => in_array($row->status, [AttendanceStatus::Present, AttendanceStatus::Late], true))->count();
+
+                return [
+                    'subject' => $rows->first()->session->schedule->assignment->subject,
+                    'attended' => $attended,
+                    'total' => $rows->count(),
+                    'percent' => (int) round($attended / $rows->count() * 100),
+                ];
+            })
+            ->sortBy(fn (array $row): string => $row['subject']->name)
+            ->values();
+    }
+
+    private function sessionScope($query, StudyGroup $group, CarbonInterface $from, CarbonInterface $to, ?int $subjectId): void
+    {
+        $query->where('study_group_id', $group->id)
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->when($subjectId, fn ($inner) => $inner->whereHas('schedule.assignment', fn ($assignment) => $assignment->where('subject_id', $subjectId)));
+    }
+
+    /**
+     * Mahasiswa dengan alpa >= ambang pada rentang tanggal (P-15), dihitung per hari berbeda.
      *
      * @return Collection<int, array{student: Student, days: int}>
      */
-    public function repeatedAbsences(StudyGroup $group, CarbonInterface $from, CarbonInterface $to, int $threshold): Collection
+    public function repeatedAbsences(StudyGroup $group, CarbonInterface $from, CarbonInterface $to, int $threshold, ?int $subjectId = null): Collection
     {
         return AttendanceRecord::query()
             ->with('student')
             ->where('status', AttendanceStatus::Absent)
-            ->whereHas('session', fn ($query) => $query
-                ->where('study_group_id', $group->id)
-                ->whereBetween('date', [$from->toDateString(), $to->toDateString()]))
+            ->whereHas('session', fn ($query) => $this->sessionScope($query, $group, $from, $to, $subjectId))
             ->get()
             ->groupBy('student_id')
             ->map(fn (Collection $rows): array => [

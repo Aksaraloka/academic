@@ -3,12 +3,13 @@
 namespace App\Livewire\Groups;
 
 use App\Models\AcademicTerm;
+use App\Models\Program;
 use App\Models\StudyGroup;
 use App\Models\Teacher;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Rombel')]
+#[Title('Kelas')]
 class Index extends Component
 {
     public bool $showForm = false;
@@ -16,6 +17,8 @@ class Index extends Component
     public string $name = '';
 
     public string $homeroom_teacher_id = '';
+
+    public string $program_id = '';
 
     public function save(): void
     {
@@ -27,16 +30,18 @@ class Index extends Component
         $data = $this->validate([
             'name' => ['required', 'string', 'max:50'],
             'homeroom_teacher_id' => ['nullable', 'exists:teachers,id'],
-        ], [], ['name' => 'nama rombel', 'homeroom_teacher_id' => 'wali kelas']);
+            'program_id' => ['nullable', 'exists:programs,id'],
+        ], [], ['name' => 'nama kelas', 'homeroom_teacher_id' => 'dosen wali', 'program_id' => 'program studi']);
 
         StudyGroup::create([
             'academic_term_id' => $term->id,
             'name' => $data['name'],
             'homeroom_teacher_id' => $data['homeroom_teacher_id'] ?: null,
+            'program_id' => $data['program_id'] ?: null,
         ]);
 
-        $this->reset(['showForm', 'name', 'homeroom_teacher_id']);
-        $this->dispatch('toast', message: 'Rombel dibuat.', type: 'success');
+        $this->reset(['showForm', 'name', 'homeroom_teacher_id', 'program_id']);
+        $this->dispatch('toast', message: 'Kelas dibuat.', type: 'success');
     }
 
     public function render()
@@ -44,12 +49,13 @@ class Index extends Component
         return view('livewire.groups.index', [
             'term' => AcademicTerm::current(),
             'groups' => StudyGroup::query()
-                ->with('homeroomTeacher')
+                ->with(['homeroomTeacher', 'program'])
                 ->withCount(['members as students_count' => fn ($query) => $query->whereNull('left_at')])
                 ->whereHas('academicTerm', fn ($query) => $query->where('is_active', true))
                 ->orderBy('name')
                 ->get(),
             'teachers' => Teacher::query()->orderBy('name')->get(),
+            'programs' => Program::query()->orderBy('name')->get(),
         ]);
     }
 }

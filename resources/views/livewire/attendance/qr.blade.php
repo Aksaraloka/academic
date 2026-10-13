@@ -1,5 +1,5 @@
 <div class="mx-auto max-w-md space-y-6" wire:poll.5s="refreshToken">
-    <x-page-header :title="'QR presensi · '.$session->studyGroup->name" subtitle="Kode berganti tiap 30 detik. Siswa memindai dari akunnya sendiri.">
+    <x-page-header :title="'QR presensi · '.$session->studyGroup->name" subtitle="Kode berganti tiap 30 detik. Mahasiswa memindai dari akunnya sendiri.">
         <x-slot:actions>
             <x-button :href="route('attendance.mark', $session)" wire:navigate variant="secondary" icon="arrow-left">Kembali</x-button>
         </x-slot:actions>
@@ -12,6 +12,6 @@
     </x-card>
 
     <x-card>
-        <x-progress label="Sudah memindai" :value="$presentCount" :max="$total" empty="Belum ada siswa di rombel ini" />
+        <x-progress label="Sudah memindai" :value="$presentCount" :max="$total" empty="Belum ada mahasiswa di kelas ini" />
     </x-card>
 </div>

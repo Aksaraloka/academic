@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AcademicTerm;
+use App\Models\Program;
 use App\Models\Student;
 use App\Models\StudyGroup;
 use Illuminate\Support\Facades\DB;
@@ -13,10 +14,10 @@ class StudentImporter
     /**
      * @var array<int, string>
      */
-    public const COLUMNS = ['nis', 'nisn', 'nama', 'jenis_kelamin', 'tanggal_lahir', 'alamat', 'telepon', 'rombel'];
+    public const COLUMNS = ['nim', 'nama', 'jenis_kelamin', 'tanggal_lahir', 'alamat', 'telepon', 'prodi', 'angkatan', 'kelas'];
 
     /**
-     * Baca CSV, validasi tiap baris (duplikat NIS dalam berkas dan di database), dan kembalikan pratinjau (A-04).
+     * Baca CSV, validasi tiap baris (duplikat NIM dalam berkas dan di database), dan kembalikan pratinjau (A-04).
      *
      * @return array{valid: array<int, array<string, mixed>>, errors: array<int, array{row: int, message: string}>}
      */
@@ -29,7 +30,7 @@ class StudentImporter
 
         $header = array_map(fn ($cell) => strtolower(trim((string) preg_replace('/^\xEF\xBB\xBF/', '', (string) $cell))), fgetcsv($handle, 0, $delimiter) ?: []);
 
-        $existing = Student::query()->pluck('nis')->filter()->flip();
+        $existing = Student::query()->pluck('nim')->filter()->flip();
         $seen = [];
         $valid = [];
         $errors = [];
@@ -48,11 +49,11 @@ class StudentImporter
             }
 
             $validator = Validator::make($row, [
-                'nis' => ['required', 'max:30'],
+                'nim' => ['required', 'max:30'],
                 'nama' => ['required', 'max:255'],
                 'jenis_kelamin' => ['nullable', 'in:L,P'],
                 'tanggal_lahir' => ['nullable', 'date'],
-            ], [], ['nis' => 'NIS', 'nama' => 'nama', 'jenis_kelamin' => 'jenis kelamin', 'tanggal_lahir' => 'tanggal lahir']);
+            ], [], ['nim' => 'NIM', 'nama' => 'nama', 'jenis_kelamin' => 'jenis kelamin', 'tanggal_lahir' => 'tanggal lahir']);
 
             if ($validator->fails()) {
                 $errors[] = ['row' => $line, 'message' => $validator->errors()->first()];
@@ -60,19 +61,19 @@ class StudentImporter
                 continue;
             }
 
-            if ($existing->has($row['nis'])) {
-                $errors[] = ['row' => $line, 'message' => "NIS {$row['nis']} sudah terdaftar."];
+            if ($existing->has($row['nim'])) {
+                $errors[] = ['row' => $line, 'message' => "NIM {$row['nim']} sudah terdaftar."];
 
                 continue;
             }
 
-            if (isset($seen[$row['nis']])) {
-                $errors[] = ['row' => $line, 'message' => "NIS {$row['nis']} duplikat dengan baris {$seen[$row['nis']]}."];
+            if (isset($seen[$row['nim']])) {
+                $errors[] = ['row' => $line, 'message' => "NIM {$row['nim']} duplikat dengan baris {$seen[$row['nim']]}."];
 
                 continue;
             }
 
-            $seen[$row['nis']] = $line;
+            $seen[$row['nim']] = $line;
             $valid[] = $row;
         }
 
@@ -82,7 +83,7 @@ class StudentImporter
     }
 
     /**
-     * Simpan baris valid dan tempatkan ke rombel bila kolom `rombel` diisi dan rombelnya ada.
+     * Simpan baris valid dan tempatkan ke kelas bila kolom `kelas` diisi dan rombelnya ada.
      *
      * @param  array<int, array<string, mixed>>  $rows
      */
@@ -93,11 +94,14 @@ class StudentImporter
             ? StudyGroup::query()->where('academic_term_id', $term->id)->get()->keyBy(fn (StudyGroup $group) => mb_strtolower($group->name))
             : collect();
 
-        return DB::transaction(function () use ($rows, $groups): int {
+        $programs = Program::query()->get()->keyBy(fn ($program) => mb_strtolower($program->name));
+
+        return DB::transaction(function () use ($rows, $groups, $programs): int {
             foreach ($rows as $row) {
                 $student = Student::create([
-                    'nis' => $row['nis'],
-                    'nisn' => ($row['nisn'] ?? '') ?: null,
+                    'nim' => $row['nim'],
+                    'program_id' => $programs->get(mb_strtolower((string) ($row['prodi'] ?? '')))?->id,
+                    'batch_year' => (int) ($row['angkatan'] ?? 0) ?: null,
                     'name' => $row['nama'],
                     'gender' => ($row['jenis_kelamin'] ?? '') ?: null,
                     'birth_date' => ($row['tanggal_lahir'] ?? '') ?: null,
@@ -107,7 +111,7 @@ class StudentImporter
                     'entry_date' => today(),
                 ]);
 
-                $group = $groups->get(mb_strtolower((string) ($row['rombel'] ?? '')));
+                $group = $groups->get(mb_strtolower((string) ($row['kelas'] ?? '')));
 
                 $group?->members()->create(['student_id' => $student->id, 'joined_at' => today()]);
             }
@@ -118,6 +122,6 @@ class StudentImporter
 
     public static function template(): string
     {
-        return implode(',', self::COLUMNS)."\n".'1001,0012345678,Contoh Siswa,L,2012-05-20,Jl. Mawar 1,08123456789,7A'."\n";
+        return implode(',', self::COLUMNS)."\n".'2410001,Contoh Mahasiswa,L,2005-05-20,Jl. Mawar 1,08123456789,Teknik Informatika,2024,TI-2024-A'."\n";
     }
 }

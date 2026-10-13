@@ -21,7 +21,7 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 
 /**
- * Siapkan sekolah dengan satu rombel berisi tiga siswa dan satu jadwal hari ini.
+ * Siapkan kampus dengan satu kelas berisi tiga mahasiswa dan satu jadwal hari ini.
  *
  * @return array{tenant: Tenant, teacher: Teacher, user: User, group: StudyGroup, students: Collection, schedule: Schedule}
  */

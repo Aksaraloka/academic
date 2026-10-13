@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\AttendanceStatus;
 use App\Enums\Role;
+use App\Enums\TenantLevel;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -58,13 +60,23 @@ class User extends Authenticatable
         return in_array($this->role, $roles, true);
     }
 
+    /**
+     * Status kehadiran yang dipakai institusi pengguna (kampus tidak memakai Terlambat).
+     *
+     * @return array<int, AttendanceStatus>
+     */
+    public function attendanceStatuses(): array
+    {
+        return AttendanceStatus::forLevel($this->tenant?->level ?? TenantLevel::Campus);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === Role::Admin;
     }
 
     /**
-     * Wali kelas: guru yang menjadi wali minimal satu rombel pada tahun ajaran aktif.
+     * Dosen wali: dosen yang menjadi wali minimal satu kelas pada tahun ajaran aktif.
      */
     public function isHomeroomTeacher(): bool
     {

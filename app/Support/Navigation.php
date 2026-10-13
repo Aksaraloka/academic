@@ -17,11 +17,12 @@ class Navigation
         $items = match ($user->role) {
             Role::Admin => [
                 self::item('Beranda', 'dashboard', 'home'),
-                self::item('Siswa', 'students.index', 'users', 'students.*'),
+                self::item('Mahasiswa', 'students.index', 'users', 'students.*'),
                 self::item('Presensi', 'attendance.index', 'clipboard-document-check', 'attendance.*'),
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
-                self::item('Guru', 'teachers.index', 'identification', 'teachers.*'),
-                self::item('Rombel', 'groups.index', 'user-group', 'groups.*'),
+                self::item('Dosen', 'teachers.index', 'identification', 'teachers.*'),
+                self::item('Kelas', 'groups.index', 'user-group', 'groups.*'),
+                self::item('Prodi', 'programs.index', 'building-library', 'programs.*'),
                 self::item('Rekap', 'reports.index', 'chart-bar', 'reports.*'),
                 self::item('Izin', 'leaves.index', 'envelope', 'leaves.*'),
             ],
@@ -36,7 +37,7 @@ class Navigation
             Role::Curriculum => [
                 self::item('Beranda', 'dashboard', 'home'),
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
-                self::item('Rombel', 'groups.index', 'user-group', 'groups.*'),
+                self::item('Kelas', 'groups.index', 'user-group', 'groups.*'),
                 self::item('Rekap', 'reports.index', 'chart-bar', 'reports.*'),
                 self::item('Check-in', 'checkin', 'map-pin'),
             ],

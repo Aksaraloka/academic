@@ -18,7 +18,7 @@
     <x-page-header title="Check-in" :subtitle="now()->translatedFormat('l, j F Y')" />
 
     @unless ($hasProfile)
-        <x-card><x-empty-state icon="identification" title="Akunmu belum tertaut ke data guru" description="Minta admin menautkan akunmu agar bisa check-in." /></x-card>
+        <x-card><x-empty-state icon="identification" title="Akunmu belum tertaut ke data dosen" description="Minta admin menautkan akunmu agar bisa check-in." /></x-card>
     @else
         <x-card>
             <div class="flex items-center gap-3">
@@ -60,7 +60,7 @@
                 @endif
             </div>
 
-            <p class="mt-4 text-xs text-text-muted">Lokasi hanya dibaca saat kamu menekan tombol, tidak dilacak terus-menerus. Check-in berhasil bila kamu berada dalam radius {{ $tenant->setting('geofence_radius') }} m dari sekolah.</p>
+            <p class="mt-4 text-xs text-text-muted">Lokasi hanya dibaca saat kamu menekan tombol, tidak dilacak terus-menerus. Check-in berhasil bila kamu berada dalam radius {{ $tenant->setting('geofence_radius') }} m dari kampus.</p>
         </x-card>
     @endunless
 </div>

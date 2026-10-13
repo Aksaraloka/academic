@@ -7,12 +7,12 @@
         <section aria-labelledby="ringkasan" class="space-y-3">
             <h2 id="ringkasan" class="sr-only">Ringkasan hari ini</h2>
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <x-stat-tile label="Kehadiran siswa hari ini" :value="$overview['percent'] === null ? '–' : $overview['percent'].'%'"
-                    :note="$overview['percent'] === null ? 'Belum ada presensi' : $overview['present'].' dari '.$overview['total'].' siswa'" />
-                <x-stat-tile label="Kelas belum diisi" :value="$overview['unfilled']"
+                <x-stat-tile label="Kehadiran mahasiswa hari ini" :value="$overview['percent'] === null ? '–' : $overview['percent'].'%'"
+                    :note="$overview['percent'] === null ? 'Belum ada presensi' : $overview['present'].' dari '.$overview['total'].' mahasiswa'" />
+                <x-stat-tile label="Pertemuan belum diisi" :value="$overview['unfilled']"
                     :note="$overview['unfilled'] > 0 ? 'Perlu ditindaklanjuti' : 'Semua sudah terisi'"
                     :tone="$overview['unfilled'] > 0 ? 'text-warning' : 'text-success'" />
-                <x-stat-tile class="col-span-2 sm:col-span-1" label="Guru belum check-in" :value="$notCheckedIn->count()"
+                <x-stat-tile class="col-span-2 sm:col-span-1" label="Dosen belum check-in" :value="$notCheckedIn->count()"
                     :note="$notCheckedIn->count() > 0 ? 'Cek daftar di bawah' : 'Semua sudah check-in'"
                     :tone="$notCheckedIn->count() > 0 ? 'text-warning' : 'text-success'" />
             </div>
@@ -67,8 +67,8 @@
                     <div class="min-w-0 flex-1">
                         <p class="truncate text-sm font-medium">{{ $schedule->assignment->subject->name }} · {{ $schedule->assignment->studyGroup->name }}</p>
                         <p class="truncate text-xs text-text-muted">
-                            Jam ke-{{ $schedule->timeSlot->period_number }} · {{ $schedule->timeSlot->timeRange() }}@if ($schedule->room) · {{ $schedule->room->name }}@endif
-                            @if ($override) · <span class="font-semibold text-warning">{{ $override->status === 'kosong' ? 'Jam kosong' : 'Guru pengganti: '.$override->substituteTeacher?->name }}</span>@endif
+                            Sesi ke-{{ $schedule->timeSlot->period_number }} · {{ $schedule->timeSlot->timeRange() }}@if ($schedule->room) · {{ $schedule->room->name }}@endif
+                            @if ($override) · <span class="font-semibold text-warning">{{ $override->status === 'kosong' ? 'Sesi kosong' : 'Dosen pengganti: '.$override->substituteTeacher?->name }}</span>@endif
                         </p>
                     </div>
                     @if (isset($sessions))
@@ -93,7 +93,7 @@
     @endif
 
     @if (isset($homeroomGroups) && $homeroomGroups->isNotEmpty())
-        <x-card title="Kelas binaan saya" :padding="false">
+        <x-card title="Kelas perwalian saya" :padding="false">
             <ul class="divide-y divide-border">
                 @foreach ($homeroomGroups as $homeroom)
                     <li class="flex min-h-14 items-center gap-3 px-4 py-2.5 hover:bg-surface-muted">
@@ -110,7 +110,7 @@
         <x-card title="Kehadiranku">
             <x-progress label="Kehadiran" :value="$summary['counts']['hadir'] + $summary['counts']['terlambat']" :max="$summary['total']" empty="Belum ada presensi" />
             <div class="mt-4 flex flex-wrap gap-2">
-                @foreach (\App\Enums\AttendanceStatus::cases() as $status)
+                @foreach (auth()->user()->attendanceStatuses() as $status)
                     <x-status-badge :status="$status" /> <span class="mr-2 text-sm font-semibold tabular-nums">{{ $summary['counts'][$status->value] }}</span>
                 @endforeach
             </div>
@@ -137,7 +137,7 @@
                     <div class="mt-4"><x-progress label="Kehadiran semester" :value="$summaries[$child->id]['counts']['hadir'] + $summaries[$child->id]['counts']['terlambat']" :max="$summaries[$child->id]['total']" /></div>
                 </x-card>
             @empty
-                <x-empty-state icon="user-group" title="Belum ada anak yang tertaut" description="Minta admin sekolah menautkan akunmu ke data anak." />
+                <x-empty-state icon="user-group" title="Belum ada anak yang tertaut" description="Minta admin kampus menautkan akunmu ke data anak." />
             @endforelse
         </section>
     @endif

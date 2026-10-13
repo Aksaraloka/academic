@@ -24,7 +24,6 @@ class Tenant extends Model
         'geofence_radius' => 100,
         'checkin_opens' => '05:30',
         'checkin_closes' => '16:00',
-        'late_after' => '07:15',
         'absent_threshold' => 3,
         'min_attendance_percent' => 75,
     ];

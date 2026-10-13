@@ -21,7 +21,7 @@
             <h2 class="text-3xl font-bold leading-tight">Satu data induk, presensi selesai kurang dari semenit.</h2>
             <p class="mt-3 text-base opacity-90">Jadwal tanpa bentrok, presensi kelas lewat beberapa ketukan, dan orang tua langsung tahu kabar anaknya.</p>
         </div>
-        <p class="relative mt-6 text-sm opacity-80 lg:mt-0">Sistem informasi akademik dan presensi untuk sekolah dan kampus.</p>
+        <p class="relative mt-6 text-sm opacity-80 lg:mt-0">Sistem informasi akademik dan presensi untuk kampus dan kampus.</p>
     </section>
     <section class="flex items-center justify-center px-4 py-10 sm:px-6">
         <div class="w-full max-w-md">

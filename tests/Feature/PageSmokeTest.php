@@ -14,12 +14,12 @@ it('renders every page for its intended roles with seeded data', function (strin
         $this->actingAs($user)->get($path)->assertOk();
     }
 })->with([
-    'admin' => ['admin@aksaraloka.test', ['/beranda', '/siswa', '/siswa/baru', '/siswa/impor', '/guru', '/rombel', '/jadwal', '/jadwal/atur', '/presensi', '/rekap', '/izin']],
-    'principal' => ['kepsek@aksaraloka.test', ['/beranda', '/presensi', '/rekap', '/check-in', '/jadwal', '/izin']],
-    'curriculum' => ['kurikulum@aksaraloka.test', ['/beranda', '/jadwal', '/jadwal/atur', '/rombel', '/rekap', '/check-in']],
-    'teacher' => ['guru@aksaraloka.test', ['/beranda', '/jadwal', '/presensi', '/check-in', '/rekap', '/izin']],
-    'duty' => ['piket@aksaraloka.test', ['/beranda', '/presensi', '/check-in', '/jadwal']],
-    'student' => ['siswa@aksaraloka.test', ['/beranda', '/jadwal', '/pindai', '/rekap']],
+    'admin' => ['admin@aksaraloka.test', ['/beranda', '/mahasiswa', '/mahasiswa/baru', '/mahasiswa/impor', '/dosen', '/prodi', '/kelas', '/jadwal', '/jadwal/atur', '/presensi', '/rekap', '/izin']],
+    'principal' => ['kaprodi@aksaraloka.test', ['/beranda', '/presensi', '/rekap', '/check-in', '/jadwal', '/izin']],
+    'curriculum' => ['akademik@aksaraloka.test', ['/beranda', '/jadwal', '/jadwal/atur', '/kelas', '/rekap', '/check-in']],
+    'teacher' => ['dosen@aksaraloka.test', ['/beranda', '/jadwal', '/presensi', '/check-in', '/rekap', '/izin']],
+    'duty' => ['petugas@aksaraloka.test', ['/beranda', '/presensi', '/check-in', '/jadwal']],
+    'student' => ['mahasiswa@aksaraloka.test', ['/beranda', '/jadwal', '/pindai', '/rekap']],
     'guardian' => ['ortu@aksaraloka.test', ['/beranda', '/jadwal', '/rekap']],
 ]);
 
