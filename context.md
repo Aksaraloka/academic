@@ -6,7 +6,7 @@ Catatan untuk siapa pun (manusia atau asisten AI) yang melanjutkan proyek ini. I
 
 Sistem informasi akademik dan presensi **universitas** (bukan sekolah), mobile-first, berbahasa Indonesia. Dibangun dari PRD "Aksaraloka Academic (+ Presensi)" yang awalnya menulis SMP/SMA/kampus; **arah akhirnya universitas saja**, jadi seluruh istilah dan data contoh memakai konteks kampus.
 
-Stack: Laravel 13, Livewire 4 (komponen kelas), Alpine, Tailwind v4, GSAP lazy, Pest, dompdf. Dev di Laravel Herd (`http://academic.test`), SQLite.
+Stack: Laravel 13, Livewire 4 (komponen kelas), Alpine, Tailwind v4, GSAP lazy, Pest, dompdf. Dev di Laravel Herd (`http://academic.test`); `.env.example` memakai SQLite, tetapi `.env` lokal bisa memakai MySQL, jadi jangan menulis migrasi atau kueri yang hanya jalan di satu mesin.
 
 ## Keputusan produk yang sudah final
 
@@ -22,6 +22,9 @@ Stack: Laravel 13, Livewire 4 (komponen kelas), Alpine, Tailwind v4, GSAP lazy, 
 - **KRS:** `enrollments` (satu per mahasiswa per semester; status draft, submitted, approved, rejected) dan `enrollment_items` (ke `teaching_assignments`). Edit hanya sah saat `AcademicCalendar::isOpen(Enrollment)`; batas SKS dari IPS semester sebelumnya (`EnrollmentService::CREDIT_LIMITS`). KRS **disetujui** menambah mahasiswa ke `GradingService::roster()`. Jadwal dan presensi belum mengikuti KRS (masih per kelas angkatan).
 - **Tugas akhir:** `theses` (status `ThesisStatus`: proposed, rejected, supervised, defense_requested, defense_scheduled, completed), `thesis_supervisors` (primary/secondary), `thesis_guidance_logs` (dibuat mahasiswa, diverifikasi pembimbing), `thesis_defenses` (ketua dan penguji, hasil). Maju sidang butuh log terverifikasi (`thesis_min_guidance`), SKS (`thesis_min_credits_defense`), dan persetujuan pembimbing utama (`defense_consent_at`). Tidak lulus mengosongkan persetujuan.
 - **Yudisium:** `yudisiums` + `graduation_decisions` (snapshot SKS, IPK, predikat, hasil cek). `YudisiumService::evaluate()` adalah satu-satunya tempat aturan lulus; hasilnya dipakai halaman staf, halaman mahasiswa, dan `finalize()` (yang menetapkan `students.status = lulus`, `graduated_on`, `graduation_predicate`). Wisuda (`GraduationService::register`) mewajibkan keputusan yudisium dan mengambil judul/tanggal sidang dari tugas akhir. Cek kurikulum wajib semua lulus belum dimasukkan.
+- **Layanan mandiri:** `letter_requests` (`LetterType`: aktif kuliah dan transkrip sementara terbit otomatis; rekomendasi dan izin penelitian menunggu persetujuan staf). Saat terbit, `LetterService::issue()` memberi nomor (`NNN/KODE/AKD/BULAN-ROMAWI/TAHUN`, urut per jenis per tahun), kode verifikasi acak, dan `snapshot` data mahasiswa; PDF dicetak dari snapshot itu, bukan dari data terkini. QR dibuat `App\Support\QrCode` (encoder sendiri, mode byte level M, maks 213 byte) menuju `/verify/{code}` yang publik dan hanya menampilkan NIM tersamar. `student_activities` (organisasi, kepanitiaan, prestasi, sertifikat, pengabdian) diverifikasi staf dengan poin; rekap SKPI hanya memuat yang terverifikasi. `scholarships` dan `scholarship_applications` (kuota dicek saat menerima, snapshot IPK saat mendaftar). `internships` (magang/MBKM; disetujui staf dengan dosen pembimbing, ditutup dengan nilai akhir) lalu `credit_conversions` dan `credit_conversion_items`: konversi yang **disetujui** ikut dihitung `AcademicRecord::transcript()` (kunci `converted`, ikut SKS lulus, IPK, dan cek yudisium). Mata kuliah yang sudah bernilai terkunci tidak bisa dikonversi. Pengaturan: `letter_signatory_*`, `internship_min_credits`, `conversion_max_credits`.
+- **Yudisium untuk dosen:** rute dan halaman yudisium terbuka bagi `teacher` secara hanya-baca; aksi tulis (buat, pilih calon, tetapkan) dan PDF tetap khusus admin, Kaprodi, dan wakil dekan (`YudisiumService::isManager`).
+- **EDOM dari sisi mahasiswa:** menu *Evaluasi dosen* disembunyikan dari sidebar karena EDOM akan menjadi survey; halaman `/my-evaluations` masih ada.
 - **Ujian:** `exam_schedules` per `teaching_assignment` dan jenis (`ExamType`: midterm/final), dibuat massal per mata kuliah. Tanggal divalidasi terhadap agenda UTS/UAS di `academic_events`. Kelayakan kartu: `ExamService::verdict()` (kehadiran >= `min_attendance_percent` per kuliah, status aktif, dan `FinanceService::krsClearance`). Kehadiran dihitung dari pertemuan yang sudah dipresensi, bukan dari `meetings_per_course`.
 - **EDOM:** `evaluation_periods` (satu per semester) memakai satu `surveys` berkategori evaluasi_dosen; jawaban di `survey_responses` dengan `teaching_assignment_id`, `user_id` selalu null, dan `respondent_hash` = HMAC(survey, kelas, user) sebagai satu-satunya penanda sudah mengisi (dipakai juga untuk syarat melihat nilai, `EvaluationService::gradeGate`). Rekap disembunyikan di bawah `EvaluationService::MIN_RESPONSES`.
 - **Jurnal/BAP:** `class_journals` satu per `attendance_sessions` (hanya sesi berjadwal); nomor pertemuan dihitung dari urutan sesi, bukan disimpan manual.
@@ -37,13 +40,14 @@ Stack: Laravel 13, Livewire 4 (komponen kelas), Alpine, Tailwind v4, GSAP lazy, 
 - **Nilai awal:** `students.legacy_credits` dan `legacy_quality_points` menampung riwayat sebelum sistem dipakai (mahasiswa pindahan atau migrasi) dan ikut IPK dan SKS lulus.
 - **Wisuda:** SKS lulus dan IPK **tidak lagi diisi manual**; `GraduationService::eligibility()` mengambilnya dari transkrip dan menyimpan snapshot pada pendaftaran.
 - **Beranda (`/home`) = berita kampus** (banner + grid kartu), bukan dashboard. Dashboard harian ada di `/summary`, **tanpa menu di sidebar** (sengaja dihapus dari navigasi atas permintaan pemilik produk; halamannya tetap ada).
-- **Halaman lebar penuh:** Beranda dan Jadwal memakai `#[Layout('layouts.app', ['fullWidth' => true])]`; halaman lain dibatasi `max-w-6xl`.
+- **Lebar halaman:** semua halaman aplikasi lebar penuh (`layouts.app` tidak lagi membatasi `max-w-6xl`, dan pembungkus `mx-auto max-w-*` per halaman sudah dihapus). Opsi `fullWidth` pada `#[Layout]` masih ada tetapi tidak berefek. Halaman masuk dan verifikasi surat berdiri sendiri dan tetap sempit.
+- **Sidebar berkategori:** `Navigation::for()` menandai tiap menu dengan `section` (Utama, Akademik, Layanan, Lainnya) lewat `withSections()`, dan layout menampilkan judul kategori saat kategori berganti. Empat menu pertama (Utama) tetap menjadi bar bawah HP. Menu keuangan mahasiswa bernama **Biaya Pendidikan** (bukan lagi "Aksaraloka Pay"); halamannya memakai ringkasan `x-stat-tile` dan tab bergaris bawah sesuai design system, bukan meniru contoh kampus lain.
 
 ## Model data dan multi-tenant
 
 - Hampir semua tabel punya `tenant_id`. Trait `App\Models\Concerns\BelongsToTenant` memasang `TenantScope` (membatasi query ke kampus pengguna yang login) dan mengisi `tenant_id` saat membuat record **hanya bila ada pengguna login**. Di seeder, tes, dan konsol, **isi `tenant_id` secara eksplisit**.
 - Tabel memakai satu skema; pemisahan schema PostgreSQL di PRD (`core`, `academic`, `attend`) belum dilakukan.
-- `Tenant::DEFAULT_SETTINGS` menyimpan bawaan pengaturan kampus; belum ada layar untuk mengubahnya.
+- `Tenant::DEFAULT_SETTINGS` menyimpan bawaan pengaturan kampus; admin mengubahnya di `/settings/campus` (`Settings\Campus`). Kunci baru harus ditambahkan di tiga tempat: `DEFAULT_SETTINGS`, properti/aturan/simpan di `Campus.php`, dan view-nya.
 - Peran: `admin`, `principal` (Kaprodi/Pimpinan), `curriculum` (Wakil dekan akademik), `teacher`, `duty` (Petugas presensi), `student`, `guardian`. "Dosen wali" adalah status kontekstual (`StudyGroup.homeroom_teacher_id`), bukan peran.
 - Jadwal dan deteksi bentrok **dibatasi per semester** (`academic_term_id`); jangan membandingkan jadwal lintas semester.
 
@@ -70,4 +74,4 @@ Stack: Laravel 13, Livewire 4 (komponen kelas), Alpine, Tailwind v4, GSAP lazy, 
 
 ## Yang belum ada
 
-**ganti kata sandi dari profil** dan reset oleh admin; presensi offline; notifikasi WhatsApp otomatis; impor Excel dan ekspor Dapodik/PDDikti; foto profil; pemisahan schema PostgreSQL.
+**ganti kata sandi dari profil** dan reset oleh admin; pencabutan surat yang sudah terbit; SKPI bernomor dan ber-QR; presensi offline; notifikasi WhatsApp otomatis; impor Excel dan ekspor Dapodik/PDDikti; foto profil; pemisahan schema PostgreSQL.

@@ -14,7 +14,7 @@ class Navigation
      */
     public static function for(User $user): array
     {
-        $items = match ($user->role) {
+        $baseItems = match ($user->role) {
             Role::Admin => [
                 self::item('Beranda', 'dashboard', 'home'),
                 self::item('Mahasiswa', 'students.index', 'users', 'students.*'),
@@ -74,12 +74,14 @@ class Navigation
             ],
         };
 
+        $items = array_map(fn (array $item): array => $item + ['section' => 'Utama'], $baseItems);
+
         if ($grades = self::gradesChildren($user)) {
             $items[] = ['label' => 'Nilai', 'icon' => 'check-badge', 'match' => 'grades.*', 'children' => $grades];
         }
 
         if ($user->hasRole(Role::Student, Role::Guardian)) {
-            $items[] = self::item('Aksaraloka Pay', 'pay.index', 'credit-card', 'pay.*');
+            $items[] = self::item('Biaya Pendidikan', 'pay.index', 'credit-card', 'pay.*');
         } elseif ($user->hasRole(Role::Admin, Role::Finance, Role::Principal)) {
             $items[] = self::item('Keuangan', 'finance.index', 'banknotes', 'finance.*');
         }
@@ -90,6 +92,15 @@ class Navigation
                 'icon' => 'academic-cap',
                 'match' => ['thesis.*', 'yudisium.*'],
                 'children' => $thesisChildren,
+            ];
+        }
+
+        if ($serviceChildren = self::serviceChildren($user)) {
+            $items[] = [
+                'label' => 'Layanan Mandiri',
+                'icon' => 'envelope',
+                'match' => ['letters.*', 'activities.*', 'scholarships.*', 'internships.*', 'conversions.*'],
+                'children' => $serviceChildren,
             ];
         }
 
@@ -133,7 +144,7 @@ class Navigation
         ];
         $items[] = self::item('Masukan', 'feedback.index', 'chat-bubble-left-right', 'feedback.*');
 
-        return $items;
+        return self::withSections($items);
     }
 
     /**
@@ -148,10 +159,60 @@ class Navigation
                 self::item('Tugas akhir', 'thesis.mine', 'document-text'),
                 self::item('Status kelulusan', 'yudisium.mine', 'check-badge'),
             ],
-            Role::Teacher => [self::item('Bimbingan tugas akhir', 'thesis.index', 'document-text', 'thesis.*')],
+            Role::Teacher => [
+                self::item('Bimbingan tugas akhir', 'thesis.index', 'document-text', 'thesis.*'),
+                self::item('Yudisium', 'yudisium.index', 'check-badge', 'yudisium.*'),
+            ],
             Role::Admin, Role::Principal, Role::Curriculum => [
                 self::item('Tugas akhir', 'thesis.index', 'document-text', 'thesis.*'),
                 self::item('Yudisium', 'yudisium.index', 'check-badge', 'yudisium.*'),
+            ],
+            default => [],
+        };
+    }
+
+    /**
+     * Kelompokkan menu ke kategori sidebar (Utama, Akademik, Layanan, Lainnya) dengan urutan stabil.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    private static function withSections(array $items): array
+    {
+        $sections = [
+            'Nilai' => 'Akademik', 'Akademik' => 'Akademik', 'Ujian & Evaluasi' => 'Akademik', 'Tugas Akhir & Kelulusan' => 'Akademik',
+            'Layanan Mandiri' => 'Layanan', 'Biaya Pendidikan' => 'Layanan', 'Keuangan' => 'Layanan',
+        ];
+        $order = ['Utama' => 0, 'Akademik' => 1, 'Layanan' => 2, 'Lainnya' => 3];
+
+        $items = array_map(fn (array $item): array => ['section' => $item['section'] ?? $sections[$item['label']] ?? 'Lainnya'] + $item, $items);
+        usort($items, fn (array $a, array $b): int => $order[$a['section']] <=> $order[$b['section']]);
+
+        return $items;
+    }
+
+    /**
+     * Submenu Layanan Mandiri: surat, aktivitas/SKPI, beasiswa, magang/MBKM, dan konversi SKS menurut peran.
+     *
+     * @return array<int, array{label: string, route: string, icon: string, match: string}>
+     */
+    private static function serviceChildren(User $user): array
+    {
+        return match ($user->role) {
+            Role::Student => [
+                self::item('Permohonan surat', 'letters.mine', 'envelope'),
+                self::item('Aktivitas & SKPI', 'activities.mine', 'star'),
+                self::item('Beasiswa', 'scholarships.mine', 'heart'),
+                self::item('Magang & MBKM', 'internships.mine', 'building-office'),
+                self::item('Konversi SKS', 'conversions.mine', 'arrow-path'),
+            ],
+            Role::Teacher => [self::item('Bimbingan magang & MBKM', 'internships.index', 'building-office', 'internships.*')],
+            Role::Admin, Role::Principal, Role::Curriculum => [
+                self::item('Permohonan surat', 'letters.index', 'envelope', 'letters.*'),
+                self::item('Verifikasi aktivitas', 'activities.index', 'star', 'activities.*'),
+                self::item('Beasiswa', 'scholarships.manage', 'heart', 'scholarships.*'),
+                self::item('Magang & MBKM', 'internships.index', 'building-office', 'internships.*'),
+                self::item('Konversi SKS', 'conversions.index', 'arrow-path', 'conversions.*'),
             ],
             default => [],
         };
@@ -167,7 +228,6 @@ class Navigation
         return match ($user->role) {
             Role::Student => [
                 self::item('Kartu ujian', 'exams.card', 'identification'),
-                self::item('Evaluasi dosen', 'evaluations.mine', 'chart-bar', 'evaluations.mine'),
                 self::item('Jurnal kuliah', 'journals.index', 'clipboard-document-list', 'journals.*'),
             ],
             Role::Guardian => [self::item('Kartu ujian', 'exams.card', 'identification')],

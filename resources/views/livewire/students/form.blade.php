@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-3xl space-y-6">
+<div class="space-y-6">
     <x-page-header :title="$student ? 'Ubah mahasiswa' : 'Tambah mahasiswa'" />
 
     <form wire:submit="save" class="space-y-4">
@@ -106,7 +106,7 @@
                 <x-field label="Tanggal masuk" name="entry_date">
                     <input id="entry_date" type="date" wire:model="entry_date" class="input">
                 </x-field>
-                <x-field label="Golongan UKT" name="ukt_group" hint="Menentukan tarif UKT di Aksaraloka Pay.">
+                <x-field label="Golongan UKT" name="ukt_group" hint="Menentukan tarif UKT di Biaya Pendidikan.">
                     <select id="ukt_group" wire:model="ukt_group" class="input">
                         <option value="">Belum ditetapkan</option>
                         @foreach (range(1, 8) as $group)<option value="{{ $group }}">Golongan {{ $group }}</option>@endforeach

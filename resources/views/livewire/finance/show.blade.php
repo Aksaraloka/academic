@@ -1,5 +1,5 @@
 @php $rp = fn ($value) => \App\Services\FinanceService::rupiah($value); $open = $invoice->status !== \App\Enums\InvoiceStatus::Paid && $invoice->status !== \App\Enums\InvoiceStatus::Cancelled; @endphp
-<div class="mx-auto max-w-4xl space-y-6">
+<div class="space-y-6">
     <x-page-header :title="$invoice->number" :subtitle="$invoice->student->name.' · '.$invoice->student->nim">
         <x-slot:actions>
             <x-button :href="route('finance.index', ['term' => $invoice->academic_term_id])" wire:navigate variant="secondary" icon="arrow-left">Keuangan</x-button>

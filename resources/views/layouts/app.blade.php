@@ -34,6 +34,12 @@
         </div>
         <nav class="flex-1 space-y-1 overflow-y-auto p-3">
             @foreach ($items as $item)
+                @if ($loop->first || $items[$loop->index - 1]['section'] !== $item['section'])
+                    @if ($item['section'] !== 'Utama')
+                        <p x-show="!collapsed" class="px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wide text-text-muted">{{ $item['section'] }}</p>
+                        <div x-show="collapsed" class="mx-3 my-2 border-t border-border" aria-hidden="true"></div>
+                    @endif
+                @endif
                 @if (isset($item['children']))
                     @php $groupActive = request()->routeIs(...(array) $item['match']); @endphp
                     <div x-data="{ open: {{ $groupActive ? 'true' : 'false' }} }">
@@ -120,7 +126,7 @@
             </div>
         </header>
 
-        <main id="konten" class="mx-auto w-full {{ ($fullWidth ?? false) ? 'max-w-none' : 'max-w-6xl' }} space-y-6 px-4 py-6 pb-28 sm:px-6 lg:pb-10">
+        <main id="konten" class="w-full space-y-6 px-4 py-6 pb-28 sm:px-6 lg:pb-10">
             {{ $slot }}
         </main>
     </div>

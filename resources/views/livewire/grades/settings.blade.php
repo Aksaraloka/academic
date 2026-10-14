@@ -1,5 +1,5 @@
 @php $letters = ['A' => 'A (angka mutu 4)', 'B' => 'B (angka mutu 3)', 'C' => 'C (angka mutu 2)', 'D' => 'D (angka mutu 1)']; @endphp
-<div class="mx-auto max-w-4xl space-y-6">
+<div class="space-y-6">
     <x-page-header title="Pengaturan nilai" subtitle="Bobot bawaan, skala huruf mutu, dan remedial.">
         <x-slot:actions>
             <x-button :href="route('grades.completeness')" wire:navigate variant="secondary" icon="arrow-left">Kelengkapan nilai</x-button>

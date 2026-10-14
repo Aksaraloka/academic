@@ -1,8 +1,9 @@
 <div class="space-y-6">
-    <x-page-header title="Yudisium" subtitle="Penetapan kelulusan: syarat dicek otomatis dari transkrip, lalu predikat kelulusan ditentukan.">
+    <x-page-header title="Yudisium" :subtitle="$canManage ? 'Penetapan kelulusan: syarat dicek otomatis dari transkrip, lalu predikat kelulusan ditentukan.' : 'Daftar yudisium dan mahasiswa yang dinyatakan lulus (hanya lihat).'">
         <x-slot:actions><x-button :href="route('thesis.index')" wire:navigate variant="secondary" icon="academic-cap">Tugas akhir</x-button></x-slot:actions>
     </x-page-header>
 
+    @if ($canManage)
     <form wire:submit="create">
         <x-card title="Yudisium baru">
             <div class="grid gap-4 sm:grid-cols-3">
@@ -13,6 +14,7 @@
             <div class="mt-4"><x-button type="submit" icon="plus" wire:loading.attr="disabled" wire:target="create">Buat yudisium</x-button></div>
         </x-card>
     </form>
+    @endif
 
     <x-card :padding="false">
         @forelse ($yudisiums as $yudisium)

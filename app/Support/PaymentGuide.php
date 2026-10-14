@@ -79,7 +79,7 @@ class PaymentGuide
                 ? "Pilih transfer sesama {$info['name']} (rekening tujuan juga di {$target})."
                 : "Pilih transfer antarbank, lalu pilih bank tujuan {$target} (BI-FAST dianjurkan karena dana masuk seketika; kode bank bisa dilihat di daftar bank pada aplikasi).",
             "Masukkan nomor rekening tujuan {$account} atas nama {$holder}.",
-            'Isi nominal persis sesuai tagihan di Aksaraloka Pay, tanpa pembulatan.',
+            'Isi nominal persis sesuai tagihan di Biaya Pendidikan, tanpa pembulatan.',
             'Isi berita atau keterangan dengan NIM dan nomor tagihan agar mudah diverifikasi.',
             'Konfirmasi dengan PIN atau kode OTP, lalu simpan bukti transfer.',
         ];
@@ -92,7 +92,7 @@ class PaymentGuide
     }
 
     /**
-     * Langkah setelah membayar: konfirmasi di Aksaraloka Pay.
+     * Langkah setelah membayar: konfirmasi di Biaya Pendidikan.
      *
      * @return array<int, string>
      */
@@ -100,7 +100,7 @@ class PaymentGuide
     {
         return [
             'Pembayaran lewat virtual account biasanya tercatat otomatis dan tagihan berubah menjadi Lunas.',
-            'Untuk transfer biasa, buka Aksaraloka Pay, pilih tagihan, lalu tekan Konfirmasi pembayaran dan unggah bukti transfer.',
+            'Untuk transfer biasa, buka Biaya Pendidikan, pilih tagihan, lalu tekan Konfirmasi pembayaran dan unggah bukti transfer.',
             'Petugas keuangan memverifikasi, lalu statusnya menjadi Lunas dan KRS bisa diisi.',
             'Jika dana sudah terpotong tetapi status belum berubah setelah 1 x 24 jam kerja, hubungi helpdesk dengan menyertakan bukti pembayaran.',
         ];

@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-3xl space-y-6">
+<div class="space-y-6">
     <div>
         <x-button :href="route('feedback.index')" wire:navigate variant="ghost" size="sm" icon="arrow-left">Masukan dan komplain</x-button>
     </div>

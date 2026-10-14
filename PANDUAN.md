@@ -1,6 +1,6 @@
 # Panduan Aksaraloka Academic
 
-Aksaraloka Academic adalah sistem informasi akademik dan presensi untuk **universitas**: data induk mahasiswa dan dosen, jadwal kuliah, presensi oleh dosen, rekap kehadiran, wisuda, survey, masukan dan komplain, serta berita kampus. Antarmukanya mobile-first, berbahasa Indonesia, dan mendukung mode terang dan gelap.
+Aksaraloka Academic adalah sistem informasi akademik dan presensi untuk **universitas**: data induk mahasiswa dan dosen, jadwal dan presensi, KRS, nilai dan transkrip, ujian, tugas akhir, yudisium dan wisuda, layanan mandiri mahasiswa (surat, SKPI, beasiswa, magang/MBKM, konversi SKS), keuangan (Biaya Pendidikan), survey, masukan dan komplain, serta berita kampus. Antarmukanya mobile-first, berbahasa Indonesia, dan mendukung mode terang dan gelap.
 
 Dokumen ini terdiri dari tiga bagian:
 
@@ -49,7 +49,7 @@ vendor/bin/pint             # merapikan gaya kode PHP
 | `APP_URL`           | Alamat aplikasi, mis. `http://academic.test`                          |
 | `APP_TIMEZONE`      | Zona waktu (bawaan `Asia/Jakarta`)                                    |
 | `APP_LOCALE`        | Bahasa (bawaan `id`)                                                  |
-| `DB_CONNECTION`     | `sqlite` untuk pengembangan; ganti ke `pgsql` untuk produksi          |
+| `DB_CONNECTION`     | `sqlite` (bawaan `.env.example`); `mysql` atau `pgsql` untuk produksi  |
 | `HELPDESK_WHATSAPP` | Nomor WhatsApp helpdesk bawaan (lihat [Helpdesk](#helpdesk-whatsapp)) |
 
 ### Akun contoh
@@ -68,7 +68,7 @@ Setelah `--seed`, semua akun memakai kata sandi **`password`**.
 | Mahasiswa            | `mahasiswa@aksaraloka.test` (juga `mhs1@` sampai `mhs12@`) |
 | Orang tua            | `ortu@aksaraloka.test`                                     |
 
-Data contoh berisi Universitas Aksara Nusantara dengan 2 fakultas, 3 program studi, 2 kelas Teknik Informatika, semester aktif 2026/2027 Ganjil, delapan semester arsip (2022/2023 Ganjil sampai 2025/2026 Genap), sekitar 190 mahasiswa angkatan 2022–2026 pada tiga prodi dengan riwayat nilai terkunci, remedial, dan mata kuliah yang diulang (angkatan 2022 sudah mencapai 144 SKS), riwayat presensi lima minggu, 10 berita, 4 kuesioner, 5 tiket masukan, dan satu periode wisuda.
+Data contoh berisi Universitas Aksara Nusantara dengan 2 fakultas, 3 program studi, 2 kelas Teknik Informatika, semester aktif 2026/2027 Ganjil, delapan semester arsip (2022/2023 Ganjil sampai 2025/2026 Genap), sekitar 190 mahasiswa angkatan 2022–2026 pada tiga prodi dengan riwayat nilai terkunci, remedial, dan mata kuliah yang diulang (angkatan 2022 sudah mencapai 144 SKS), riwayat presensi lima minggu, 10 berita, 4 kuesioner, 5 tiket masukan, satu periode wisuda, serta tugas akhir dan yudisium angkatan 2022. Layanan mandiri juga terisi contoh: surat terbit, menunggu, dan ditolak; sekitar 50 aktivitas kemahasiswaan; tiga beasiswa (dua dibuka, satu ditutup) dengan beberapa pendaftar; tujuh pengajuan magang/MBKM; dan konversi SKS yang sudah disetujui maupun masih menunggu. Data ini dibuat `SelfServiceSeeder` dan hanya untuk mahasiswa angkatan 2022 yang belum punya akun login; gunakan akun staf untuk melihatnya.
 
 ---
 
@@ -78,18 +78,20 @@ Data contoh berisi Universitas Aksara Nusantara dengan 2 fakultas, 3 program stu
 
 | Peran                    | Menu utama                                                                                      |
 | ------------------------ | ----------------------------------------------------------------------------------------------- |
-| **Admin / BAAK**         | Beranda, Mahasiswa, Presensi, Jadwal, Dosen, Kelas, Prodi, Rekap, Izin, Wisuda, Survey, Masukan |
-| **Kaprodi / Pimpinan**   | Beranda, Presensi (pantau), Rekap, Check-in, Jadwal, Wisuda, Izin, Survey (hasil), Masukan      |
-| **Wakil dekan akademik** | Beranda, Jadwal (atur), Kelas, Rekap, Check-in, Wisuda                                          |
-| **Dosen**                | Beranda, Jadwal, Presensi, Check-in, Rekap, Izin, Survey, Masukan                               |
+| **Admin / BAAK**         | Beranda, Mahasiswa, Presensi, Jadwal, Dosen, Kelas, Prodi, Wisuda, Rekap, Izin; Nilai, Akademik, Ujian & Evaluasi, Tugas Akhir & Kelulusan, Layanan Mandiri, Keuangan, Pengaturan, Survey, Masukan |
+| **Kaprodi / Pimpinan**   | Beranda, Presensi (pantau), Rekap, Check-in, Jadwal, Wisuda, Izin; persetujuan revisi nilai, tugas akhir, yudisium, Layanan Mandiri, Keuangan (lihat), Survey (hasil), Masukan |
+| **Wakil dekan akademik** | Beranda, Jadwal (atur), Kelas, Rekap, Check-in, Wisuda; kelengkapan nilai, Akademik, ujian, tugas akhir, yudisium, Layanan Mandiri |
+| **Dosen**                | Beranda, Jadwal, Presensi, Check-in, Rekap, Izin; input nilai, persetujuan KRS dan perwalian, ujian, jurnal, bimbingan tugas akhir, yudisium (lihat), bimbingan magang/MBKM |
 | **Petugas presensi**     | Beranda, Presensi, Check-in, Jadwal                                                             |
 | **Petugas keuangan**     | Beranda, Keuangan, Akademik (kalender), Survey, Masukan                                          |
-| **Mahasiswa**            | Beranda, Presensi, Jadwal, Wisuda, Survey, Masukan                                   |
-| **Orang tua**            | Beranda, Jadwal, Kehadiran, Survey, Masukan                                                     |
+| **Mahasiswa**            | Beranda, Status Kehadiran, Jadwal, Wisuda; KHS dan transkrip, Biaya Pendidikan, KRS, kurikulum, status akademik, tugas akhir, status kelulusan, kartu ujian, jurnal kuliah, Layanan Mandiri, Survey, Masukan |
+| **Orang tua**            | Beranda, Jadwal, Kehadiran; KHS dan transkrip, Biaya Pendidikan, kartu ujian, Survey, Masukan   |
 
 Semua peran juga punya menu **Survey**, **Masukan**, tombol **Hubungi Helpdesk** di bawah menu Masukan, dan **Profil** (di menu pengguna, pojok kanan atas).
 
-Di HP, empat menu pertama tampil di bar bawah dan sisanya ada di **Lainnya**. Di desktop, sidebar bisa diciutkan dan grup Survey bisa dilipat.
+Sidebar dikelompokkan dalam kategori berjudul kecil: **Utama** (menu harian), **Akademik** (Akademik, Nilai, Ujian & Evaluasi, Tugas Akhir & Kelulusan), **Layanan** (Layanan Mandiri, Biaya Pendidikan atau Keuangan), dan **Lainnya** (Pengaturan, Survey, Masukan). Menu yang punya submenu bisa dilipat, dan sidebar bisa diciutkan (judul kategori berubah menjadi garis tipis). Halaman aplikasi memakai **lebar penuh** area di samping sidebar.
+
+Di HP, empat menu pertama (kategori Utama) tampil di bar bawah dan sisanya ada di **Lainnya**.
 
 ### Masuk dan keluar
 
@@ -204,6 +206,7 @@ Alur: mahasiswa mengajukan judul, program studi menyetujui sekaligus menetapkan 
 
 - **Syarat lulus dicek otomatis** (`YudisiumService::evaluate`) dari transkrip: status aktif, **SKS lulus** minimal (bawaan 144), **IPK** minimal (2,00), **tidak ada nilai E**, **nilai D maksimal 25%** dari SKS lulus, tugas akhir lulus sidang, dan tidak ada tunggakan pembayaran lewat jatuh tempo. Batas-batas ini bisa diubah di Pengaturan kampus.
 - **Predikat:** *Dengan Pujian* (IPK minimal 3,51, tanpa nilai D, masa studi paling lama 4,5 tahun), *Sangat Memuaskan* (IPK minimal 2,76), atau *Memuaskan*.
+- **Dosen** (`/yudisium`, menu Tugas Akhir & Kelulusan): hanya melihat daftar yudisium, calon beserta rincian syarat, dan yang sudah dinyatakan lulus. Tidak bisa membuat yudisium, memilih calon, menetapkan kelulusan, maupun mengunduh PDF.
 - **Staf** (`/yudisium`; Kaprodi, wakil dekan, admin): buat yudisium (nama, tanggal, nomor SK), lihat calon (mahasiswa aktif yang tugas akhirnya lulus sidang) lengkap dengan rincian tiap syarat, **Pilih semua yang memenuhi syarat**, lalu **Tetapkan kelulusan**. Mahasiswa yang diluluskan berstatus **Lulus** dengan tanggal dan predikat tercatat. Rekap yudisium dan **Surat Keterangan Lulus** per mahasiswa tersedia sebagai PDF.
 - **Mahasiswa** (`/my-graduation`, Status kelulusan): daftar syarat beserta nilainya sekarang, perkiraan predikat, dan setelah ditetapkan, unduhan Surat Keterangan Lulus.
 - **Wisuda sekarang mengikuti yudisium:** pendaftaran wisuda hanya bisa oleh mahasiswa yang sudah dinyatakan lulus yudisium. SKS, IPK, **judul skripsi, dan tanggal sidang diambil otomatis** dari transkrip dan tugas akhir (tidak diisi manual).
@@ -216,6 +219,8 @@ Alur: mahasiswa mengajukan judul, program studi menyetujui sekaligus menetapkan 
 - Kode: `ExamService`.
 
 ### Evaluasi dosen (EDOM)
+
+> Menu *Evaluasi dosen* sudah dihapus dari sidebar mahasiswa karena EDOM akan dipindahkan ke modul Survey. Halaman dan menu stafnya (`/evaluations/periods`, `/evaluations/results`) masih ada.
 
 - **Periode** (`/evaluations/periods`; admin dan wakil dekan mengelola): satu periode per semester dengan satu kuesioner berkategori *Evaluasi dosen* (dibuat lewat Survey, sebaiknya tidak diterbitkan sebagai survey umum), tanggal buka dan tutup, dan opsi **wajib diisi sebelum melihat nilai**. Periode harus diterbitkan agar mahasiswa bisa mengisi.
 - **Mahasiswa** (`/my-evaluations`): daftar mata kuliah semester aktif (anggota kelas atau KRS disetujui) dengan tombol **Isi evaluasi** per kelas. Jawaban **anonim** (tidak menyimpan identitas, hanya penanda agar tidak terisi dua kali) dan tidak bisa diubah.
@@ -230,18 +235,30 @@ Alur: mahasiswa mengajukan judul, program studi menyetujui sekaligus menetapkan 
 - **BAP PDF:** admin, Kaprodi, wakil dekan, dan dosen pengampu bisa mengunduh Berita Acara Perkuliahan (materi per pertemuan, kehadiran, dan tanda tangan).
 - Kode: `JournalService`.
 
-### Keuangan (Aksaraloka Pay)
+### Layanan mandiri mahasiswa
 
-Tagihan UKT dan BPP per semester, status pembayaran, riwayat pembayaran, dan syarat lunas untuk KRS. Jumlah uang disimpan dalam rupiah bulat.
+Menu **Layanan Mandiri** (mahasiswa) dan menu staf dengan nama yang sama (admin, Kaprodi, wakil dekan; dosen hanya melihat bimbingan magang). Semua pengajuan mahasiswa melewati antrean persetujuan staf dan tercatat di `audit_logs`.
+
+- **Permohonan surat** (`/letters`): pilih jenis surat. *Surat keterangan aktif kuliah* dan *transkrip sementara* terbit otomatis; *rekomendasi* dan *izin penelitian* menunggu persetujuan staf di `/letters/manage`. Surat terbit sebagai PDF bernomor dengan QR; pindai QR membuka halaman `/verify/{kode}` yang menyatakan surat sah. Nama dan jabatan penandatangan diatur di Pengaturan kampus. Nomor surat berformat `NNN/KODE/AKD/BULAN-ROMAWI/TAHUN` (KODE: SKAK, TRS, REK, IP), urut per jenis per tahun. Isi surat dibekukan saat terbit (data mahasiswa, semester, SKS, dan IPK saat itu), jadi PDF yang diunduh ulang tidak berubah. Halaman verifikasi hanya menampilkan jenis, nomor, tanggal, nama, dan NIM yang disamarkan. Mahasiswa hanya bisa mengajukan bila berstatus aktif dan tidak punya pengajuan sejenis yang masih menunggu.
+- **Aktivitas & SKPI** (`/activities`): catat organisasi, kepanitiaan, prestasi, sertifikat, dan pengabdian (bukti opsional, maks 3 MB). Staf memverifikasi dan memberi poin di `/activities/manage`. Tombol *Unduh rekap SKPI* memuat kegiatan yang sudah terverifikasi.
+- **Beasiswa** (`/scholarships`): mahasiswa melihat syarat (IPK, semester, kuota) dan mendaftar; staf membuka program di `/scholarships/manage` dan menyeleksi di `/scholarships/applications`.
+- **Magang & MBKM** (`/internships`): mahasiswa mengajukan (butuh SKS minimal sesuai pengaturan), staf menyetujui dan menetapkan dosen pembimbing, lalu dosen atau staf menutup program dengan nilai akhir di `/internships/manage`.
+- **Konversi SKS** (`/conversions`): setelah program selesai (atau untuk sertifikasi dan kuliah di kampus lain), mahasiswa memilih mata kuliah pengganti; staf memberi huruf mutu A–D di `/conversions/manage`. Yang disetujui langsung tampil di transkrip (bagian *Hasil konversi SKS*, di halaman maupun PDF) dan masuk IPK, SKS lulus, serta cek yudisium. Mata kuliah yang sudah bernilai terkunci atau sudah ada di konversi lain tidak bisa diajukan, dan total SKS per pengajuan dibatasi pengaturan kampus.
+
+Kode: `LetterService`, `ActivityService`, `ScholarshipService`, `InternshipService`, `CreditConversionService`, dan `App\Support\QrCode` (pembuat QR tanpa dependensi tambahan, hingga 213 byte).
+
+### Keuangan (Biaya Pendidikan)
+
+Menu bernama **Biaya Pendidikan** (mahasiswa dan orang tua) atau **Keuangan** (staf). Isinya tagihan UKT dan BPP per semester, status pembayaran, riwayat pembayaran, dan syarat lunas untuk KRS. Jumlah uang disimpan dalam rupiah bulat.
 
 - **Tarif** (`/finance/rates`, admin dan petugas keuangan): UKT per **golongan 1–8** untuk tiap prodi (atau satu tarif bawaan semua golongan) dan BPP per prodi. Golongan UKT mahasiswa diisi di formulir Mahasiswa.
 - **Menerbitkan tagihan** (`/finance`): pilih semester, tanggal jatuh tempo, dan (opsional) prodi, lalu **Terbitkan tagihan**. Sistem membuat tagihan UKT + BPP untuk mahasiswa **aktif** yang belum punya tagihan semester itu (mahasiswa cuti, non-aktif, dan DO dilewati). Menjalankannya lagi tidak membuat tagihan ganda. Tiap tagihan mendapat nomor `INV-…` dan **virtual account** (awalan kampus + NIM).
 - **Status tagihan:** Belum dibayar, Dibayar sebagian, Lunas, Dibatalkan, dengan penanda Lewat jatuh tempo. Halaman Keuangan menampilkan total ditagihkan, diterima, belum dibayar, dan pembayaran yang menunggu verifikasi, dengan filter semester, status, dan pencarian nama atau NIM.
-- **Mahasiswa dan orang tua** (`/pay`, menu Aksaraloka Pay): daftar tagihan, sisa tagihan, rincian, cara pembayaran (rekening kampus dan nomor VA), dan riwayat. Mahasiswa menekan **Konfirmasi pembayaran** (jumlah, metode, tanggal, referensi, bukti foto atau PDF maksimal 3 MB). Konfirmasi berstatus menunggu sampai petugas keuangan memverifikasi; jumlahnya tidak boleh melebihi sisa tagihan yang belum dalam verifikasi. Orang tua hanya melihat.
+- **Mahasiswa dan orang tua** (`/pay`, menu Biaya Pendidikan): tiga ringkasan (total tagihan, belum dibayar, batas akhir pembayaran) dan dua tab: **Tagihan** (tabel nama, periode, nominal, batas akhir, status, dan tombol Rincian) serta **Riwayat pembayaran**. Rincian tagihan memuat cara pembayaran (rekening kampus dan nomor VA). Mahasiswa menekan **Konfirmasi pembayaran** (jumlah, metode, tanggal, referensi, bukti foto atau PDF maksimal 3 MB). Konfirmasi berstatus menunggu sampai petugas keuangan memverifikasi; jumlahnya tidak boleh melebihi sisa tagihan yang belum dalam verifikasi. Orang tua hanya melihat.
 - **Petugas keuangan** (akun `keuangan@`, juga admin): di detail tagihan (`/finance/invoices/{id}`) **Konfirmasi** atau **Tolak** (alasan wajib) pembayaran mahasiswa, **Catat pembayaran** langsung (tunai, transfer, VA, dompet digital), **Beri dispensasi KRS**, atau **Batalkan tagihan** (hanya bila belum ada pembayaran terkonfirmasi). Kaprodi dan pimpinan bisa melihat saja.
-- **Panduan pembayaran** (`/pay/guide`, tombol di Aksaraloka Pay dan di detail tagihan): pilih **Virtual account** atau **Transfer bank**, lalu pilih bank (BCA, Mandiri, BNI, BRI, BSI, CIMB Niaga, Permata, BTN). Tiap bank menampilkan langkah lewat ATM, aplikasi mobile, dan internet banking, dengan nomor VA mahasiswa dan rekening kampus terisi otomatis, serta langkah konfirmasi setelah membayar. Teks panduan ada di `app/Support/PaymentGuide.php`; nama menu bank bisa berubah mengikuti versi aplikasinya.
+- **Panduan pembayaran** (`/pay/guide`, tombol di Biaya Pendidikan dan di detail tagihan): pilih **Virtual account** atau **Transfer bank**, lalu pilih bank (BCA, Mandiri, BNI, BRI, BSI, CIMB Niaga, Permata, BTN). Tiap bank menampilkan langkah lewat ATM, aplikasi mobile, dan internet banking, dengan nomor VA mahasiswa dan rekening kampus terisi otomatis, serta langkah konfirmasi setelah membayar. Teks panduan ada di `app/Support/PaymentGuide.php`; nama menu bank bisa berubah mengikuti versi aplikasinya.
 - **PDF:** tagihan beserta riwayat pembayarannya bisa diunduh (jadi bukti lunas setelah lunas) oleh pemilik tagihan dan petugas.
-- **Syarat KRS:** bila pengaturan *Tagihan harus lunas sebelum KRS* aktif (bawaan aktif, diatur di Pengaturan kampus), mahasiswa dengan tagihan semester itu yang belum lunas dan tanpa dispensasi tidak bisa mengisi atau mengajukan KRS; halaman KRS menampilkan sisa tagihan dan tautan ke Aksaraloka Pay. Semester tanpa tagihan terbit tidak menghalangi KRS.
+- **Syarat KRS:** bila pengaturan *Tagihan harus lunas sebelum KRS* aktif (bawaan aktif, diatur di Pengaturan kampus), mahasiswa dengan tagihan semester itu yang belum lunas dan tanpa dispensasi tidak bisa mengisi atau mengajukan KRS; halaman KRS menampilkan sisa tagihan dan tautan ke Biaya Pendidikan. Semester tanpa tagihan terbit tidak menghalangi KRS.
 - **Webhook virtual account:** penyedia pembayaran dapat memanggil `POST /pay/webhook` dengan JSON `{"va_number": "...", "amount": 1000000, "reference": "...", "paid_at": "2026-10-14"}` dan header `X-Pay-Signature` berisi `HMAC-SHA256(body, PAY_WEBHOOK_SECRET)`. Pembayaran dialokasikan ke tagihan terbuka yang paling dulu jatuh tempo, idempoten menurut `reference`, dan ditolak bila jumlah melebihi sisa tagihan. Isi `PAY_WEBHOOK_SECRET` di `.env`; tanpa rahasia, webhook menolak semua permintaan.
 - Kode: `FinanceService`, model `Invoice`, `Payment`, `FeeRate`.
 
@@ -363,11 +380,22 @@ Pengaturan disimpan pada kolom JSON `settings` tabel `tenants`. Nilai yang tidak
 | `grade_weights` | 30/25/35/10 | Bobot bawaan tugas, UTS, UAS, kehadiran (menu Pengaturan nilai) |
 | `grade_scale` | A 80, B 70, C 60, D 50 | Batas minimal huruf mutu; di bawah D adalah E |
 | `remedial_letters` | D, E | Huruf yang berhak remedial |
+| `krs_requires_payment` | `true` | Tagihan harus lunas sebelum KRS |
+| `thesis_min_credits_propose`, `thesis_min_credits_defense` | `100`, `120` | SKS lulus minimal untuk mengajukan judul dan maju sidang |
+| `thesis_min_guidance` | `8` | Log bimbingan terverifikasi minimal sebelum sidang |
+| `thesis_required_for_graduation` | `true` | Tugas akhir wajib lulus sidang untuk lulus yudisium |
+| `graduation_max_d_percent` | `25` | Batas SKS bernilai D (persen dari SKS lulus) |
+| `predicate_very_satisfactory_gpa`, `predicate_cum_laude_gpa`, `predicate_cum_laude_max_years` | `2.76`, `3.51`, `4.5` | Batas predikat kelulusan |
+| `va_prefix` | `8808` | Awalan nomor virtual account (awalan + NIM) |
+| `payment_bank_name`, `payment_account_number`, `payment_account_name` | kosong | Rekening kampus untuk transfer biasa |
+| `letter_signatory_name`, `letter_signatory_title` | kosong, Kepala Biro Administrasi Akademik | Penandatangan surat; nama kosong mencetak garis tanda tangan manual |
+| `internship_min_credits` | `80` | SKS lulus minimal untuk mengajukan magang/MBKM |
+| `conversion_max_credits` | `20` | Batas SKS per pengajuan konversi |
 
-Belum ada layar pengaturan. Ubah lewat tinker, mis.:
+Admin mengubah pengaturan di atas (kecuali bobot dan skala nilai, yang ada di menu Nilai > Pengaturan nilai) lewat **Pengaturan > Pengaturan kampus** (`/settings/campus`); perubahan tercatat di `audit_logs`. Lewat tinker juga bisa, mis.:
 
 ```bash
-php artisan tinker --execute 'App\Models\Tenant::first()->update(["settings" => array_merge(App\Models\Tenant::first()->settings ?? [], ["helpdesk_whatsapp" => "081234567800", "geofence_radius" => 150])]);'
+php artisan tinker --execute 'App\Models\Tenant::first()->update(["settings" => array_merge(App\Models\Tenant::first()->settings ?? [], ["helpdesk_whatsapp" => "081234567800"])]);'
 ```
 
 Nomor helpdesk boleh ditulis `0812…`, `+62 812…`, atau `62812…`; sistem menormalkannya ke format internasional.
@@ -382,10 +410,10 @@ Laravel 13, Livewire 4 (komponen berbasis kelas), Alpine.js, Tailwind CSS v4, GS
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `app/Enums`                  | Peran, status kehadiran, status mahasiswa, kategori berita, dan sebagainya                                                                                                                                              |
 | `app/Models`                 | Model Eloquent. Trait `BelongsToTenant` + `TenantScope` membatasi data ke kampus pengguna dan mengisi `tenant_id` otomatis                                                                                              |
-| `app/Services`               | Logika bisnis: `GradingService`, `AcademicRecord` (KHS, IPS, IPK, transkrip), `AttendanceService`, `AttendanceReport`, `ScheduleBoard`, `ScheduleConflictDetector`, `TeacherCheckinService`, `GraduationService`, `SurveyService`, `FeedbackService`, `StudentImporter`, `AuditLogger` |
+| `app/Services`               | Logika bisnis: `GradingService`, `AcademicRecord` (KHS, IPS, IPK, transkrip), `AttendanceService`, `AttendanceReport`, `ScheduleBoard`, `ScheduleConflictDetector`, `TeacherCheckinService`, `GraduationService`, `SurveyService`, `FeedbackService`, `StudentImporter`, `AuditLogger`, `EnrollmentService`, `CurriculumService`, `FinanceService`, `ExamService`, `EvaluationService`, `JournalService`, `ThesisService`, `YudisiumService`, `LetterService`, `ActivityService`, `ScholarshipService`, `InternshipService`, `CreditConversionService` |
 | `app/Livewire`               | Halaman per modul (`Attendance`, `Schedule`, `Students`, `Wisuda`, `Survey`, `Feedback`, `News`, `Profile`, …)                                                                                                          |
 | `app/Http/Controllers`       | Unduhan dan file privat (PDF jadwal, CSV, poster, lampiran, cetak berita acara)                                                                                                                                         |
-| `app/Support/Navigation.php` | Definisi menu per peran, termasuk grup menu                                                                                                                                                                             |
+| `app/Support/Navigation.php` | Definisi menu per peran, grup menu, dan kategori sidebar; juga `GradeScale`, `PaymentGuide`, dan `QrCode` (di folder yang sama)                                                                                                                                                                             |
 | `resources/views/components` | Komponen Blade: `x-button`, `x-card`, `x-badge`, `x-stat-tile`, `x-progress`, `x-pie-chart`, `x-icon`, dan lainnya                                                                                                      |
 | `resources/js`               | `theme.js` (tema), `motion.js` (animasi GSAP)                                                                                                                                                                           |
 | `tests/Feature`              | Tes fitur (Pest)                                                                                                                                                                                                        |
@@ -402,9 +430,11 @@ Beberapa prinsip yang dipakai:
 Hal-hal berikut **belum ada** atau perlu keputusan lanjutan:
 
 - **Ganti kata sandi dari profil dan reset oleh admin.** Lupa kata sandi lewat email sudah tersedia (`/forgot-password`); email dikirim lewat `MAIL_MAILER` (bawaan `log`, isi surat ada di `storage/logs`). Atur SMTP di `.env` untuk produksi.
-- Layar pengaturan kampus dan aktivasi semester (saat ini lewat data atau tinker).
-- Payment gateway sungguhan (saat ini verifikasi manual dan webhook VA), cicilan terjadwal, denda keterlambatan, dan beasiswa atau keringanan UKT otomatis.
-- Cetak KRS PDF, status otomatis "lulus" setelah wisuda, dan kuliah tanpa kelas angkatan (kelas terbuka murni lintas prodi).
+- Peluncuran semester baru satu klik dan kalender akademik tahunan otomatis (semester dan agenda diatur manual di `/academic-terms` dan Kalender akademik).
+- Payment gateway sungguhan (saat ini verifikasi manual dan webhook VA), cicilan terjadwal, denda keterlambatan, dan keringanan UKT otomatis. Beasiswa baru sebatas pendaftaran dan seleksi; penerima belum otomatis memotong tagihan.
+- Cetak KRS PDF, cek mata kuliah wajib kurikulum pada yudisium, dan kuliah tanpa kelas angkatan (kelas terbuka murni lintas prodi).
+- Surat yang sudah terbit belum bisa dicabut dari antarmuka; QR memuat tautan verifikasi (maksimal 213 byte); SKPI belum bernomor dan belum ber-QR.
+- EDOM masih berdiri sendiri; rencananya dipindahkan ke modul Survey.
 - Presensi saat offline, notifikasi WhatsApp otomatis ke orang tua, dan presensi gerbang.
 - Impor Excel (baru CSV), ekspor format Dapodik atau Neo Feeder PDDikti.
 - Foto profil.

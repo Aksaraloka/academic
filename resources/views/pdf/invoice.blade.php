@@ -30,7 +30,7 @@
 <body>
     <div class="kop">
         <h1>{{ $tenant->name }}</h1>
-        <p>Aksaraloka Pay · Keuangan Akademik</p>
+        <p>Biaya Pendidikan · Keuangan Akademik</p>
     </div>
 
     <h2>{{ $invoice->status === \App\Enums\InvoiceStatus::Paid ? 'Bukti Pembayaran Lunas' : 'Tagihan Pembayaran' }}</h2>
@@ -69,7 +69,7 @@
 
     @if ($invoice->status !== \App\Enums\InvoiceStatus::Paid && $tenant->setting('payment_account_number'))
         <h3>Cara pembayaran</h3>
-        <p>Transfer ke {{ $tenant->setting('payment_bank_name') }} {{ $tenant->setting('payment_account_number') }} a.n. {{ $tenant->setting('payment_account_name') }}, atau bayar lewat virtual account {{ $invoice->va_number }}. Setelah transfer, konfirmasi pembayaran di Aksaraloka Pay.</p>
+        <p>Transfer ke {{ $tenant->setting('payment_bank_name') }} {{ $tenant->setting('payment_account_number') }} a.n. {{ $tenant->setting('payment_account_name') }}, atau bayar lewat virtual account {{ $invoice->va_number }}. Setelah transfer, konfirmasi pembayaran di Biaya Pendidikan.</p>
     @endif
 
     <p class="foot">Dicetak oleh {{ $printedBy }} pada {{ now()->translatedFormat('j F Y H:i') }}.</p>

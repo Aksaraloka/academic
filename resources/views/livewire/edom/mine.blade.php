@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-4xl space-y-6">
+<div class="space-y-6">
     <x-page-header title="Evaluasi dosen" subtitle="Nilai pengajaran dosen di tiap mata kuliah yang kamu ikuti. Jawabanmu anonim.">
         <x-slot:actions>
             <x-button :href="route('grades.khs')" wire:navigate variant="secondary" icon="chart-bar">KHS</x-button>

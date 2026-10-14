@@ -1,5 +1,5 @@
 @php $rp = fn ($value) => \App\Services\FinanceService::rupiah($value); @endphp
-<div class="mx-auto max-w-4xl space-y-6">
+<div class="space-y-6">
     <x-page-header title="Tarif keuangan" subtitle="UKT per golongan dan BPP per program studi. Dipakai saat menerbitkan tagihan semester.">
         <x-slot:actions>
             <x-button :href="route('finance.index')" wire:navigate variant="secondary" icon="arrow-left">Keuangan</x-button>

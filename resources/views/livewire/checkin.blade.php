@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-lg space-y-6"
+<div class="space-y-6"
      x-data="{
         busy: false,
         locate(action) {

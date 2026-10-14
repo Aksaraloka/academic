@@ -177,9 +177,9 @@ Aturan: ukuran isian minimal 16 px (mencegah zoom otomatis di iOS), teks panjang
 - **Garis:** `border border-border` (1 px). Bayangan sangat jarang: `shadow-sm` hanya pada menu dropdown, `shadow-lg` pada panel melayang.
 - **Jarak:** skala Tailwind 4 px. Ritme standar: isi kartu `p-4 sm:p-5`; antar kartu `space-y-4`; antar bagian halaman `space-y-6`; grid kartu `gap-4`; grup tombol `gap-2`.
 - **Target sentuh:** minimal 44 px (`min-h-11`); baris daftar `min-h-12` (14 untuk baris dengan dua baris teks).
-- **Lebar konten:** halaman aplikasi `max-w-6xl mx-auto px-4 sm:px-6`; formulir `max-w-2xl`; halaman baca `max-w-3xl`.
+- **Lebar konten:** halaman aplikasi **lebar penuh** (`w-full px-4 sm:px-6`) di samping sidebar; tidak ada batas `max-w-*` pada halaman. Halaman masuk dan verifikasi publik berdiri sendiri dan tetap sempit.
 - **Kerangka aplikasi:**
-    - Desktop (`lg`): sidebar tetap kiri lebar `w-64` (ciut `w-[4.5rem]`), header atas `h-16` lengket dengan `bg-surface/90 backdrop-blur`.
+    - Desktop (`lg`): sidebar tetap kiri lebar `w-64` (ciut `w-[4.5rem]`), header atas `h-16` lengket dengan `bg-surface/90 backdrop-blur`. Menu dikelompokkan dalam kategori (Utama, Akademik, Layanan, Lainnya) dengan judul `text-[11px] font-semibold uppercase tracking-wide text-text-muted`; saat sidebar ciut judulnya berganti garis `border-t border-border`.
     - HP: tanpa sidebar; header yang sama dan **bar navigasi bawah** (maks. 5 item, `min-h-14`), konten diberi `pb-28`.
     - Header kanan: pemilih tema, lonceng notifikasi (lencana belum dibaca), menu pengguna (foto atau inisial).
 - **Breakpoint:** `sm` 640, `lg` 1024 (titik pindah sidebar), `xl` 1280.

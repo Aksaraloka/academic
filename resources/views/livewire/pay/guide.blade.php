@@ -1,8 +1,8 @@
 @php $rp = fn ($value) => \App\Services\FinanceService::rupiah($value); @endphp
-<div class="mx-auto max-w-4xl space-y-6">
+<div class="space-y-6">
     <x-page-header title="Panduan pembayaran" subtitle="Cara membayar UKT dan BPP lewat virtual account atau transfer dari bank di Indonesia.">
         <x-slot:actions>
-            <x-button :href="route('pay.index')" wire:navigate variant="secondary" icon="arrow-left">Aksaraloka Pay</x-button>
+            <x-button :href="route('pay.index')" wire:navigate variant="secondary" icon="arrow-left">Biaya Pendidikan</x-button>
         </x-slot:actions>
     </x-page-header>
 

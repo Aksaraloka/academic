@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-2xl space-y-6">
+<div class="space-y-6">
     <x-page-header title="Impor mahasiswa" subtitle="Unggah berkas CSV. Kamu bisa memeriksa hasilnya sebelum disimpan.">
         <x-slot:actions>
             <x-button :href="route('students.index')" wire:navigate variant="secondary" icon="arrow-left">Kembali</x-button>

@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Aksaraloka Pay: tagihan UKT dan BPP per semester, pembayaran (verifikasi manual atau webhook virtual account),
+ * Biaya Pendidikan: tagihan UKT dan BPP per semester, pembayaran (verifikasi manual atau webhook virtual account),
  * dan status lunas sebagai syarat pengisian KRS.
  */
 class FinanceService

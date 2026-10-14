@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-3xl space-y-6">
+<div class="space-y-6">
     <x-page-header title="Bantuan survey" subtitle="Pertanyaan yang sering diajukan seputar pengisian kuesioner." />
 
     <x-card :padding="false">

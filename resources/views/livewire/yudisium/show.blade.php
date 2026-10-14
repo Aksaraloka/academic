@@ -2,7 +2,7 @@
     <x-page-header :title="$yudisium->name" :subtitle="$yudisium->held_on->translatedFormat('l, j F Y').($yudisium->number ? ' · '.$yudisium->number : '')">
         <x-slot:actions>
             <x-button :href="route('yudisium.index')" wire:navigate variant="secondary" icon="arrow-left">Yudisium</x-button>
-            @if ($yudisium->isFinalized() && $decisions->isNotEmpty())<x-button :href="route('yudisium.pdf', $yudisium)" icon="arrow-down-tray" download>Rekap PDF</x-button>@endif
+            @if ($canManage && $yudisium->isFinalized() && $decisions->isNotEmpty())<x-button :href="route('yudisium.pdf', $yudisium)" icon="arrow-down-tray" download>Rekap PDF</x-button>@endif
         </x-slot:actions>
     </x-page-header>
 
@@ -17,7 +17,7 @@
                         <p class="truncate text-xs text-text-muted">{{ $decision->student->program?->label() }} · {{ $decision->credits }} SKS · IPK {{ number_format((float) $decision->gpa, 2, ',', '.') }}</p>
                     </div>
                     <x-badge :variant="$decision->predicate === 'Dengan Pujian' ? 'primary' : 'success'">{{ $decision->predicate }}</x-badge>
-                    <x-button size="sm" variant="secondary" :href="route('yudisium.certificate', $decision)" download>SKL PDF</x-button>
+                    @if ($canManage)<x-button size="sm" variant="secondary" :href="route('yudisium.certificate', $decision)" download>SKL PDF</x-button>@endif
                 </div>
             @empty
                 <p class="px-4 py-4 text-sm text-text-muted">Tidak ada keputusan kelulusan.</p>
@@ -28,7 +28,7 @@
             <p class="text-sm text-text-muted">Calon yudisium: mahasiswa aktif yang tugas akhirnya sudah lulus sidang (atau, bila kampus tidak mewajibkan tugas akhir, angkatan yang sudah menempuh lebih dari tiga tahun). Syarat dicek otomatis dari transkrip saat halaman dibuka.</p>
             <div class="mt-3 flex flex-wrap items-center gap-3">
                 <label class="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" wire:model.live="onlyEligible" class="size-5 accent-primary"> Hanya yang memenuhi syarat</label>
-                <x-button size="sm" variant="secondary" wire:click="selectEligible">Pilih semua yang memenuhi syarat</x-button>
+                @if ($canManage)<x-button size="sm" variant="secondary" wire:click="selectEligible">Pilih semua yang memenuhi syarat</x-button>@endif
             </div>
         </x-card>
 
@@ -37,14 +37,14 @@
                 @php $student = $row['student']; $result = $row['result']; @endphp
                 <div class="border-t border-border px-4 py-3 first:border-t-0" wire:key="c-{{ $student->id }}">
                     <div class="flex flex-wrap items-center gap-3">
-                        <input type="checkbox" wire:model="selected" value="{{ $student->id }}" class="size-5 shrink-0 accent-primary" @disabled(! $result['eligible']) aria-label="Pilih {{ $student->name }}">
+                        @if ($canManage)<input type="checkbox" wire:model="selected" value="{{ $student->id }}" class="size-5 shrink-0 accent-primary" @disabled(! $result['eligible']) aria-label="Pilih {{ $student->name }}">@endif
                         <div class="min-w-0 flex-1">
                             <p class="truncate text-sm font-medium">{{ $student->name }} <span class="text-text-muted">· {{ $student->nim }}</span></p>
                             <p class="truncate text-xs text-text-muted">{{ $student->program?->label() }} · {{ $result['credits'] }} SKS · IPK {{ $result['gpa'] !== null ? number_format($result['gpa'], 2, ',', '.') : '-' }}</p>
                         </div>
                         @if ($result['eligible'])<x-badge variant="success">Memenuhi syarat · {{ $result['predicate'] }}</x-badge>@else<x-badge variant="danger">Belum memenuhi syarat</x-badge>@endif
                     </div>
-                    <details class="mt-1 pl-8">
+                    <details class="mt-1 {{ $canManage ? 'pl-8' : '' }}">
                         <summary class="min-h-11 cursor-pointer py-2 text-sm font-medium text-primary">Rincian syarat</summary>
                         <ul class="space-y-1 pb-2 text-sm">
                             @foreach ($result['checks'] as $check)
@@ -58,7 +58,7 @@
             @endforelse
         </x-card>
 
-        @if ($rows->isNotEmpty())
+        @if ($canManage && $rows->isNotEmpty())
             <x-card title="Tetapkan kelulusan">
                 <p class="mb-3 text-sm text-text-muted">{{ count($selected) }} mahasiswa dipilih. Mahasiswa yang dinyatakan lulus berstatus Lulus dan bisa mendaftar wisuda.</p>
                 <div class="max-w-sm"><x-field label="Nomor SK yudisium" name="number"><input id="number" type="text" wire:model="number" class="input" placeholder="Opsional"></x-field></div>

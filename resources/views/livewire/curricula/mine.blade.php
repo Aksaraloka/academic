@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-4xl space-y-6">
+<div class="space-y-6">
     <x-page-header title="Kurikulum" subtitle="Mata kuliah di kurikulum prodimu dan kemajuan studimu." />
 
     @if (! $curriculum)

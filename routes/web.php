@@ -1,25 +1,31 @@
 <?php
 
+use App\Http\Controllers\ActivityEvidenceController;
 use App\Http\Controllers\ExamCardPdfController;
 use App\Http\Controllers\FeedbackAttachmentController;
 use App\Http\Controllers\GradeReportController;
 use App\Http\Controllers\GraduationMinutesPrintController;
 use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\JournalPdfController;
+use App\Http\Controllers\LetterPdfController;
+use App\Http\Controllers\LetterVerificationController;
 use App\Http\Controllers\NewsPosterController;
 use App\Http\Controllers\PaymentProofController;
 use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\ScheduleExportController;
+use App\Http\Controllers\SkpiPdfController;
 use App\Http\Controllers\SurveyExportController;
 use App\Http\Controllers\YudisiumPdfController;
 use App\Livewire\Academic;
+use App\Livewire\Activities;
 use App\Livewire\Advising;
 use App\Livewire\Attendance;
 use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\ResetPassword;
 use App\Livewire\Checkin;
+use App\Livewire\Conversions;
 use App\Livewire\Curricula;
 use App\Livewire\Dashboard;
 use App\Livewire\Edom;
@@ -30,14 +36,17 @@ use App\Livewire\Finance;
 use App\Livewire\Grades;
 use App\Livewire\Graduation;
 use App\Livewire\Groups;
+use App\Livewire\Internships;
 use App\Livewire\Journals;
 use App\Livewire\Leaves;
+use App\Livewire\Letters;
 use App\Livewire\News;
 use App\Livewire\Pay;
 use App\Livewire\Profile;
 use App\Livewire\Programs;
 use App\Livewire\Reports;
 use App\Livewire\Schedule;
+use App\Livewire\Scholarships;
 use App\Livewire\Settings;
 use App\Livewire\Status;
 use App\Livewire\Students;
@@ -59,6 +68,9 @@ Route::middleware('guest')->group(function () {
 
 // Notifikasi pembayaran virtual account dari penyedia pembayaran (ditandatangani HMAC, tanpa sesi).
 Route::post('/pay/webhook', PaymentWebhookController::class)->name('pay.webhook');
+
+// Tujuan QR pada surat: publik, hanya menegaskan keaslian surat.
+Route::get('/verify/{code}', LetterVerificationController::class)->where('code', '[A-Za-z0-9]{8,24}')->middleware('throttle:60,1')->name('letters.verify');
 
 Route::post('/logout', function () {
     Auth::logout();
@@ -101,11 +113,25 @@ Route::middleware('auth')->group(function () {
     Route::livewire('/thesis', Thesis\Index::class)->name('thesis.index')->middleware('role:admin,principal,curriculum,teacher');
     Route::livewire('/thesis/{thesis}', Thesis\Show::class)->name('thesis.show')->middleware('role:admin,principal,curriculum,teacher');
     Route::livewire('/my-thesis', Thesis\Mine::class)->name('thesis.mine')->middleware('role:student');
-    Route::livewire('/yudisium', Yudisium\Index::class)->name('yudisium.index')->middleware('role:admin,principal,curriculum');
-    Route::livewire('/yudisium/{yudisium}', Yudisium\Show::class)->name('yudisium.show')->middleware('role:admin,principal,curriculum');
+    Route::livewire('/yudisium', Yudisium\Index::class)->name('yudisium.index')->middleware('role:admin,principal,curriculum,teacher');
+    Route::livewire('/yudisium/{yudisium}', Yudisium\Show::class)->name('yudisium.show')->middleware('role:admin,principal,curriculum,teacher');
     Route::get('/yudisium/{yudisium}/pdf', [YudisiumPdfController::class, 'recap'])->name('yudisium.pdf');
     Route::get('/yudisium/decisions/{decision}/certificate', [YudisiumPdfController::class, 'certificate'])->name('yudisium.certificate');
     Route::livewire('/my-graduation', Yudisium\Mine::class)->name('yudisium.mine')->middleware('role:student');
+    Route::livewire('/letters', Letters\Mine::class)->name('letters.mine')->middleware('role:student');
+    Route::livewire('/letters/manage', Letters\Index::class)->name('letters.index')->middleware('role:admin,principal,curriculum');
+    Route::get('/letters/{letter}/pdf', LetterPdfController::class)->name('letters.pdf')->middleware('role:student,admin,principal,curriculum');
+    Route::livewire('/activities', Activities\Mine::class)->name('activities.mine')->middleware('role:student');
+    Route::livewire('/activities/manage', Activities\Index::class)->name('activities.index')->middleware('role:admin,principal,curriculum');
+    Route::get('/activities/skpi/{student?}', SkpiPdfController::class)->name('activities.skpi')->middleware('role:student,admin,principal,curriculum');
+    Route::get('/activities/{activity}/evidence', ActivityEvidenceController::class)->name('activities.evidence')->middleware('role:student,admin,principal,curriculum');
+    Route::livewire('/scholarships', Scholarships\Mine::class)->name('scholarships.mine')->middleware('role:student');
+    Route::livewire('/scholarships/manage', Scholarships\Manage::class)->name('scholarships.manage')->middleware('role:admin,principal,curriculum');
+    Route::livewire('/scholarships/applications', Scholarships\Applications::class)->name('scholarships.applications')->middleware('role:admin,principal,curriculum');
+    Route::livewire('/internships', Internships\Mine::class)->name('internships.mine')->middleware('role:student');
+    Route::livewire('/internships/manage', Internships\Index::class)->name('internships.index')->middleware('role:admin,principal,curriculum,teacher');
+    Route::livewire('/conversions', Conversions\Mine::class)->name('conversions.mine')->middleware('role:student');
+    Route::livewire('/conversions/manage', Conversions\Index::class)->name('conversions.index')->middleware('role:admin,principal,curriculum');
     Route::livewire('/summary', Dashboard::class)->name('summary');
 
     Route::livewire('/profile', Profile\Show::class)->name('profile.show');

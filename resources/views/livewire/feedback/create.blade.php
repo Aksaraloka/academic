@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-2xl space-y-6">
+<div class="space-y-6">
     <x-page-header title="Kirim masukan atau komplain" subtitle="Ceritakan dengan jelas agar bisa segera ditindaklanjuti.">
         <x-slot:actions>
             <x-button :href="route('feedback.index')" wire:navigate variant="secondary" icon="arrow-left">Kembali</x-button>

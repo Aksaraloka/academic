@@ -1,4 +1,4 @@
-<article class="mx-auto max-w-3xl space-y-6">
+<article class="space-y-6">
     <div>
         <x-button :href="route('dashboard')" wire:navigate variant="ghost" size="sm" icon="arrow-left">Beranda</x-button>
     </div>

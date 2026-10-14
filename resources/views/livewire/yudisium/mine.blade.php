@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-4xl space-y-6">
+<div class="space-y-6">
     <x-page-header title="Status kelulusan" subtitle="Syarat lulus dicek otomatis dari transkripmu.">
         <x-slot:actions><x-button :href="route('graduation.overview')" wire:navigate variant="secondary" icon="academic-cap">Wisuda</x-button></x-slot:actions>
     </x-page-header>

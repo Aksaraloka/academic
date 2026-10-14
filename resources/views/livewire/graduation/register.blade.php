@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-2xl space-y-6">
+<div class="space-y-6">
     <x-page-header :title="'Daftar wisuda'" :subtitle="$period->name">
         <x-slot:actions>
             <x-button :href="route('graduation.overview', ['period' => $period->id])" wire:navigate variant="secondary" icon="arrow-left">Kembali</x-button>

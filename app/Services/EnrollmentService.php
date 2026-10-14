@@ -320,7 +320,7 @@ class EnrollmentService
         $clearance = $this->finance->krsClearance($enrollment->student, $enrollment->academicTerm);
 
         if (! $clearance['allowed']) {
-            throw ValidationException::withMessages(['selection' => 'KRS baru bisa diisi setelah tagihan semester ini lunas (sisa '.FinanceService::rupiah($clearance['outstanding']).'). Lihat menu Aksaraloka Pay.']);
+            throw ValidationException::withMessages(['selection' => 'KRS baru bisa diisi setelah tagihan semester ini lunas (sisa '.FinanceService::rupiah($clearance['outstanding']).'). Lihat menu Biaya Pendidikan.']);
         }
 
         if (! $this->isWindowOpen($enrollment->academicTerm)) {

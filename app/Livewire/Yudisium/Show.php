@@ -29,6 +29,8 @@ class Show extends Component
 
     public function selectEligible(YudisiumService $service): void
     {
+        abort_unless($service->isManager(auth()->user()), 403);
+
         $this->selected = $service->candidates(auth()->user()->tenant)
             ->filter(fn ($student): bool => $service->evaluate($student, $this->yudisium()->held_on)['eligible'])
             ->map(fn ($student): string => (string) $student->id)->values()->all();
@@ -62,6 +64,7 @@ class Show extends Component
         }
 
         return view('livewire.yudisium.show', [
+            'canManage' => $service->isManager(auth()->user()),
             'yudisium' => $yudisium,
             'rows' => $rows,
             'decisions' => $yudisium->decisions()->with('student.program')->get()->sortBy(fn ($decision): string => $decision->student->name)->values(),

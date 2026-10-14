@@ -2,12 +2,15 @@
 
 namespace App\Services;
 
+use App\Enums\ConversionStatus;
 use App\Enums\GradeKind;
 use App\Enums\Role;
 use App\Models\AcademicTerm;
+use App\Models\CreditConversionItem;
 use App\Models\Grade;
 use App\Models\Student;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -113,9 +116,50 @@ class AcademicRecord
     }
 
     /**
-     * Transkrip: hasil terbaik tiap mata kuliah di seluruh semester, ditambah nilai riwayat sebelum sistem dipakai.
+     * Semester ke berapa mahasiswa pada semester akademik (bawaan: yang aktif): jumlah semester sejak masuk.
+     */
+    public function semesterOf(Student $student, ?AcademicTerm $term = null): int
+    {
+        $term ??= AcademicTerm::withoutGlobalScopes()->where('tenant_id', $student->tenant_id)->where('is_active', true)->first();
+
+        if ($term === null) {
+            return 1;
+        }
+
+        $entry = $student->entry_date ?? ($student->batch_year ? Carbon::create((int) $student->batch_year, 1, 1) : $term->starts_at);
+
+        return max(1, AcademicTerm::withoutGlobalScopes()->where('tenant_id', $student->tenant_id)
+            ->whereDate('starts_at', '<=', $term->starts_at)->whereDate('ends_at', '>=', $entry)->count());
+    }
+
+    /**
+     * Mata kuliah hasil konversi SKS yang sudah disetujui, kecuali yang sudah punya nilai kuliah sendiri.
      *
-     * @return array{rows: Collection<int, array<string, mixed>>, groups: Collection<int, Collection<int, array<string, mixed>>>, credits_counted: int, credits_passed: int, quality_points: float, ipk: ?float, legacy_credits: int, legacy_quality_points: float}
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function convertedRows(Student $student, Collection $rows): Collection
+    {
+        return CreditConversionItem::query()->with(['subject', 'conversion'])
+            ->whereHas('conversion', fn ($query) => $query->where('student_id', $student->id)->where('status', ConversionStatus::Approved))
+            ->whereNotNull('letter')->get()
+            ->reject(fn (CreditConversionItem $item): bool => $rows->contains(fn (array $row): bool => $row['subject']->id === $item->subject_id))
+            ->map(fn (CreditConversionItem $item): array => [
+                'item' => $item,
+                'subject' => $item->subject,
+                'source' => $item->conversion->source,
+                'credits' => $item->credits,
+                'letter' => $item->letter,
+                'points' => (float) $item->points,
+                'mutu' => round((float) $item->points * $item->credits, 2),
+                'passed' => (float) $item->points >= 1.0,
+            ])->values();
+    }
+
+    /**
+     * Transkrip: hasil terbaik tiap mata kuliah di seluruh semester, ditambah SKS hasil konversi dan nilai riwayat sebelum sistem dipakai.
+     *
+     * @return array{rows: Collection<int, array<string, mixed>>, groups: Collection<int, Collection<int, array<string, mixed>>>, converted: Collection<int, array<string, mixed>>, credits_counted: int, credits_passed: int, quality_points: float, ipk: ?float, legacy_credits: int, legacy_quality_points: float}
      */
     public function transcript(Student $student): array
     {
@@ -132,13 +176,15 @@ class AcademicRecord
 
         $legacyCredits = (int) $student->legacy_credits;
         $legacyQuality = (float) $student->legacy_quality_points;
-        $counted = (int) $rows->sum('credits') + $legacyCredits;
-        $quality = (float) $rows->sum('mutu') + $legacyQuality;
-        $passed = (int) $rows->where('passed', true)->sum('credits') + $legacyCredits;
+        $converted = $this->convertedRows($student, $rows);
+        $counted = (int) $rows->sum('credits') + (int) $converted->sum('credits') + $legacyCredits;
+        $quality = (float) $rows->sum('mutu') + (float) $converted->sum('mutu') + $legacyQuality;
+        $passed = (int) $rows->where('passed', true)->sum('credits') + (int) $converted->where('passed', true)->sum('credits') + $legacyCredits;
 
         return [
             'rows' => $rows,
             'groups' => $rows->groupBy(fn (array $row): int => $row['term']->id),
+            'converted' => $converted,
             'credits_counted' => $counted,
             'credits_passed' => $passed,
             'quality_points' => $quality,

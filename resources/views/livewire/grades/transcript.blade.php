@@ -63,8 +63,32 @@
                 </table>
             </x-card>
         @empty
-            <x-card><x-empty-state icon="document-text" title="Belum ada nilai di transkrip" description="Mata kuliah muncul di sini setelah dosen mengunci nilainya." /></x-card>
+            @if ($transcript['converted']->isEmpty())
+                <x-card><x-empty-state icon="document-text" title="Belum ada nilai di transkrip" description="Mata kuliah muncul di sini setelah dosen mengunci nilainya." /></x-card>
+            @endif
         @endforelse
+
+        @if ($transcript['converted']->isNotEmpty())
+            <x-card title="Hasil konversi SKS (magang, MBKM, dan lainnya)" :padding="false">
+                <table class="table-responsive">
+                    <thead>
+                        <tr><th scope="col">Kode</th><th scope="col">Mata kuliah</th><th scope="col">Sumber</th><th scope="col" class="text-right">SKS</th><th scope="col">Huruf</th><th scope="col" class="text-right">Mutu</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($transcript['converted'] as $row)
+                            <tr wire:key="trc-{{ $row['item']->id }}">
+                                <td data-label="Kode" class="tabular-nums text-text-muted">{{ $row['subject']->code }}</td>
+                                <td data-label="Mata kuliah" class="font-medium">{{ $row['subject']->name }}</td>
+                                <td data-label="Sumber" class="text-text-muted">{{ $row['source']->label() }}</td>
+                                <td data-label="SKS" class="tabular-nums sm:text-right">{{ $row['credits'] }}</td>
+                                <td data-label="Huruf"><x-badge :variant="$letterTone[$row['letter']]">{{ $row['letter'] }}</x-badge></td>
+                                <td data-label="Mutu" class="tabular-nums sm:text-right">{{ $num($row['points'], 1) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </x-card>
+        @endif
 
         <p class="text-xs text-text-muted">Transkrip memakai hasil terbaik untuk tiap mata kuliah yang diulang atau diremedial. IPK = jumlah (SKS × mutu) ÷ jumlah SKS. SKS lulus adalah mata kuliah dengan nilai D ke atas.</p>
     @endif

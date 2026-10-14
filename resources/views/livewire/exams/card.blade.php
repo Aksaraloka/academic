@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-4xl space-y-6">
+<div class="space-y-6">
     <x-page-header title="Kartu ujian" :subtitle="$student ? $student->name.' · NIM '.$student->nim : 'Jadwal dan syarat mengikuti ujian'">
         <x-slot:actions>
             @if ($children->count() > 1)

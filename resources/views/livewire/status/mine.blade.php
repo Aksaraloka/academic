@@ -2,7 +2,7 @@
     $canLeave = $student->status === \App\Enums\StudentStatus::Active;
     $canReactivate = $student->status->canReactivate();
 @endphp
-<div class="mx-auto max-w-4xl space-y-6">
+<div class="space-y-6">
     <x-page-header title="Status akademik" subtitle="Status aktif, cuti, atau non-aktif per semester, beserta pengajuan cuti dan aktif kembali.">
         <x-slot:actions>
             <x-button :href="route('academic.calendar')" wire:navigate variant="secondary" icon="calendar-days">Kalender akademik</x-button>

@@ -65,6 +65,27 @@
         </table>
     @endforeach
 
+    @if ($transcript['converted']->isNotEmpty())
+        <h3>Hasil konversi SKS</h3>
+        <table class="grid">
+            <thead>
+                <tr><th style="width:12%">Kode</th><th>Mata kuliah</th><th style="width:22%">Sumber</th><th style="width:7%">SKS</th><th style="width:8%">Huruf</th><th style="width:9%">Mutu</th></tr>
+            </thead>
+            <tbody>
+                @foreach ($transcript['converted'] as $row)
+                    <tr>
+                        <td>{{ $row['subject']->code }}</td>
+                        <td>{{ $row['subject']->name }}</td>
+                        <td>{{ $row['source']->label() }}</td>
+                        <td class="c">{{ $row['credits'] }}</td>
+                        <td class="c"><b>{{ $row['letter'] }}</b></td>
+                        <td class="r">{{ $num($row['points'], 1) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
+
     <table class="summary">
         <tr><td style="width:30%">SKS lulus</td><td><b>{{ $transcript['credits_passed'] }}</b></td></tr>
         <tr><td>SKS dihitung</td><td><b>{{ $transcript['credits_counted'] }}</b></td></tr>

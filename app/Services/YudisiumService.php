@@ -54,7 +54,7 @@ class YudisiumService
         $minGpa = (float) $tenant->setting('graduation_min_gpa');
         $maxD = (float) $tenant->setting('graduation_max_d_percent');
 
-        $rows = $transcript['rows'];
+        $rows = $transcript['rows']->concat($transcript['converted']);
         $eCount = $rows->filter(fn (array $row): bool => ! $row['passed'])->count();
         $dCredits = (int) $rows->where('letter', 'D')->sum('credits');
         $dPercent = $credits > 0 ? round($dCredits / $credits * 100, 1) : 0.0;

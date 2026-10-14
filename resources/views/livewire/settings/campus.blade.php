@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-4xl space-y-6">
+<div class="space-y-6">
     <x-page-header title="Pengaturan kampus" subtitle="Identitas, aturan presensi, lokasi check-in, dan syarat wisuda. Bobot nilai ada di menu Nilai.">
         <x-slot:actions>
             <x-button :href="route('academic.terms')" wire:navigate variant="secondary" icon="calendar-days">Semester akademik</x-button>
@@ -74,7 +74,16 @@
             </div>
         </x-card>
 
-        <x-card title="Keuangan (Aksaraloka Pay)">
+        <x-card title="Layanan mandiri mahasiswa">
+            <div class="grid gap-4 sm:grid-cols-2">
+                <x-field label="Nama penandatangan surat" name="letter_signatory_name" hint="Dicetak di bawah tanda tangan surat. Kosongkan bila ditandatangani manual."><input id="letter_signatory_name" type="text" wire:model="letter_signatory_name" class="input"></x-field>
+                <x-field label="Jabatan penandatangan" name="letter_signatory_title" required><input id="letter_signatory_title" type="text" wire:model="letter_signatory_title" class="input"></x-field>
+                <x-field label="SKS minimal magang / MBKM" name="internship_min_credits" hint="SKS lulus yang dibutuhkan untuk mengajukan." required><input id="internship_min_credits" type="number" min="0" wire:model="internship_min_credits" class="input text-right tabular-nums" inputmode="numeric"></x-field>
+                <x-field label="Batas SKS per pengajuan konversi" name="conversion_max_credits" required><input id="conversion_max_credits" type="number" min="1" wire:model="conversion_max_credits" class="input text-right tabular-nums" inputmode="numeric"></x-field>
+            </div>
+        </x-card>
+
+        <x-card title="Keuangan (Biaya Pendidikan)">
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="flex min-h-11 items-center gap-2 text-sm sm:col-span-2">
                     <input type="checkbox" wire:model="krs_requires_payment" class="size-5 accent-primary">

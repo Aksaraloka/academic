@@ -4,6 +4,7 @@ namespace App\Livewire\Yudisium;
 
 use App\Models\Yudisium;
 use App\Services\AuditLogger;
+use App\Services\YudisiumService;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -16,8 +17,10 @@ class Index extends Component
 
     public string $number = '';
 
-    public function create(AuditLogger $audit): void
+    public function create(AuditLogger $audit, YudisiumService $service): void
     {
+        abort_unless($service->isManager(auth()->user()), 403);
+
         $data = $this->validate([
             'name' => ['required', 'string', 'max:150'],
             'held_on' => ['required', 'date'],
@@ -31,9 +34,10 @@ class Index extends Component
         $this->redirectRoute('yudisium.show', $yudisium, navigate: true);
     }
 
-    public function render()
+    public function render(YudisiumService $service)
     {
         return view('livewire.yudisium.index', [
+            'canManage' => $service->isManager(auth()->user()),
             'yudisiums' => Yudisium::query()->withCount('decisions')->orderByDesc('held_on')->get(),
         ]);
     }

@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-2xl space-y-6">
+<div class="space-y-6">
     <div>
         <x-button :href="route('survey.index')" wire:navigate variant="ghost" size="sm" icon="arrow-left">Kuesioner</x-button>
     </div>

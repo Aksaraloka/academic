@@ -571,5 +571,6 @@ SVG;
         }
 
         (new JournalSeeder)->seed($tenant);
+        (new SelfServiceSeeder)->seed($tenant, $adminUser);
     }
 }
