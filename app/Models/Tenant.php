@@ -33,6 +33,11 @@ class Tenant extends Model
         'remedial_letters' => ['D', 'E'],
         'graduation_min_credits' => 144,
         'graduation_min_gpa' => 2.0,
+        'krs_requires_payment' => true,
+        'va_prefix' => '8808',
+        'payment_bank_name' => null,
+        'payment_account_number' => null,
+        'payment_account_name' => null,
     ];
 
     /**

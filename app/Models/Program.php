@@ -18,6 +18,11 @@ class Program extends Model
         return $this->belongsTo(Faculty::class);
     }
 
+    public function feeRates(): HasMany
+    {
+        return $this->hasMany(FeeRate::class);
+    }
+
     public function students(): HasMany
     {
         return $this->hasMany(Student::class);

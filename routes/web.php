@@ -3,7 +3,10 @@
 use App\Http\Controllers\FeedbackAttachmentController;
 use App\Http\Controllers\GradeReportController;
 use App\Http\Controllers\GraduationMinutesPrintController;
+use App\Http\Controllers\InvoicePdfController;
 use App\Http\Controllers\NewsPosterController;
+use App\Http\Controllers\PaymentProofController;
+use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\ScheduleExportController;
 use App\Http\Controllers\SurveyExportController;
@@ -18,11 +21,13 @@ use App\Livewire\Curricula;
 use App\Livewire\Dashboard;
 use App\Livewire\Enrollment;
 use App\Livewire\Feedback;
+use App\Livewire\Finance;
 use App\Livewire\Grades;
 use App\Livewire\Graduation;
 use App\Livewire\Groups;
 use App\Livewire\Leaves;
 use App\Livewire\News;
+use App\Livewire\Pay;
 use App\Livewire\Profile;
 use App\Livewire\Programs;
 use App\Livewire\Reports;
@@ -44,6 +49,9 @@ Route::middleware('guest')->group(function () {
     Route::livewire('/reset-password/{token}', ResetPassword::class)->name('password.reset');
 });
 
+// Notifikasi pembayaran virtual account dari penyedia pembayaran (ditandatangani HMAC, tanpa sesi).
+Route::post('/pay/webhook', PaymentWebhookController::class)->name('pay.webhook');
+
 Route::post('/logout', function () {
     Auth::logout();
     request()->session()->invalidate();
@@ -63,6 +71,13 @@ Route::middleware('auth')->group(function () {
     Route::livewire('/my-advising', Advising\Mine::class)->name('advising.mine')->middleware('role:student');
     Route::livewire('/curricula', Curricula\Index::class)->name('curricula.index')->middleware('role:admin,principal,curriculum');
     Route::livewire('/my-curriculum', Curricula\Mine::class)->name('curricula.mine')->middleware('role:student');
+    Route::livewire('/pay', Pay\Index::class)->name('pay.index')->middleware('role:student,guardian');
+    Route::livewire('/pay/invoices/{invoice}', Pay\Show::class)->name('pay.show')->middleware('role:student,guardian');
+    Route::livewire('/finance', Finance\Index::class)->name('finance.index')->middleware('role:admin,finance,principal');
+    Route::livewire('/finance/rates', Finance\Rates::class)->name('finance.rates')->middleware('role:admin,finance');
+    Route::livewire('/finance/invoices/{invoice}', Finance\Show::class)->name('finance.show')->middleware('role:admin,finance,principal');
+    Route::get('/finance/invoices/{invoice}/pdf', InvoicePdfController::class)->name('finance.pdf');
+    Route::get('/finance/payments/{payment}/proof', PaymentProofController::class)->name('finance.proof');
     Route::livewire('/summary', Dashboard::class)->name('summary');
 
     Route::livewire('/profile', Profile\Show::class)->name('profile.show');

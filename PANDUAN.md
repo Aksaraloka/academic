@@ -63,6 +63,7 @@ Setelah `--seed`, semua akun memakai kata sandi **`password`**.
 | Wakil dekan akademik | `akademik@aksaraloka.test`                                 |
 | Dosen                | `dosen@aksaraloka.test`, `dosen2@aksaraloka.test`          |
 | Petugas presensi     | `petugas@aksaraloka.test`                                  |
+| Petugas keuangan     | `keuangan@aksaraloka.test`                                 |
 | Mahasiswa            | `mahasiswa@aksaraloka.test` (juga `mhs1@` sampai `mhs12@`) |
 | Orang tua            | `ortu@aksaraloka.test`                                     |
 
@@ -81,6 +82,7 @@ Data contoh berisi Universitas Aksara Nusantara dengan 2 fakultas, 3 program stu
 | **Wakil dekan akademik** | Beranda, Jadwal (atur), Kelas, Rekap, Check-in, Wisuda                                          |
 | **Dosen**                | Beranda, Jadwal, Presensi, Check-in, Rekap, Izin, Survey, Masukan                               |
 | **Petugas presensi**     | Beranda, Presensi, Check-in, Jadwal                                                             |
+| **Petugas keuangan**     | Beranda, Keuangan, Akademik (kalender), Survey, Masukan                                          |
 | **Mahasiswa**            | Beranda, Presensi, Jadwal, Wisuda, Survey, Masukan                                   |
 | **Orang tua**            | Beranda, Jadwal, Kehadiran, Survey, Masukan                                                     |
 
@@ -186,6 +188,20 @@ Alur: mahasiswa memilih mata kuliah, mengajukan ke dosen wali, dosen wali menyet
 
 - **Dosen wali** (`/advising`, menu Perwalian): daftar mahasiswa perwalian semester aktif, status KRS masing-masing, dan riwayat bimbingan. Dosen wali menambah dan mengubah **catatan bimbingan** (tanggal, topik, catatan, tindak lanjut). Admin, Kaprodi, dan wakil dekan bisa melihat seluruhnya tetapi tidak menambah catatan. Dari halaman Persetujuan KRS ada pintasan Bimbingan per mahasiswa.
 - **Mahasiswa** (`/my-advising`): melihat nama dosen wali dan riwayat catatan bimbingannya.
+
+### Keuangan (Aksaraloka Pay)
+
+Tagihan UKT dan BPP per semester, status pembayaran, riwayat pembayaran, dan syarat lunas untuk KRS. Jumlah uang disimpan dalam rupiah bulat.
+
+- **Tarif** (`/finance/rates`, admin dan petugas keuangan): UKT per **golongan 1–8** untuk tiap prodi (atau satu tarif bawaan semua golongan) dan BPP per prodi. Golongan UKT mahasiswa diisi di formulir Mahasiswa.
+- **Menerbitkan tagihan** (`/finance`): pilih semester, tanggal jatuh tempo, dan (opsional) prodi, lalu **Terbitkan tagihan**. Sistem membuat tagihan UKT + BPP untuk mahasiswa **aktif** yang belum punya tagihan semester itu (mahasiswa cuti, non-aktif, dan DO dilewati). Menjalankannya lagi tidak membuat tagihan ganda. Tiap tagihan mendapat nomor `INV-…` dan **virtual account** (awalan kampus + NIM).
+- **Status tagihan:** Belum dibayar, Dibayar sebagian, Lunas, Dibatalkan, dengan penanda Lewat jatuh tempo. Halaman Keuangan menampilkan total ditagihkan, diterima, belum dibayar, dan pembayaran yang menunggu verifikasi, dengan filter semester, status, dan pencarian nama atau NIM.
+- **Mahasiswa dan orang tua** (`/pay`, menu Aksaraloka Pay): daftar tagihan, sisa tagihan, rincian, cara pembayaran (rekening kampus dan nomor VA), dan riwayat. Mahasiswa menekan **Konfirmasi pembayaran** (jumlah, metode, tanggal, referensi, bukti foto atau PDF maksimal 3 MB). Konfirmasi berstatus menunggu sampai petugas keuangan memverifikasi; jumlahnya tidak boleh melebihi sisa tagihan yang belum dalam verifikasi. Orang tua hanya melihat.
+- **Petugas keuangan** (akun `keuangan@`, juga admin): di detail tagihan (`/finance/invoices/{id}`) **Konfirmasi** atau **Tolak** (alasan wajib) pembayaran mahasiswa, **Catat pembayaran** langsung (tunai, transfer, VA, dompet digital), **Beri dispensasi KRS**, atau **Batalkan tagihan** (hanya bila belum ada pembayaran terkonfirmasi). Kaprodi dan pimpinan bisa melihat saja.
+- **PDF:** tagihan beserta riwayat pembayarannya bisa diunduh (jadi bukti lunas setelah lunas) oleh pemilik tagihan dan petugas.
+- **Syarat KRS:** bila pengaturan *Tagihan harus lunas sebelum KRS* aktif (bawaan aktif, diatur di Pengaturan kampus), mahasiswa dengan tagihan semester itu yang belum lunas dan tanpa dispensasi tidak bisa mengisi atau mengajukan KRS; halaman KRS menampilkan sisa tagihan dan tautan ke Aksaraloka Pay. Semester tanpa tagihan terbit tidak menghalangi KRS.
+- **Webhook virtual account:** penyedia pembayaran dapat memanggil `POST /pay/webhook` dengan JSON `{"va_number": "...", "amount": 1000000, "reference": "...", "paid_at": "2026-10-14"}` dan header `X-Pay-Signature` berisi `HMAC-SHA256(body, PAY_WEBHOOK_SECRET)`. Pembayaran dialokasikan ke tagihan terbuka yang paling dulu jatuh tempo, idempoten menurut `reference`, dan ditolak bila jumlah melebihi sisa tagihan. Isi `PAY_WEBHOOK_SECRET` di `.env`; tanpa rahasia, webhook menolak semua permintaan.
+- Kode: `FinanceService`, model `Invoice`, `Payment`, `FeeRate`.
 
 ### Status mahasiswa, cuti, dan aktif kembali
 
@@ -345,6 +361,7 @@ Hal-hal berikut **belum ada** atau perlu keputusan lanjutan:
 
 - **Ganti kata sandi dari profil dan reset oleh admin.** Lupa kata sandi lewat email sudah tersedia (`/forgot-password`); email dikirim lewat `MAIL_MAILER` (bawaan `log`, isi surat ada di `storage/logs`). Atur SMTP di `.env` untuk produksi.
 - Layar pengaturan kampus dan aktivasi semester (saat ini lewat data atau tinker).
+- Payment gateway sungguhan (saat ini verifikasi manual dan webhook VA), cicilan terjadwal, denda keterlambatan, dan beasiswa atau keringanan UKT otomatis.
 - Cetak KRS PDF, status otomatis "lulus" setelah wisuda, dan kuliah tanpa kelas angkatan (kelas terbuka murni lintas prodi).
 - Presensi saat offline, notifikasi WhatsApp otomatis ke orang tua, dan presensi gerbang.
 - Impor Excel (baru CSV), ekspor format Dapodik atau Neo Feeder PDDikti.

@@ -31,6 +31,7 @@ use App\Models\TeachingAssignment;
 use App\Models\Tenant;
 use App\Models\TimeSlot;
 use App\Models\User;
+use App\Services\FinanceService;
 use App\Support\GradeScale;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
@@ -115,6 +116,7 @@ SVG;
         $account('Admin BAAK', 'admin@aksaraloka.test', Role::Admin);
         $account('Prof. Dr. Maya Kaprodi, M.T.', 'kaprodi@aksaraloka.test', Role::Principal);
         $account('Petugas Presensi', 'petugas@aksaraloka.test', Role::Duty);
+        $financeUser = $account('Petugas Keuangan', 'keuangan@aksaraloka.test', Role::Finance);
 
         $teachers = collect([
             ['Budi Santoso, M.Kom.', 'dosen@aksaraloka.test', Role::Teacher],
@@ -527,6 +529,7 @@ SVG;
 
         // Mahasiswa angkatan 2022–2026 di berbagai semester beserta riwayat nilainya.
         (new AcademicHistorySeeder)->seed($tenant, $teachers);
+        (new FinanceSeeder)->seed($tenant, $financeUser, app(FinanceService::class));
 
         // Riwayat presensi lima minggu terakhir (tanpa hari ini) agar rekap dan syarat ujian 75% terlihat.
         $dates = collect(range(1, 35))->map(fn (int $back) => today()->subDays($back))->filter(fn ($date) => ! $date->isSunday());

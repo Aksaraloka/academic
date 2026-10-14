@@ -40,6 +40,7 @@ class EnrollmentService
         private readonly AcademicCalendar $calendar,
         private readonly AcademicRecord $records,
         private readonly CurriculumService $curricula,
+        private readonly FinanceService $finance,
         private readonly AuditLogger $audit,
     ) {}
 
@@ -314,6 +315,12 @@ class EnrollmentService
 
         if (! $enrollment->status->isEditable()) {
             throw ValidationException::withMessages(['selection' => 'KRS yang sedang diajukan atau sudah disetujui tidak bisa diubah. Tarik pengajuan dulu bila perlu.']);
+        }
+
+        $clearance = $this->finance->krsClearance($enrollment->student, $enrollment->academicTerm);
+
+        if (! $clearance['allowed']) {
+            throw ValidationException::withMessages(['selection' => 'KRS baru bisa diisi setelah tagihan semester ini lunas (sisa '.FinanceService::rupiah($clearance['outstanding']).'). Lihat menu Aksaraloka Pay.']);
         }
 
         if (! $this->isWindowOpen($enrollment->academicTerm)) {

@@ -61,6 +61,8 @@ class Form extends Component
 
     public string $status = 'aktif';
 
+    public string $ukt_group = '';
+
     public string $entry_date = '';
 
     public string $previous_school = '';
@@ -110,6 +112,7 @@ class Form extends Component
             'domicile_postal_code' => (string) $student->domicile_postal_code,
             'phone' => (string) $student->phone,
             'status' => $student->status->value,
+            'ukt_group' => (string) $student->ukt_group,
             'entry_date' => $student->entry_date?->toDateString() ?? '',
             'previous_school' => (string) $student->previous_school,
             'admission_path' => (string) $student->admission_path,
@@ -200,6 +203,7 @@ class Form extends Component
             'domicile_postal_code' => ['nullable', 'digits_between:4,10'],
             'phone' => ['nullable', 'string', 'max:30'],
             'status' => ['required', Rule::enum(StudentStatus::class)],
+            'ukt_group' => ['nullable', 'integer', 'between:1,8'],
             'entry_date' => ['nullable', 'date'],
             'previous_school' => ['nullable', 'string', 'max:255'],
             'admission_path' => ['nullable', Rule::in(Student::ADMISSION_PATHS)],

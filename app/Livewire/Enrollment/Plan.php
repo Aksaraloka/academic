@@ -6,6 +6,7 @@ use App\Enums\StudentStatus;
 use App\Models\AcademicTerm;
 use App\Models\Enrollment;
 use App\Services\EnrollmentService;
+use App\Services\FinanceService;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -70,7 +71,7 @@ class Plan extends Component
         return $service->start(auth()->user()->student, $term);
     }
 
-    public function render(EnrollmentService $service)
+    public function render(EnrollmentService $service, FinanceService $finance)
     {
         $student = auth()->user()->student;
         $term = AcademicTerm::current();
@@ -85,13 +86,15 @@ class Plan extends Component
         $offerings = $service->offerings($student, $term);
         $ownGroupId = $service->groupFor($student, $term)?->id;
         $chosen = $offerings->whereIn('id', array_map('intval', $this->selected));
-        $editable = $enrollment !== null && $enrollment->status->isEditable() && $service->isWindowOpen($term) && $student->status === StudentStatus::Active;
+        $clearance = $finance->krsClearance($student, $term);
+        $editable = $enrollment !== null && $enrollment->status->isEditable() && $service->isWindowOpen($term) && $student->status === StudentStatus::Active && $clearance['allowed'];
 
         return view('livewire.enrollment.plan', [
             'term' => $term,
             'student' => $student,
             'enrollment' => $enrollment,
             'editable' => $editable,
+            'unpaid' => $clearance['allowed'] ? null : $clearance['outstanding'],
             'inactiveStatus' => $student->status === StudentStatus::Active ? null : $student->status,
             'windowOpen' => $service->isWindowOpen($term),
             'window' => $service->window($term),

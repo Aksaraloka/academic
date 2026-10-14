@@ -58,6 +58,9 @@ class Navigation
                 self::item('Check-in', 'checkin', 'map-pin'),
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
             ],
+            Role::Finance => [
+                self::item('Beranda', 'dashboard', 'home'),
+            ],
             Role::Student => [
                 self::item('Beranda', 'dashboard', 'home'),
                 self::item('Status Kehadiran', 'attendance.mine', 'clipboard-document-check', 'attendance.mine'),
@@ -73,6 +76,12 @@ class Navigation
 
         if ($grades = self::gradesChildren($user)) {
             $items[] = ['label' => 'Nilai', 'icon' => 'check-badge', 'match' => 'grades.*', 'children' => $grades];
+        }
+
+        if ($user->hasRole(Role::Student, Role::Guardian)) {
+            $items[] = self::item('Aksaraloka Pay', 'pay.index', 'credit-card', 'pay.*');
+        } elseif ($user->hasRole(Role::Admin, Role::Finance, Role::Principal)) {
+            $items[] = self::item('Keuangan', 'finance.index', 'banknotes', 'finance.*');
         }
 
         $items[] = [

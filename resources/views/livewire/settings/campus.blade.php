@@ -61,6 +61,19 @@
             </div>
         </x-card>
 
+        <x-card title="Keuangan (Aksaraloka Pay)">
+            <div class="grid gap-4 sm:grid-cols-2">
+                <label class="flex min-h-11 items-center gap-2 text-sm sm:col-span-2">
+                    <input type="checkbox" wire:model="krs_requires_payment" class="size-5 accent-primary">
+                    Tagihan harus lunas sebelum mahasiswa bisa mengisi KRS
+                </label>
+                <x-field label="Awalan virtual account" name="va_prefix" hint="Nomor VA = awalan + NIM."><input id="va_prefix" type="text" wire:model="va_prefix" class="input tabular-nums" inputmode="numeric" placeholder="8808"></x-field>
+                <x-field label="Bank tujuan transfer" name="payment_bank_name"><input id="payment_bank_name" type="text" wire:model="payment_bank_name" class="input" placeholder="Bank Mandiri"></x-field>
+                <x-field label="Nomor rekening" name="payment_account_number"><input id="payment_account_number" type="text" wire:model="payment_account_number" class="input tabular-nums" inputmode="numeric"></x-field>
+                <x-field label="Atas nama" name="payment_account_name"><input id="payment_account_name" type="text" wire:model="payment_account_name" class="input"></x-field>
+            </div>
+        </x-card>
+
         <x-button type="submit" wire:loading.attr="disabled" wire:target="save">Simpan pengaturan</x-button>
     </form>
 </div>

@@ -18,6 +18,13 @@
             </div>
         @endif
 
+        @if ($unpaid !== null)
+            <div class="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm" role="status">
+                KRS baru bisa diisi setelah tagihan semester ini lunas. Sisa tagihan <strong>{{ \App\Services\FinanceService::rupiah($unpaid) }}</strong>.
+                <a href="{{ route('pay.index') }}" wire:navigate class="font-medium text-primary hover:underline">Buka Aksaraloka Pay</a>.
+            </div>
+        @endif
+
         <x-card>
             <div class="flex flex-wrap items-center gap-3">
                 @if ($windowOpen)

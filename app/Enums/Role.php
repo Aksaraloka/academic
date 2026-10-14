@@ -9,6 +9,7 @@ enum Role: string
     case Curriculum = 'curriculum';
     case Teacher = 'teacher';
     case Duty = 'duty';
+    case Finance = 'finance';
     case Student = 'student';
     case Guardian = 'guardian';
 
@@ -20,6 +21,7 @@ enum Role: string
             self::Curriculum => 'Wakil dekan akademik',
             self::Teacher => 'Dosen',
             self::Duty => 'Petugas presensi',
+            self::Finance => 'Petugas keuangan',
             self::Student => 'Mahasiswa',
             self::Guardian => 'Orang tua',
         };

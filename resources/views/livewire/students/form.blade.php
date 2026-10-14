@@ -106,6 +106,12 @@
                 <x-field label="Tanggal masuk" name="entry_date">
                     <input id="entry_date" type="date" wire:model="entry_date" class="input">
                 </x-field>
+                <x-field label="Golongan UKT" name="ukt_group" hint="Menentukan tarif UKT di Aksaraloka Pay.">
+                    <select id="ukt_group" wire:model="ukt_group" class="input">
+                        <option value="">Belum ditetapkan</option>
+                        @foreach (range(1, 8) as $group)<option value="{{ $group }}">Golongan {{ $group }}</option>@endforeach
+                    </select>
+                </x-field>
                 <x-field label="Status" name="status" required>
                     <select id="status" wire:model="status" class="input">
                         @foreach (\App\Enums\StudentStatus::cases() as $option)<option value="{{ $option->value }}">{{ $option->label() }}</option>@endforeach
