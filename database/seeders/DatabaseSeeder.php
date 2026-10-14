@@ -10,6 +10,8 @@ use App\Models\AttendanceSession;
 use App\Models\Faculty;
 use App\Models\FeedbackReply;
 use App\Models\FeedbackTicket;
+use App\Models\Grade;
+use App\Models\GradeRevision;
 use App\Models\GraduationPeriod;
 use App\Models\GraduationRegistration;
 use App\Models\Guardian;
@@ -19,6 +21,7 @@ use App\Models\Room;
 use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\StudyGroup;
+use App\Models\StudyGroupMember;
 use App\Models\Subject;
 use App\Models\Survey;
 use App\Models\SurveyAnswer;
@@ -28,6 +31,7 @@ use App\Models\TeachingAssignment;
 use App\Models\Tenant;
 use App\Models\TimeSlot;
 use App\Models\User;
+use App\Support\GradeScale;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 
@@ -130,7 +134,7 @@ SVG;
 
         $term = AcademicTerm::create([
             'tenant_id' => $tenant->id, 'name' => '2026/2027', 'semester' => 'Ganjil',
-            'starts_at' => '2026-09-07', 'ends_at' => '2027-01-15', 'is_active' => true,
+            'starts_at' => '2026-09-07', 'ends_at' => '2027-01-15', 'is_active' => true, 'grading_closes_on' => '2027-01-29',
         ]);
 
         $groups = collect(['TI-2024-A' => $teachers[0], 'TI-2024-B' => $teachers[1]])->map(fn (Teacher $advisor, string $name) => StudyGroup::create([
@@ -179,6 +183,8 @@ SVG;
                     'admission_path' => ['SNBP', 'SNBT', 'Mandiri'][array_rand([0, 1, 2])],
                     'status' => 'aktif',
                     'entry_date' => '2024-09-02',
+                    'legacy_credits' => 40,
+                    'legacy_quality_points' => round(40 * fake()->randomFloat(2, 2.7, 3.8), 2),
                 ]);
                 $group->members()->create(['student_id' => $student->id, 'joined_at' => '2026-09-07']);
                 $students->push($student);
@@ -243,6 +249,7 @@ SVG;
                 'tenant_id' => $tenant->id, 'program_id' => $informatics->id, 'name' => $row[0],
                 'nim' => (string) (2210000 + $index + 1), 'batch_year' => 2022, 'gender' => $index % 2 === 0 ? 'P' : 'L',
                 'status' => 'aktif', 'entry_date' => '2022-09-05',
+                'legacy_credits' => $row[3], 'legacy_quality_points' => round($row[2] * $row[3], 2),
             ]);
 
             GraduationRegistration::create([
@@ -397,7 +404,7 @@ SVG;
         // Semester sebelumnya (arsip, terkunci): kelas yang sama dengan mata kuliah semester 2 pada Selasa dan Kamis.
         $previousTerm = AcademicTerm::create([
             'tenant_id' => $tenant->id, 'name' => '2025/2026', 'semester' => 'Genap',
-            'starts_at' => '2026-02-09', 'ends_at' => '2026-06-26', 'is_active' => false, 'is_locked' => true,
+            'starts_at' => '2026-02-09', 'ends_at' => '2026-06-26', 'is_active' => false, 'is_locked' => true, 'grading_closes_on' => '2026-07-10',
         ]);
 
         $previousSubjects = collect([
@@ -433,6 +440,88 @@ SVG;
                     ]);
                 }
             }
+        }
+
+        // Nilai: semester lalu terkunci semua, semester ini draf pada satu kelas.
+        $scale = GradeScale::for($tenant);
+        $clamp = fn (int|float $value): float => (float) max(0, min(100, round($value, 2)));
+        $lockedBy = fn (TeachingAssignment $assignment) => $teachers->firstWhere('id', $assignment->teacher_id)?->user_id;
+        $demoStudent = $students->first();
+
+        $record = function (TeachingAssignment $assignment, Student $student, float $base) use ($scale, $clamp, $tenant): Grade {
+            $scores = [
+                'assignment' => $clamp($base + random_int(-6, 8)),
+                'midterm' => $clamp($base + random_int(-10, 10)),
+                'final' => $clamp($base + random_int(-12, 10)),
+                'attendance' => (float) random_int(78, 100),
+            ];
+            $total = GradeScale::total($scores, $scale->weightsFor($assignment));
+            $letter = $scale->letterFor($total);
+
+            return Grade::create([
+                'tenant_id' => $tenant->id, 'teaching_assignment_id' => $assignment->id, 'student_id' => $student->id, 'kind' => 'reguler',
+                'assignment_score' => $scores['assignment'], 'midterm_score' => $scores['midterm'], 'final_exam_score' => $scores['final'],
+                'attendance_score' => $scores['attendance'], 'total_score' => $total, 'letter' => $letter, 'points' => GradeScale::pointsFor($letter),
+            ]);
+        };
+
+        $previousAssignments = TeachingAssignment::query()->with('subject')->where('academic_term_id', $previousTerm->id)->get();
+
+        foreach ($previousAssignments as $assignment) {
+            $members = StudyGroupMember::query()->where('study_group_id', $assignment->study_group_id)->pluck('student_id');
+
+            foreach (Student::query()->whereIn('id', $members)->orderBy('id')->get() as $student) {
+                // Mahasiswa contoh gagal di Matematika Diskrit lalu remedial; sebagian kecil lainnya mendapat nilai rendah.
+                $base = $student->id === $demoStudent->id && $assignment->subject->code === 'MK102'
+                    ? 41
+                    : (random_int(1, 100) <= 8 ? random_int(30, 52) : random_int(62, 95));
+
+                $grade = $record($assignment, $student, $base);
+
+                if ($student->id === $demoStudent->id && $assignment->subject->code === 'MK102') {
+                    Grade::create([
+                        'tenant_id' => $tenant->id, 'teaching_assignment_id' => $assignment->id, 'student_id' => $student->id, 'kind' => 'remedial',
+                        'total_score' => 68, 'letter' => $scale->letterFor(68), 'points' => GradeScale::pointsFor($scale->letterFor(68)),
+                    ]);
+                }
+            }
+
+            $assignment->update(['grades_locked_at' => '2026-07-01 10:00:00', 'grades_locked_by' => $lockedBy($assignment)]);
+        }
+
+        // Pengajuan revisi yang menunggu persetujuan Kaprodi.
+        $revisable = Grade::query()
+            ->whereHas('assignment', fn ($query) => $query->where('teacher_id', $teachers[0]->id)->where('academic_term_id', $previousTerm->id))
+            ->where('student_id', '!=', $demoStudent->id)
+            ->where('kind', 'reguler')
+            ->orderBy('total_score')
+            ->first();
+
+        if ($revisable) {
+            $old = $revisable->scores();
+            $new = ['assignment' => $clamp($old['assignment'] + 10), 'midterm' => $clamp($old['midterm'] + 12), 'final' => $old['final']];
+            $newTotal = GradeScale::total($new + ['attendance' => $old['attendance']], $scale->weightsFor($revisable->assignment));
+
+            GradeRevision::create([
+                'tenant_id' => $tenant->id, 'grade_id' => $revisable->id, 'requested_by' => $teachers[0]->user_id,
+                'reason' => 'Terdapat kesalahan input nilai tugas dan UTS; sudah saya cocokkan dengan lembar jawaban asli mahasiswa.',
+                'old_scores' => $old, 'new_scores' => $new + ['total' => $newTotal, 'letter' => $scale->letterFor($newTotal)],
+                'status' => 'menunggu',
+            ]);
+        }
+
+        // Semester ini: draf (tugas dan UTS terisi, UAS belum) untuk kelas pertama dosen contoh.
+        $draftAssignment = TeachingAssignment::query()
+            ->where('academic_term_id', $term->id)->where('teacher_id', $teachers[0]->id)->orderBy('id')->first();
+
+        foreach ($draftAssignment->studyGroup->activeStudents as $student) {
+            $base = random_int(60, 92);
+
+            Grade::create([
+                'tenant_id' => $tenant->id, 'teaching_assignment_id' => $draftAssignment->id, 'student_id' => $student->id, 'kind' => 'reguler',
+                'assignment_score' => $clamp($base + random_int(-6, 8)), 'midterm_score' => $clamp($base + random_int(-10, 10)),
+                'attendance_score' => (float) random_int(80, 100),
+            ]);
         }
 
         // Riwayat presensi lima minggu terakhir (tanpa hari ini) agar rekap dan syarat ujian 75% terlihat.

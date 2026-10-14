@@ -55,9 +55,14 @@
                             <td data-label="Angkatan" class="tabular-nums text-text-muted">{{ $student->batch_year ?? '–' }}</td>
                             <td data-label="Status"><x-badge :variant="$student->status->variant()">{{ $student->status->label() }}</x-badge></td>
                             <td data-label="Aksi" class="sm:text-right">
-                                @if (auth()->user()->isAdmin())
-                                    <x-button :href="route('students.edit', $student)" wire:navigate variant="ghost" size="sm" icon="pencil-square">Ubah</x-button>
-                                @endif
+                                <div class="flex flex-wrap justify-end gap-1">
+                                    @if (auth()->user()->hasRole(\App\Enums\Role::Admin, \App\Enums\Role::Principal, \App\Enums\Role::Curriculum))
+                                        <x-button :href="route('grades.transcript', ['mahasiswa' => $student->id])" wire:navigate variant="ghost" size="sm" icon="document-text">Transkrip</x-button>
+                                    @endif
+                                    @if (auth()->user()->isAdmin())
+                                        <x-button :href="route('students.edit', $student)" wire:navigate variant="ghost" size="sm" icon="pencil-square">Ubah</x-button>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @endforeach

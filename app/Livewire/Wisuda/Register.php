@@ -16,10 +16,6 @@ class Register extends Component
 
     public string $thesis_title = '';
 
-    public string $gpa = '';
-
-    public string $credits_earned = '';
-
     public string $defense_date = '';
 
     public string $gown_size = '';
@@ -35,8 +31,6 @@ class Register extends Component
         if ($existing) {
             $this->fill([
                 'thesis_title' => $existing->thesis_title,
-                'gpa' => (string) $existing->gpa,
-                'credits_earned' => (string) $existing->credits_earned,
                 'defense_date' => $existing->defense_date->toDateString(),
                 'gown_size' => (string) $existing->gown_size,
             ]);
@@ -55,12 +49,10 @@ class Register extends Component
     {
         $data = $this->validate([
             'thesis_title' => ['required', 'string', 'max:300'],
-            'gpa' => ['required', 'numeric', 'between:0,4'],
-            'credits_earned' => ['required', 'integer', 'between:0,300'],
             'defense_date' => ['required', 'date', 'before_or_equal:today'],
             'gown_size' => ['nullable', 'in:S,M,L,XL,XXL'],
         ], [], [
-            'thesis_title' => 'judul skripsi', 'gpa' => 'IPK', 'credits_earned' => 'SKS lulus',
+            'thesis_title' => 'judul skripsi',
             'defense_date' => 'tanggal sidang', 'gown_size' => 'ukuran toga',
         ]);
 
@@ -74,16 +66,14 @@ class Register extends Component
         return $this->redirectRoute('wisuda.overview', ['periode' => $this->period->id], navigate: true);
     }
 
-    public function render()
+    public function render(GraduationService $service)
     {
         $existing = $this->existing();
-        $tenant = auth()->user()->tenant;
 
         return view('livewire.wisuda.register', [
             'existing' => $existing,
             'locked' => $existing !== null && $existing->status !== GraduationStatus::Rejected,
-            'minCredits' => (int) $tenant->setting('graduation_min_credits'),
-            'minGpa' => number_format((float) $tenant->setting('graduation_min_gpa'), 2, ',', '.'),
+            'eligibility' => $service->eligibility(auth()->user()->student),
         ]);
     }
 }

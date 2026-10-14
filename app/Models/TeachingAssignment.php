@@ -8,10 +8,36 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['tenant_id', 'academic_term_id', 'teacher_id', 'subject_id', 'study_group_id', 'hours_per_week'])]
+#[Fillable(['tenant_id', 'academic_term_id', 'teacher_id', 'subject_id', 'study_group_id', 'hours_per_week', 'weight_assignment', 'weight_midterm', 'weight_final', 'weight_attendance', 'grades_locked_at', 'grades_locked_by', 'grading_extended_until'])]
 class TeachingAssignment extends Model
 {
     use BelongsToTenant;
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'grades_locked_at' => 'datetime',
+            'grading_extended_until' => 'date',
+        ];
+    }
+
+    public function academicTerm(): BelongsTo
+    {
+        return $this->belongsTo(AcademicTerm::class);
+    }
+
+    public function grades(): HasMany
+    {
+        return $this->hasMany(Grade::class);
+    }
+
+    public function areGradesLocked(): bool
+    {
+        return $this->grades_locked_at !== null;
+    }
 
     public function teacher(): BelongsTo
     {

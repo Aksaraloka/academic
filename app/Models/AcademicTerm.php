@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['tenant_id', 'name', 'semester', 'starts_at', 'ends_at', 'is_active', 'is_locked'])]
+#[Fillable(['tenant_id', 'name', 'semester', 'starts_at', 'ends_at', 'is_active', 'is_locked', 'grading_closes_on'])]
 class AcademicTerm extends Model
 {
     use BelongsToTenant, HasFactory;
@@ -23,6 +23,7 @@ class AcademicTerm extends Model
             'ends_at' => 'date',
             'is_active' => 'boolean',
             'is_locked' => 'boolean',
+            'grading_closes_on' => 'date',
         ];
     }
 

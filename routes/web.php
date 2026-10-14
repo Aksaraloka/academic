@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\FeedbackAttachmentController;
+use App\Http\Controllers\GradeReportController;
 use App\Http\Controllers\GraduationMinutesPrintController;
 use App\Http\Controllers\NewsPosterController;
 use App\Http\Controllers\ReportExportController;
@@ -11,6 +12,7 @@ use App\Livewire\Auth\Login;
 use App\Livewire\Checkin;
 use App\Livewire\Dashboard;
 use App\Livewire\Feedback;
+use App\Livewire\Grades;
 use App\Livewire\Groups;
 use App\Livewire\Leaves;
 use App\Livewire\News;
@@ -128,6 +130,22 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:student')->group(function () {
         Route::livewire('/wisuda/{period}/daftar', Wisuda\Register::class)->name('wisuda.register');
     });
+
+    Route::middleware('role:student,guardian,admin,principal,curriculum')->group(function () {
+        Route::livewire('/nilai/khs', Grades\Khs::class)->name('grades.khs');
+        Route::livewire('/nilai/transkrip', Grades\Transcript::class)->name('grades.transcript');
+        Route::get('/nilai/khs/unduh', [GradeReportController::class, 'khs'])->name('grades.khs.pdf');
+        Route::get('/nilai/transkrip/unduh', [GradeReportController::class, 'transcript'])->name('grades.transcript.pdf');
+    });
+
+    Route::middleware('role:teacher,curriculum,principal,duty,admin')->group(function () {
+        Route::livewire('/nilai/input', Grades\Courses::class)->name('grades.input.index');
+        Route::livewire('/nilai/input/{assignment}', Grades\Sheet::class)->name('grades.input.sheet');
+    });
+
+    Route::livewire('/nilai/revisi', Grades\Revisions::class)->name('grades.revisions')->middleware('role:teacher,principal,admin');
+    Route::livewire('/nilai/kelengkapan', Grades\Completeness::class)->name('grades.completeness')->middleware('role:admin,principal,curriculum');
+    Route::livewire('/nilai/pengaturan', Grades\Settings::class)->name('grades.settings')->middleware('role:admin');
 
     Route::livewire('/rekap', Reports\Index::class)->name('reports.index');
     Route::get('/rekap/ekspor', ReportExportController::class)->name('reports.export');

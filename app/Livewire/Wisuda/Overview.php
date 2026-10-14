@@ -7,6 +7,7 @@ use App\Enums\Role;
 use App\Enums\StudentStatus;
 use App\Models\GraduationPeriod;
 use App\Models\GraduationRegistration;
+use App\Services\GraduationService;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -40,6 +41,12 @@ class Overview extends Component
         if ($isStudent) {
             $student = $user->student;
             $tenant = $user->tenant;
+            $eligibility = $student
+                ? app(GraduationService::class)->eligibility($student)
+                : [
+                    'credits' => 0, 'gpa' => null, 'meets_credits' => false, 'meets_gpa' => false,
+                    'min_credits' => (int) $tenant->setting('graduation_min_credits'), 'min_gpa' => (float) $tenant->setting('graduation_min_gpa'),
+                ];
             $registration = $student
                 ? GraduationRegistration::query()->where('graduation_period_id', $period->id)->where('student_id', $student->id)->first()
                 : null;
@@ -50,8 +57,8 @@ class Overview extends Component
                 'requirements' => [
                     ['label' => 'Berstatus mahasiswa aktif', 'met' => $student?->status === StudentStatus::Active],
                     ['label' => 'Terdaftar pada program studi', 'met' => $student?->program_id !== null],
-                    ['label' => 'SKS lulus minimal '.$tenant->setting('graduation_min_credits'), 'met' => null],
-                    ['label' => 'IPK minimal '.number_format((float) $tenant->setting('graduation_min_gpa'), 2, ',', '.'), 'met' => null],
+                    ['label' => 'SKS lulus minimal '.$eligibility['min_credits'].' (kamu: '.$eligibility['credits'].')', 'met' => $eligibility['meets_credits']],
+                    ['label' => 'IPK minimal '.number_format($eligibility['min_gpa'], 2, ',', '.').' (kamu: '.($eligibility['gpa'] === null ? '–' : number_format($eligibility['gpa'], 2, ',', '.')).')', 'met' => $eligibility['meets_gpa']],
                     ['label' => 'Sudah menyelesaikan sidang akhir', 'met' => null],
                 ],
             ];

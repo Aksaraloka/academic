@@ -28,6 +28,9 @@ class Tenant extends Model
         'min_attendance_percent' => 75,
         'meetings_per_course' => 16,
         'helpdesk_whatsapp' => null,
+        'grade_weights' => ['assignment' => 30, 'midterm' => 25, 'final' => 35, 'attendance' => 10],
+        'grade_scale' => ['A' => 80, 'B' => 70, 'C' => 60, 'D' => 50],
+        'remedial_letters' => ['D', 'E'],
         'graduation_min_credits' => 144,
         'graduation_min_gpa' => 2.0,
     ];

@@ -71,6 +71,10 @@ class Navigation
             ],
         };
 
+        if ($grades = self::gradesChildren($user)) {
+            $items[] = ['label' => 'Nilai', 'icon' => 'check-badge', 'match' => 'grades.*', 'children' => $grades];
+        }
+
         $items[] = [
             'label' => 'Survey',
             'icon' => 'chart-pie',
@@ -84,6 +88,38 @@ class Navigation
         $items[] = self::item('Masukan', 'feedback.index', 'chat-bubble-left-right', 'feedback.*');
 
         return $items;
+    }
+
+    /**
+     * Submenu Nilai menurut peran; null bila perannya tidak punya menu nilai.
+     *
+     * @return array<int, array{label: string, route: string, icon: string, match: string}>|null
+     */
+    private static function gradesChildren(User $user): ?array
+    {
+        return match ($user->role) {
+            Role::Student, Role::Guardian => [
+                self::item('KHS', 'grades.khs', 'chart-bar', 'grades.khs'),
+                self::item('Transkrip', 'grades.transcript', 'document-text', 'grades.transcript'),
+            ],
+            Role::Teacher => [
+                self::item('Input nilai', 'grades.input.index', 'pencil-square', 'grades.input.*'),
+                self::item('Revisi nilai', 'grades.revisions', 'arrow-path', 'grades.revisions'),
+            ],
+            Role::Principal => [
+                self::item('Persetujuan revisi', 'grades.revisions', 'arrow-path', 'grades.revisions'),
+                self::item('Kelengkapan nilai', 'grades.completeness', 'clipboard-document-check', 'grades.completeness'),
+            ],
+            Role::Admin => [
+                self::item('Kelengkapan nilai', 'grades.completeness', 'clipboard-document-check', 'grades.completeness'),
+                self::item('Revisi nilai', 'grades.revisions', 'arrow-path', 'grades.revisions'),
+                self::item('Pengaturan nilai', 'grades.settings', 'cog-6-tooth', 'grades.settings'),
+            ],
+            Role::Curriculum => [
+                self::item('Kelengkapan nilai', 'grades.completeness', 'clipboard-document-check', 'grades.completeness'),
+            ],
+            default => null,
+        };
     }
 
     /**

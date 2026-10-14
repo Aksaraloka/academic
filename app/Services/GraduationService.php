@@ -14,17 +14,42 @@ use Illuminate\Validation\ValidationException;
 
 class GraduationService
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(
+        private readonly AuditLogger $audit,
+        private readonly AcademicRecord $records,
+    ) {}
+
+    /**
+     * Kelayakan mendaftar wisuda berdasarkan transkrip otomatis: SKS lulus dan IPK dibandingkan syarat kampus.
+     *
+     * @return array{credits: int, gpa: ?float, min_credits: int, min_gpa: float, has_grades: bool, meets_credits: bool, meets_gpa: bool, eligible: bool}
+     */
+    public function eligibility(Student $student): array
+    {
+        $record = $this->records->eligibility($student);
+        $minCredits = (int) $student->tenant->setting('graduation_min_credits');
+        $minGpa = (float) $student->tenant->setting('graduation_min_gpa');
+        $meetsCredits = $record['credits'] >= $minCredits;
+        $meetsGpa = $record['gpa'] !== null && $record['gpa'] >= $minGpa;
+
+        return $record + [
+            'min_credits' => $minCredits,
+            'min_gpa' => $minGpa,
+            'meets_credits' => $meetsCredits,
+            'meets_gpa' => $meetsGpa,
+            'eligible' => $record['has_grades'] && $meetsCredits && $meetsGpa,
+        ];
+    }
 
     /**
      * Mahasiswa mendaftar wisuda. Pendaftaran yang ditolak boleh diajukan ulang.
      *
-     * @param  array{thesis_title: string, gpa: float|string, credits_earned: int|string, defense_date: string, gown_size?: ?string}  $data
+     * SKS lulus dan IPK tidak diisi manual; keduanya diambil dari transkrip saat mendaftar.
+     *
+     * @param  array{thesis_title: string, defense_date: string, gown_size?: ?string}  $data
      */
     public function register(Student $student, GraduationPeriod $period, array $data): GraduationRegistration
     {
-        $tenant = $student->tenant;
-
         if (! $period->isOpen()) {
             throw ValidationException::withMessages(['period' => 'Pendaftaran untuk periode ini sedang tidak dibuka.']);
         }
@@ -46,21 +71,24 @@ class GraduationService
             throw ValidationException::withMessages(['period' => 'Kuota wisuda periode ini sudah penuh.']);
         }
 
-        $minCredits = (int) $tenant->setting('graduation_min_credits');
-        $minGpa = (float) $tenant->setting('graduation_min_gpa');
+        $eligibility = $this->eligibility($student);
 
-        if ((int) $data['credits_earned'] < $minCredits) {
-            throw ValidationException::withMessages(['credits_earned' => "SKS lulus minimal {$minCredits} untuk mendaftar wisuda."]);
+        if (! $eligibility['has_grades']) {
+            throw ValidationException::withMessages(['eligibility' => 'Belum ada nilai yang tercatat di transkripmu. Hubungi BAAK bila nilai awalmu belum diinput.']);
         }
 
-        if ((float) $data['gpa'] < $minGpa) {
-            throw ValidationException::withMessages(['gpa' => 'IPK minimal '.number_format($minGpa, 2, ',', '.').' untuk mendaftar wisuda.']);
+        if (! $eligibility['meets_credits']) {
+            throw ValidationException::withMessages(['eligibility' => "SKS lulusmu {$eligibility['credits']}, belum mencapai minimal {$eligibility['min_credits']} untuk mendaftar wisuda."]);
+        }
+
+        if (! $eligibility['meets_gpa']) {
+            throw ValidationException::withMessages(['eligibility' => 'IPK '.number_format((float) $eligibility['gpa'], 2, ',', '.').' belum mencapai minimal '.number_format($eligibility['min_gpa'], 2, ',', '.').' untuk mendaftar wisuda.']);
         }
 
         $attributes = [
             'thesis_title' => $data['thesis_title'],
-            'gpa' => $data['gpa'],
-            'credits_earned' => $data['credits_earned'],
+            'gpa' => round((float) $eligibility['gpa'], 2),
+            'credits_earned' => $eligibility['credits'],
             'defense_date' => $data['defense_date'],
             'gown_size' => $data['gown_size'] ?? null,
             'status' => GraduationStatus::Submitted,

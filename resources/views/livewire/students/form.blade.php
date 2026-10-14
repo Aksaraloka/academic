@@ -114,6 +114,18 @@
             </div>
         </x-card>
 
+        <x-card title="Nilai awal (riwayat sebelum sistem)">
+            <p class="mb-3 text-sm text-text-muted">Untuk mahasiswa pindahan atau yang studinya berjalan sebelum sistem ini dipakai. Nilai ini digabung ke transkrip, IPK, dan syarat wisuda. Kosongkan (0) bila semua nilai sudah diinput lewat dosen.</p>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <x-field label="SKS nilai awal" name="legacy_credits">
+                    <input id="legacy_credits" type="number" min="0" max="300" wire:model="legacy_credits" class="input" inputmode="numeric" @error('legacy_credits') aria-invalid="true" @enderror>
+                </x-field>
+                <x-field label="Total mutu nilai awal" name="legacy_quality_points" hint="Jumlah (SKS × angka mutu) semua mata kuliah awal, mis. 140 SKS × IPK 3,50 = 490.">
+                    <input id="legacy_quality_points" type="number" step="0.01" min="0" max="1500" wire:model="legacy_quality_points" class="input" inputmode="decimal" @error('legacy_quality_points') aria-invalid="true" @enderror>
+                </x-field>
+            </div>
+        </x-card>
+
         <section aria-labelledby="ortu" class="space-y-3">
             <h2 id="ortu" class="text-lg font-semibold">Orang tua / wali</h2>
             <p class="text-sm text-text-muted">Kosongkan nama bila datanya tidak ada. Menghapus nama hanya melepas tautan ke mahasiswa ini.</p>

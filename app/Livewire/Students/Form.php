@@ -67,6 +67,10 @@ class Form extends Component
 
     public string $admission_path = '';
 
+    public string $legacy_credits = '0';
+
+    public string $legacy_quality_points = '0';
+
     /** @var array<int, array{id: ?int, relation: string, name: string, occupation: string, education: string, phone: string, address: string}> */
     public array $parents = [];
 
@@ -109,6 +113,8 @@ class Form extends Component
             'entry_date' => $student->entry_date?->toDateString() ?? '',
             'previous_school' => (string) $student->previous_school,
             'admission_path' => (string) $student->admission_path,
+            'legacy_credits' => (string) $student->legacy_credits,
+            'legacy_quality_points' => (string) (float) $student->legacy_quality_points,
         ]);
 
         $existing = $student->guardians()->get();
@@ -197,6 +203,8 @@ class Form extends Component
             'entry_date' => ['nullable', 'date'],
             'previous_school' => ['nullable', 'string', 'max:255'],
             'admission_path' => ['nullable', Rule::in(Student::ADMISSION_PATHS)],
+            'legacy_credits' => ['nullable', 'integer', 'between:0,300'],
+            'legacy_quality_points' => ['nullable', 'numeric', 'between:0,1500'],
             'parents' => ['array', 'max:6'],
             'parents.*.id' => ['nullable', 'integer'],
             'parents.*.relation' => ['required', Rule::in(['Ayah', 'Ibu', 'Wali'])],
@@ -236,6 +244,8 @@ class Form extends Component
             'entry_date' => 'tanggal masuk',
             'previous_school' => 'asal sekolah',
             'admission_path' => 'jalur masuk',
+            'legacy_credits' => 'SKS nilai awal',
+            'legacy_quality_points' => 'total mutu nilai awal',
             'parents.*.name' => 'nama orang tua/wali',
             'parents.*.occupation' => 'pekerjaan',
             'parents.*.education' => 'pendidikan',
@@ -252,6 +262,8 @@ class Form extends Component
 
         $data = collect($validated)->map(fn ($value) => $value === '' ? null : $value)->all();
         $data['nationality'] ??= 'Indonesia';
+        $data['legacy_credits'] = (int) ($data['legacy_credits'] ?? 0);
+        $data['legacy_quality_points'] = (float) ($data['legacy_quality_points'] ?? 0);
 
         if ($data['is_domicile_same']) {
             $data = array_merge($data, ['domicile_address' => null, 'domicile_city' => null, 'domicile_province' => null, 'domicile_postal_code' => null]);
