@@ -66,7 +66,7 @@ Setelah `--seed`, semua akun memakai kata sandi **`password`**.
 | Mahasiswa            | `mahasiswa@aksaraloka.test` (juga `mhs1@` sampai `mhs12@`) |
 | Orang tua            | `ortu@aksaraloka.test`                                     |
 
-Data contoh berisi Universitas Aksara Nusantara dengan 2 fakultas, 3 program studi, 2 kelas Teknik Informatika, semester aktif 2026/2027 Ganjil, semester arsip 2025/2026 Genap, riwayat presensi lima minggu, 10 berita, 4 kuesioner, 5 tiket masukan, dan satu periode wisuda.
+Data contoh berisi Universitas Aksara Nusantara dengan 2 fakultas, 3 program studi, 2 kelas Teknik Informatika, semester aktif 2026/2027 Ganjil, delapan semester arsip (2022/2023 Ganjil sampai 2025/2026 Genap), sekitar 190 mahasiswa angkatan 2022–2026 pada tiga prodi dengan riwayat nilai terkunci, remedial, dan mata kuliah yang diulang (angkatan 2022 sudah mencapai 144 SKS), riwayat presensi lima minggu, 10 berita, 4 kuesioner, 5 tiket masukan, dan satu periode wisuda.
 
 ---
 
