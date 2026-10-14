@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Grades;
 
+use App\Enums\Role;
 use App\Services\AcademicRecord;
+use App\Services\EvaluationService;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -20,7 +22,7 @@ class Khs extends Component
     #[Url(as: 'child')]
     public ?int $childId = null;
 
-    public function render(AcademicRecord $records)
+    public function render(AcademicRecord $records, EvaluationService $evaluations)
     {
         $user = auth()->user();
         $student = $records->resolveStudent($user, $this->studentId, $this->childId);
@@ -28,11 +30,16 @@ class Khs extends Component
 
         $term = $student ? $records->defaultTerm($student, (int) $this->termId ?: null) : null;
 
+        $gate = $student && $term && $user->hasRole(Role::Student, Role::Guardian)
+            ? $evaluations->gradeGate($student, $term)
+            : ['blocked' => false, 'pending' => collect(), 'period' => null];
+
         return view('livewire.grades.khs', [
+            'gate' => $gate,
             'student' => $student?->load('program.faculty'),
             'terms' => $terms,
             'term' => $term,
-            'khs' => $student && $term ? $records->khs($student, $term) : null,
+            'khs' => $student && $term && ! $gate['blocked'] ? $records->khs($student, $term) : null,
             'children' => $user->guardian?->students()->get() ?? collect(),
             'pdfQuery' => array_filter(['semester' => $term?->id, 'student' => $this->studentId, 'child' => $this->childId]),
         ]);

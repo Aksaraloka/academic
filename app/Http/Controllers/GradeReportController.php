@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
 use App\Models\Student;
 use App\Services\AcademicRecord;
+use App\Services\EvaluationService;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
@@ -15,12 +17,16 @@ class GradeReportController extends Controller
     /**
      * Unduh KHS satu semester sebagai PDF.
      */
-    public function khs(Request $request, AcademicRecord $records): Response
+    public function khs(Request $request, AcademicRecord $records, EvaluationService $evaluations): Response
     {
         $student = $this->student($request, $records);
         $term = $records->defaultTerm($student, $request->integer('semester') ?: null);
 
         abort_if($term === null, 404);
+
+        if ($request->user()->hasRole(Role::Student, Role::Guardian)) {
+            abort_if($evaluations->gradeGate($student, $term)['blocked'], 403, 'Isi evaluasi dosen terlebih dahulu.');
+        }
 
         $khs = $records->khs($student, $term);
         abort_if($khs['rows']->isEmpty(), 404);

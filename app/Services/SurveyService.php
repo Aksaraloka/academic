@@ -87,7 +87,7 @@ class SurveyService
      * @param  array<int|string, mixed>  $answers
      * @return array<int, string|array<int, string>> hanya pertanyaan yang dijawab
      */
-    private function validateAnswers(Survey $survey, array $answers): array
+    public function validateAnswers(Survey $survey, array $answers): array
     {
         $clean = [];
         $errors = [];

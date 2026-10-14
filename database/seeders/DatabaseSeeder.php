@@ -530,6 +530,7 @@ SVG;
         // Mahasiswa angkatan 2022–2026 di berbagai semester beserta riwayat nilainya.
         (new AcademicHistorySeeder)->seed($tenant, $teachers);
         (new FinanceSeeder)->seed($tenant, $financeUser, app(FinanceService::class));
+        (new ExamEvaluationSeeder)->seed($tenant, $adminUser);
 
         // Riwayat presensi lima minggu terakhir (tanpa hari ini) agar rekap dan syarat ujian 75% terlihat.
         $dates = collect(range(1, 35))->map(fn (int $back) => today()->subDays($back))->filter(fn ($date) => ! $date->isSunday());
@@ -567,5 +568,7 @@ SVG;
                 }
             }
         }
+
+        (new JournalSeeder)->seed($tenant);
     }
 }

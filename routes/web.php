@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\ExamCardPdfController;
 use App\Http\Controllers\FeedbackAttachmentController;
 use App\Http\Controllers\GradeReportController;
 use App\Http\Controllers\GraduationMinutesPrintController;
 use App\Http\Controllers\InvoicePdfController;
+use App\Http\Controllers\JournalPdfController;
 use App\Http\Controllers\NewsPosterController;
 use App\Http\Controllers\PaymentProofController;
 use App\Http\Controllers\PaymentWebhookController;
@@ -19,12 +21,15 @@ use App\Livewire\Auth\ResetPassword;
 use App\Livewire\Checkin;
 use App\Livewire\Curricula;
 use App\Livewire\Dashboard;
+use App\Livewire\Edom;
 use App\Livewire\Enrollment;
+use App\Livewire\Exams;
 use App\Livewire\Feedback;
 use App\Livewire\Finance;
 use App\Livewire\Grades;
 use App\Livewire\Graduation;
 use App\Livewire\Groups;
+use App\Livewire\Journals;
 use App\Livewire\Leaves;
 use App\Livewire\News;
 use App\Livewire\Pay;
@@ -79,6 +84,17 @@ Route::middleware('auth')->group(function () {
     Route::livewire('/finance/invoices/{invoice}', Finance\Show::class)->name('finance.show')->middleware('role:admin,finance,principal');
     Route::get('/finance/invoices/{invoice}/pdf', InvoicePdfController::class)->name('finance.pdf');
     Route::get('/finance/payments/{payment}/proof', PaymentProofController::class)->name('finance.proof');
+    Route::livewire('/exams', Exams\Index::class)->name('exams.index')->middleware('role:admin,principal,curriculum,teacher');
+    Route::livewire('/exams/{exam}/participants', Exams\Participants::class)->name('exams.participants')->middleware('role:admin,principal,curriculum,teacher');
+    Route::livewire('/my-exams', Exams\Card::class)->name('exams.card')->middleware('role:student,guardian');
+    Route::get('/my-exams/pdf', ExamCardPdfController::class)->name('exams.card.pdf')->middleware('role:student,guardian');
+    Route::livewire('/evaluations/periods', Edom\Periods::class)->name('evaluations.periods')->middleware('role:admin,principal,curriculum');
+    Route::livewire('/evaluations/results', Edom\Results::class)->name('evaluations.results')->middleware('role:admin,principal,curriculum,teacher');
+    Route::livewire('/my-evaluations', Edom\Mine::class)->name('evaluations.mine')->middleware('role:student');
+    Route::livewire('/my-evaluations/{assignment}', Edom\Fill::class)->name('evaluations.fill')->middleware('role:student');
+    Route::livewire('/journals', Journals\Index::class)->name('journals.index')->middleware('role:admin,principal,curriculum,teacher,student');
+    Route::livewire('/journals/{assignment}', Journals\Show::class)->name('journals.show')->middleware('role:admin,principal,curriculum,teacher,student');
+    Route::get('/journals/{assignment}/pdf', JournalPdfController::class)->name('journals.pdf')->middleware('role:admin,principal,curriculum,teacher');
     Route::livewire('/summary', Dashboard::class)->name('summary');
 
     Route::livewire('/profile', Profile\Show::class)->name('profile.show');

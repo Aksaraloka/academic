@@ -84,6 +84,15 @@ class Navigation
             $items[] = self::item('Keuangan', 'finance.index', 'banknotes', 'finance.*');
         }
 
+        if ($examChildren = self::examChildren($user)) {
+            $items[] = [
+                'label' => 'Ujian & Evaluasi',
+                'icon' => 'clipboard-document-check',
+                'match' => ['exams.*', 'evaluations.*', 'journals.*'],
+                'children' => $examChildren,
+            ];
+        }
+
         $items[] = [
             'label' => 'Akademik',
             'icon' => 'academic-cap',
@@ -116,6 +125,35 @@ class Navigation
         $items[] = self::item('Masukan', 'feedback.index', 'chat-bubble-left-right', 'feedback.*');
 
         return $items;
+    }
+
+    /**
+     * Submenu Ujian & Evaluasi: jadwal dan kartu ujian, EDOM, dan jurnal perkuliahan menurut peran.
+     *
+     * @return array<int, array{label: string, route: string, icon: string, match: string}>
+     */
+    private static function examChildren(User $user): array
+    {
+        return match ($user->role) {
+            Role::Student => [
+                self::item('Kartu ujian', 'exams.card', 'identification'),
+                self::item('Evaluasi dosen', 'evaluations.mine', 'chart-bar', 'evaluations.mine'),
+                self::item('Jurnal kuliah', 'journals.index', 'clipboard-document-list', 'journals.*'),
+            ],
+            Role::Guardian => [self::item('Kartu ujian', 'exams.card', 'identification')],
+            Role::Teacher => [
+                self::item('Jadwal ujian', 'exams.index', 'calendar-days', 'exams.*'),
+                self::item('Hasil evaluasi', 'evaluations.results', 'chart-bar'),
+                self::item('Jurnal kuliah', 'journals.index', 'clipboard-document-list', 'journals.*'),
+            ],
+            Role::Admin, Role::Principal, Role::Curriculum => [
+                self::item('Jadwal ujian', 'exams.index', 'calendar-days', 'exams.*'),
+                self::item('Periode evaluasi', 'evaluations.periods', 'cog-6-tooth'),
+                self::item('Hasil evaluasi', 'evaluations.results', 'chart-bar'),
+                self::item('Jurnal kuliah', 'journals.index', 'clipboard-document-list', 'journals.*'),
+            ],
+            default => [],
+        };
     }
 
     /**

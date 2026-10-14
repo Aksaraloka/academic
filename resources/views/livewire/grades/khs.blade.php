@@ -36,7 +36,16 @@
             @endif
         </div>
 
-        @if (! $khs)
+        @if ($gate['blocked'])
+            <x-card>
+                <div class="space-y-3">
+                    <x-badge variant="warning" icon="lock-closed">Nilai tertahan</x-badge>
+                    <p class="text-sm">Nilai semester {{ $term->name }} · {{ $term->semester }} bisa dilihat setelah kamu mengisi evaluasi dosen untuk semua mata kuliah. Tersisa {{ $gate['pending']->count() }} mata kuliah:</p>
+                    <ul class="list-disc space-y-1 pl-5 text-sm">@foreach ($gate['pending'] as $pending)<li>{{ $pending->subject->name }} <span class="text-text-muted">· {{ $pending->teacher->name }}</span></li>@endforeach</ul>
+                    @if (auth()->user()->hasRole(\App\Enums\Role::Student))<x-button :href="route('evaluations.mine')" wire:navigate>Isi evaluasi dosen</x-button>@else<p class="text-sm text-text-muted">Minta anakmu mengisi evaluasi dosen di Aksaraloka.</p>@endif
+                </div>
+            </x-card>
+        @elseif (! $khs)
             <x-card><x-empty-state icon="chart-bar" title="Belum ada nilai" description="Nilai tampil di sini setelah dosen mengunci nilai kelasnya." /></x-card>
         @else
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">

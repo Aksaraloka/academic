@@ -189,6 +189,28 @@ Alur: mahasiswa memilih mata kuliah, mengajukan ke dosen wali, dosen wali menyet
 - **Dosen wali** (`/advising`, menu Perwalian): daftar mahasiswa perwalian semester aktif, status KRS masing-masing, dan riwayat bimbingan. Dosen wali menambah dan mengubah **catatan bimbingan** (tanggal, topik, catatan, tindak lanjut). Admin, Kaprodi, dan wakil dekan bisa melihat seluruhnya tetapi tidak menambah catatan. Dari halaman Persetujuan KRS ada pintasan Bimbingan per mahasiswa.
 - **Mahasiswa** (`/my-advising`): melihat nama dosen wali dan riwayat catatan bimbingannya.
 
+### Ujian dan kartu ujian
+
+- **Jadwal ujian** (`/exams`, menu Ujian & Evaluasi; admin dan wakil dekan mengelola, dosen dan Kaprodi melihat): pilih semester, jenis (UTS atau UAS), mata kuliah, tanggal, jam, dan ruang. Satu jadwal berlaku untuk **semua kelas** mata kuliah itu semester tersebut. Tanggal harus berada dalam masa UTS atau UAS di Kalender akademik, dan ditolak bila bentrok dengan ujian lain pada kelas atau ruang yang sama. Dosen hanya melihat ujian mata kuliahnya.
+- **Peserta** (tombol Peserta di tiap jadwal): daftar mahasiswa kelas itu beserta kehadiran dan status **Berhak** atau **Tidak berhak** mengikuti ujian.
+- **Kartu ujian** (`/my-exams`, mahasiswa dan orang tua): pilih UTS atau UAS. Kartu **terbit** bila status akademik aktif, tagihan semester lunas (bila kampus mewajibkan lunas), dan ada mata kuliah berjadwal dengan **kehadiran minimal 75%** (angka mengikuti pengaturan *Minimal kehadiran* di Pengaturan kampus). Mata kuliah dengan kehadiran di bawah syarat ditandai Tidak berhak dan tidak masuk PDF. Kehadiran dihitung dari pertemuan yang sudah dipresensi; mata kuliah tanpa presensi dianggap memenuhi syarat.
+- Kode: `ExamService`.
+
+### Evaluasi dosen (EDOM)
+
+- **Periode** (`/evaluations/periods`; admin dan wakil dekan mengelola): satu periode per semester dengan satu kuesioner berkategori *Evaluasi dosen* (dibuat lewat Survey, sebaiknya tidak diterbitkan sebagai survey umum), tanggal buka dan tutup, dan opsi **wajib diisi sebelum melihat nilai**. Periode harus diterbitkan agar mahasiswa bisa mengisi.
+- **Mahasiswa** (`/my-evaluations`): daftar mata kuliah semester aktif (anggota kelas atau KRS disetujui) dengan tombol **Isi evaluasi** per kelas. Jawaban **anonim** (tidak menyimpan identitas, hanya penanda agar tidak terisi dua kali) dan tidak bisa diubah.
+- **Syarat melihat nilai:** bila opsi wajib aktif, KHS semester itu (tampilan dan PDF) tertahan sampai evaluasi semua mata kuliah selesai. Transkrip tidak terpengaruh.
+- **Hasil** (`/evaluations/results`): rata-rata per pertanyaan dan komentar per kelas. Dosen hanya melihat kelasnya sendiri. Rekap baru tampil setelah minimal **3 responden** agar anonim.
+- Kode: `EvaluationService`; respons memakai tabel survey dengan kolom `teaching_assignment_id`.
+
+### Jurnal perkuliahan (BAP)
+
+- **Dosen mengisi di halaman presensi:** kartu *Jurnal perkuliahan* berisi pokok bahasan, materi, dan catatan. **Simpan sementara** menyimpan jurnal bila pokok bahasan sudah diisi; **Simpan dan selesai** mewajibkan pokok bahasan untuk sesi kuliah (presensi harian tidak memakai jurnal).
+- **Jurnal kuliah** (`/journals`): daftar kuliah semester dengan jumlah pertemuan yang jurnalnya sudah terisi. Detail per kuliah menampilkan materi tiap pertemuan beserta kehadiran; dosen pengampu bisa mengisi atau mengubah jurnal pertemuan sebelumnya. Mahasiswa melihat jurnal mata kuliahnya (hanya baca).
+- **BAP PDF:** admin, Kaprodi, wakil dekan, dan dosen pengampu bisa mengunduh Berita Acara Perkuliahan (materi per pertemuan, kehadiran, dan tanda tangan).
+- Kode: `JournalService`.
+
 ### Keuangan (Aksaraloka Pay)
 
 Tagihan UKT dan BPP per semester, status pembayaran, riwayat pembayaran, dan syarat lunas untuk KRS. Jumlah uang disimpan dalam rupiah bulat.

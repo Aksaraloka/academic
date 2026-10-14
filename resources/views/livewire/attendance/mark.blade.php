@@ -17,6 +17,22 @@
         <p class="rounded-lg border border-border bg-surface-muted p-3 text-sm text-text-muted" role="status">Kamu hanya bisa melihat presensi ini. Koreksi setelah hari berlalu dilakukan oleh dosen wali atau admin.</p>
     @endunless
 
+    @if ($session->schedule && $canEdit)
+        <x-card title="Jurnal perkuliahan (BAP)">
+            <p class="mb-3 text-sm text-text-muted">Catat materi pertemuan ini. Pokok bahasan wajib diisi saat menyelesaikan sesi.</p>
+            <div class="grid gap-4">
+                <x-field label="Pokok bahasan" name="journalTopic" required><input id="journalTopic" type="text" wire:model="journalTopic" class="input" placeholder="Mis. Normalisasi basis data" @error('journalTopic') aria-invalid="true" @enderror></x-field>
+                <x-field label="Materi yang diajarkan" name="journalMaterial"><textarea id="journalMaterial" wire:model="journalMaterial" rows="2" class="input"></textarea></x-field>
+                <x-field label="Catatan" name="journalNotes"><input id="journalNotes" type="text" wire:model="journalNotes" class="input" placeholder="Tugas, kendala, atau tindak lanjut"></x-field>
+            </div>
+        </x-card>
+    @elseif ($session->schedule && $journal)
+        <x-card title="Jurnal perkuliahan (BAP)">
+            <p class="text-sm font-medium">{{ $journal->topic }}</p>
+            @if ($journal->material)<p class="mt-1 whitespace-pre-line text-sm">{{ $journal->material }}</p>@endif
+        </x-card>
+    @endif
+
     <x-card :padding="false">
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
             <p class="text-sm text-text-muted">Ketuk nama untuk menandai tidak hadir.</p>

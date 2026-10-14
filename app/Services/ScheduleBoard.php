@@ -74,7 +74,7 @@ class ScheduleBoard
      *
      * @return array<int, int>
      */
-    private function assignmentIdsForStudent(int $studentId, AcademicTerm $term): array
+    public function assignmentIdsForStudent(int $studentId, AcademicTerm $term): array
     {
         $enrolled = Enrollment::query()
             ->where('academic_term_id', $term->id)->where('student_id', $studentId)->where('status', EnrollmentStatus::Approved)
