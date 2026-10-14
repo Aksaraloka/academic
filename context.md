@@ -57,4 +57,4 @@ Stack: Laravel 13, Livewire 4 (komponen kelas), Alpine, Tailwind v4, GSAP lazy, 
 
 ## Yang belum ada
 
-Layar pengaturan kampus dan aktivasi semester; **alur lupa/reset kata sandi** (dosen baru dibuat dengan kata sandi acak sehingga belum bisa masuk); KRS dan kelas paralel; presensi offline; notifikasi WhatsApp otomatis; impor Excel dan ekspor Dapodik/PDDikti; foto profil; pemisahan schema PostgreSQL.
+Layar pengaturan kampus dan aktivasi semester; **ganti kata sandi dari profil** dan reset oleh admin; KRS dan kelas paralel; presensi offline; notifikasi WhatsApp otomatis; impor Excel dan ekspor Dapodik/PDDikti; foto profil; pemisahan schema PostgreSQL.

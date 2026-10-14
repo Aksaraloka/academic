@@ -8,7 +8,9 @@ use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\ScheduleExportController;
 use App\Http\Controllers\SurveyExportController;
 use App\Livewire\Attendance;
+use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
+use App\Livewire\Auth\ResetPassword;
 use App\Livewire\Checkin;
 use App\Livewire\Dashboard;
 use App\Livewire\Feedback;
@@ -32,6 +34,8 @@ Route::redirect('/', '/beranda');
 
 Route::middleware('guest')->group(function () {
     Route::livewire('/masuk', Login::class)->name('login');
+    Route::livewire('/lupa-kata-sandi', ForgotPassword::class)->name('password.request');
+    Route::livewire('/atur-ulang-kata-sandi/{token}', ResetPassword::class)->name('password.reset');
 });
 
 Route::post('/keluar', function () {

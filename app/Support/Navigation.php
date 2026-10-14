@@ -60,7 +60,7 @@ class Navigation
             ],
             Role::Student => [
                 self::item('Beranda', 'dashboard', 'home'),
-                self::item('Presensi', 'attendance.mine', 'clipboard-document-check', 'attendance.mine'),
+                self::item('Status Kehadiran', 'attendance.mine', 'clipboard-document-check', 'attendance.mine'),
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
                 self::item('Wisuda', 'wisuda.overview', 'academic-cap', 'wisuda.*'),
             ],

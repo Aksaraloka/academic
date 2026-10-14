@@ -308,7 +308,7 @@ Beberapa prinsip yang dipakai:
 
 Hal-hal berikut **belum ada** atau perlu keputusan lanjutan:
 
-- **Lupa kata sandi dan reset kata sandi oleh admin.** Dosen baru dibuat dengan kata sandi acak yang tidak diketahui siapa pun, sehingga belum bisa masuk sampai alur reset tersedia.
+- **Ganti kata sandi dari profil dan reset oleh admin.** Lupa kata sandi lewat email sudah tersedia (`/lupa-kata-sandi`); email dikirim lewat `MAIL_MAILER` (bawaan `log`, isi surat ada di `storage/logs`). Atur SMTP di `.env` untuk produksi.
 - Layar pengaturan kampus dan aktivasi semester (saat ini lewat data atau tinker).
 - KRS online dan persetujuan dosen wali; kuota kelas paralel.
 - Presensi saat offline, notifikasi WhatsApp otomatis ke orang tua, dan presensi gerbang.
