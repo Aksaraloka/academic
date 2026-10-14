@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
@@ -22,6 +23,25 @@ class Login extends Component
     public string $password = '';
 
     public bool $remember = false;
+
+    /** Pintu masuk yang dipilih: student (mahasiswa), guardian (orang tua), atau lecturer (dosen dan staf). */
+    #[Url(as: 'as')]
+    public string $portal = 'student';
+
+    public function mount(): void
+    {
+        if (! in_array($this->portal, ['student', 'guardian', 'lecturer'], true)) {
+            $this->portal = 'student';
+        }
+    }
+
+    public function choosePortal(string $portal): void
+    {
+        if (in_array($portal, ['student', 'guardian', 'lecturer'], true)) {
+            $this->portal = $portal;
+            $this->resetErrorBag();
+        }
+    }
 
     public function login(): void
     {
@@ -39,6 +59,20 @@ class Login extends Component
             RateLimiter::hit($throttleKey);
 
             throw ValidationException::withMessages(['email' => 'Email atau kata sandi salah.']);
+        }
+
+        $userPortal = Auth::user()->role->loginPortal();
+
+        if ($userPortal !== 'any' && $userPortal !== $this->portal) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Akun ini milik '.match ($userPortal) {
+                    'student' => 'mahasiswa. Pilih "Mahasiswa" di atas.',
+                    'guardian' => 'orang tua. Pilih "Orang tua" di atas.',
+                    default => 'dosen atau staf. Pilih "Dosen" di atas.',
+                },
+            ]);
         }
 
         RateLimiter::clear($throttleKey);

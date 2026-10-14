@@ -25,6 +25,19 @@ enum Role: string
         };
     }
 
+    /**
+     * Pintu masuk halaman login: mahasiswa, orang tua, dosen dan staf akademik, atau admin (boleh dari pintu mana pun).
+     */
+    public function loginPortal(): string
+    {
+        return match ($this) {
+            self::Student => 'student',
+            self::Guardian => 'guardian',
+            self::Admin => 'any',
+            default => 'lecturer',
+        };
+    }
+
     public function isStaff(): bool
     {
         return in_array($this, [self::Admin, self::Principal, self::Curriculum, self::Teacher, self::Duty], true);

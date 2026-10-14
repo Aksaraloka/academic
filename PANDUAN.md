@@ -90,7 +90,7 @@ Di HP, empat menu pertama tampil di bar bawah dan sisanya ada di **Lainnya**. Di
 
 ### Masuk dan keluar
 
-Buka `/login`, isi email dan kata sandi. Percobaan salah dibatasi 5 kali per menit. **Keluar** ada di menu pengguna. Pilihan tema (Terang, Gelap, Ikuti sistem) ada di ikon matahari/bulan di header, dan tahun ajaran aktif tampil di sebelahnya.
+Buka `/login`, pilih tab **Mahasiswa**, **Orang tua**, atau **Dosen** (dosen, Kaprodi, wakil dekan, dan petugas), lalu isi email dan kata sandi. Akun yang memilih tab salah ditolak dengan petunjuk tab yang benar; **admin bisa masuk dari tab mana pun**. Tab terpilih ikut di URL (`/login?as=guardian`). Percobaan salah dibatasi 5 kali per menit. **Keluar** ada di menu pengguna. Pilihan tema (Terang, Gelap, Ikuti sistem) ada di ikon matahari/bulan di header, dan tahun ajaran aktif tampil di sebelahnya.
 
 ### Beranda (berita kampus)
 
