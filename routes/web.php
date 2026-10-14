@@ -72,6 +72,7 @@ Route::middleware('auth')->group(function () {
     Route::livewire('/curricula', Curricula\Index::class)->name('curricula.index')->middleware('role:admin,principal,curriculum');
     Route::livewire('/my-curriculum', Curricula\Mine::class)->name('curricula.mine')->middleware('role:student');
     Route::livewire('/pay', Pay\Index::class)->name('pay.index')->middleware('role:student,guardian');
+    Route::livewire('/pay/guide', Pay\Guide::class)->name('pay.guide')->middleware('role:student,guardian,admin,finance,principal');
     Route::livewire('/pay/invoices/{invoice}', Pay\Show::class)->name('pay.show')->middleware('role:student,guardian');
     Route::livewire('/finance', Finance\Index::class)->name('finance.index')->middleware('role:admin,finance,principal');
     Route::livewire('/finance/rates', Finance\Rates::class)->name('finance.rates')->middleware('role:admin,finance');

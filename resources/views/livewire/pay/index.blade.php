@@ -1,13 +1,14 @@
 @php $rp = fn ($value) => \App\Services\FinanceService::rupiah($value); @endphp
 <div class="mx-auto max-w-4xl space-y-6">
     <x-page-header title="Aksaraloka Pay" subtitle="Tagihan UKT dan BPP, status pembayaran, dan riwayat pembayaranmu.">
-        @if ($children->count() > 1)
-            <x-slot:actions>
+        <x-slot:actions>
+            @if ($children->count() > 1)
                 <select wire:model.live="childId" class="input" aria-label="Pilih anak">
                     @foreach ($children as $child)<option value="{{ $child->id }}" @selected($child->id === $student?->id)>{{ $child->name }}</option>@endforeach
                 </select>
-            </x-slot:actions>
-        @endif
+            @endif
+            <x-button :href="route('pay.guide')" wire:navigate variant="secondary" icon="question-mark-circle">Panduan pembayaran</x-button>
+        </x-slot:actions>
     </x-page-header>
 
     @if (! $student)

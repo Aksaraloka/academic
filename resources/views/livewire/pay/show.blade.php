@@ -30,6 +30,9 @@
 
     @if ($canPay)
         <x-card title="Cara membayar">
+            <x-slot:actions>
+                <x-button size="sm" variant="secondary" :href="route('pay.guide')" wire:navigate icon="question-mark-circle">Panduan per bank</x-button>
+            </x-slot:actions>
             <ul class="space-y-2 text-sm">
                 @if ($bank['number'])
                     <li><span class="text-text-muted">Transfer bank:</span> <strong>{{ $bank['name'] }} {{ $bank['number'] }}</strong> a.n. {{ $bank['holder'] }}</li>
