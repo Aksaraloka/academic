@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Enrollment;
 
+use App\Enums\StudentStatus;
 use App\Models\AcademicTerm;
 use App\Models\Enrollment;
 use App\Services\EnrollmentService;
@@ -26,7 +27,7 @@ class Plan extends Component
             return;
         }
 
-        $enrollment = $service->isWindowOpen($term)
+        $enrollment = $service->isWindowOpen($term) && $student->status === StudentStatus::Active
             ? $service->start($student, $term)
             : Enrollment::query()->where('academic_term_id', $term->id)->where('student_id', $student->id)->first();
 
@@ -84,13 +85,14 @@ class Plan extends Component
         $offerings = $service->offerings($student, $term);
         $ownGroupId = $service->groupFor($student, $term)?->id;
         $chosen = $offerings->whereIn('id', array_map('intval', $this->selected));
-        $editable = $enrollment !== null && $enrollment->status->isEditable() && $service->isWindowOpen($term);
+        $editable = $enrollment !== null && $enrollment->status->isEditable() && $service->isWindowOpen($term) && $student->status === StudentStatus::Active;
 
         return view('livewire.enrollment.plan', [
             'term' => $term,
             'student' => $student,
             'enrollment' => $enrollment,
             'editable' => $editable,
+            'inactiveStatus' => $student->status === StudentStatus::Active ? null : $student->status,
             'windowOpen' => $service->isWindowOpen($term),
             'window' => $service->window($term),
             'offerings' => $offerings,

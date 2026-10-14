@@ -11,6 +11,13 @@
     @if (! $term)
         <x-card><x-empty-state icon="calendar-days" title="Belum ada semester aktif" description="KRS tersedia setelah BAAK mengaktifkan semester." /></x-card>
     @else
+        @if ($inactiveStatus)
+            <div class="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm" role="status">
+                Status akademikmu <strong>{{ $inactiveStatus->label() }}</strong>, jadi KRS tidak bisa diisi.
+                @if ($inactiveStatus->canReactivate())<a href="{{ route('status.mine') }}" wire:navigate class="font-medium text-primary hover:underline">Ajukan aktif kembali</a>.@endif
+            </div>
+        @endif
+
         <x-card>
             <div class="flex flex-wrap items-center gap-3">
                 @if ($windowOpen)
@@ -56,14 +63,25 @@
             <form wire:submit.prevent class="space-y-4">
                 <x-card title="Mata kuliah yang dibuka" :padding="false">
                     @forelse ($offerings as $assignment)
-                        <label class="flex min-h-14 cursor-pointer items-start gap-3 border-t border-border px-4 py-3 first:border-t-0 hover:bg-surface-muted" wire:key="off-{{ $assignment->id }}">
-                            <input type="checkbox" wire:model.live="selected" value="{{ $assignment->id }}" class="mt-1 size-5 shrink-0 accent-primary">
+                        @php
+                            $unmet = $assignment->krs_unmet;
+                            $full = $assignment->capacity !== null && $assignment->krs_seats_taken >= $assignment->capacity && ! in_array((string) $assignment->id, $selected, true);
+                            $blocked = $unmet->isNotEmpty() || $full;
+                        @endphp
+                        <label class="flex min-h-14 items-start gap-3 border-t border-border px-4 py-3 first:border-t-0 {{ $blocked ? 'opacity-60' : 'cursor-pointer hover:bg-surface-muted' }}" wire:key="off-{{ $assignment->id }}">
+                            <input type="checkbox" wire:model.live="selected" value="{{ $assignment->id }}" class="mt-1 size-5 shrink-0 accent-primary" @disabled($blocked)>
                             <span class="min-w-0 flex-1">
                                 <span class="block text-sm font-medium">{{ $assignment->subject->code }} · {{ $assignment->subject->name }}</span>
-                                <span class="block text-xs text-text-muted">{{ $assignment->teacher->name }} · Kelas {{ $assignment->studyGroup->name }} · {{ $scheduleText($assignment) }}</span>
+                                <span class="block text-xs text-text-muted">{{ $assignment->teacher->name }} · Kelas {{ $assignment->classLabel() }} · {{ $scheduleText($assignment) }}</span>
+                                @if ($unmet->isNotEmpty())<span class="block text-xs text-danger">Prasyarat belum lulus: {{ $unmet->pluck('name')->implode(', ') }}</span>@endif
+                                @if ($assignment->capacity !== null)<span class="block text-xs {{ $full ? 'text-danger' : 'text-text-muted' }}">Kuota {{ min($assignment->krs_seats_taken, $assignment->capacity) }}/{{ $assignment->capacity }}{{ $full ? ' · penuh' : '' }}</span>@endif
                             </span>
-                            <x-badge>{{ $assignment->subject->credits }} SKS</x-badge>
-                            @if ($assignment->study_group_id === $ownGroupId)<x-badge variant="primary">Paket kelasmu</x-badge>@endif
+                            <span class="flex shrink-0 flex-wrap justify-end gap-1">
+                                <x-badge>{{ $assignment->subject->credits }} SKS</x-badge>
+                                @if ($assignment->krs_type)<x-badge :variant="$assignment->krs_type->variant()">{{ $assignment->krs_type->label() }}</x-badge>@endif
+                                @if ($assignment->krs_semester)<x-badge>Smt {{ $assignment->krs_semester }}</x-badge>@endif
+                                @if ($assignment->study_group_id === $ownGroupId)<x-badge variant="primary">Paket kelasmu</x-badge>@endif
+                            </span>
                         </label>
                     @empty
                         <x-empty-state icon="clipboard-document-list" title="Belum ada mata kuliah dibuka" description="BAAK belum membuka mata kuliah untuk prodimu semester ini." />
@@ -82,7 +100,7 @@
                         <x-icon name="academic-cap" class="mt-0.5 text-primary" />
                         <div class="min-w-0 flex-1">
                             <p class="text-sm font-medium">{{ $assignment->subject->code }} · {{ $assignment->subject->name }}</p>
-                            <p class="text-xs text-text-muted">{{ $assignment->teacher->name }} · Kelas {{ $assignment->studyGroup->name }} · {{ $scheduleText($assignment) }}</p>
+                            <p class="text-xs text-text-muted">{{ $assignment->teacher->name }} · Kelas {{ $assignment->classLabel() }} · {{ $scheduleText($assignment) }}</p>
                         </div>
                         <x-badge>{{ $assignment->subject->credits }} SKS</x-badge>
                     </div>

@@ -33,6 +33,7 @@
                             <p class="truncate text-xs text-text-muted">{{ $enrollment->student->nim }} · {{ $enrollment->assignments->count() }} mata kuliah · {{ $enrollment->credits() }} SKS</p>
                         </div>
                         <x-badge :variant="$enrollment->status->variant()">{{ $enrollment->status->label() }}</x-badge>
+                        <x-button size="sm" variant="ghost" :href="route('advising.index', ['student' => $enrollment->student_id])" wire:navigate>Bimbingan</x-button>
                         @if ($enrollment->status === \App\Enums\EnrollmentStatus::Submitted)
                             <div class="flex gap-2">
                                 <x-button size="sm" wire:click="approve({{ $enrollment->id }})" wire:confirm="Setujui KRS {{ $enrollment->student->name }}?">Setujui</x-button>
@@ -45,7 +46,7 @@
                         <summary class="min-h-11 cursor-pointer py-2 text-sm font-medium text-primary">Lihat mata kuliah</summary>
                         <ul class="space-y-1 pb-2 text-sm">
                             @foreach ($enrollment->assignments as $assignment)
-                                <li class="flex justify-between gap-3"><span>{{ $assignment->subject->code }} · {{ $assignment->subject->name }} <span class="text-text-muted">({{ $assignment->studyGroup->name }})</span></span><span class="text-text-muted">{{ $assignment->subject->credits }} SKS</span></li>
+                                <li class="flex justify-between gap-3"><span>{{ $assignment->subject->code }} · {{ $assignment->subject->name }} <span class="text-text-muted">({{ $assignment->classLabel() }})</span></span><span class="text-text-muted">{{ $assignment->subject->credits }} SKS</span></li>
                             @endforeach
                         </ul>
                         @if ($enrollment->advisor_note)<p class="pb-2 text-xs text-text-muted">Catatan: {{ $enrollment->advisor_note }}</p>@endif

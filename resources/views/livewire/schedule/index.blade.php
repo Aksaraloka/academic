@@ -54,7 +54,7 @@
                 </select>
             </div>
             <div>
-                <label for="target" class="mb-1 block text-xs font-medium text-text-muted">{{ ['group' => 'Kelas', 'teacher' => 'Dosen', 'room' => 'Ruang'][$view] }}</label>
+                <label for="target" class="mb-1 block text-xs font-medium text-text-muted">{{ ['group' => 'Kelas', 'student' => 'Mahasiswa', 'teacher' => 'Dosen', 'room' => 'Ruang'][$view] }}</label>
                 <select id="target" wire:model.live="targetId" class="input">
                     <option value="">Pilih…</option>
                     @foreach ($options as $id => $label)<option value="{{ $id }}">{{ $label }}</option>@endforeach

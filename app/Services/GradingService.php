@@ -2,16 +2,13 @@
 
 namespace App\Services;
 
-use App\Enums\EnrollmentStatus;
 use App\Enums\GradeKind;
 use App\Enums\GradeRevisionStatus;
 use App\Enums\Role;
 use App\Models\AttendanceRecord;
-use App\Models\Enrollment;
 use App\Models\Grade;
 use App\Models\GradeRevision;
 use App\Models\Student;
-use App\Models\StudyGroupMember;
 use App\Models\TeachingAssignment;
 use App\Models\User;
 use App\Support\GradeScale;
@@ -25,7 +22,7 @@ class GradingService
     /** @var array<string, string> */
     public const FIELDS = ['assignment' => 'assignment_score', 'midterm' => 'midterm_score', 'final' => 'final_exam_score'];
 
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(private readonly AuditLogger $audit, private readonly ClassRoster $classRoster) {}
 
     public function scale(User $user): GradeScale
     {
@@ -83,22 +80,9 @@ class GradingService
      */
     public function roster(TeachingAssignment $assignment): Collection
     {
-        $term = $assignment->academicTerm;
-
-        $memberIds = StudyGroupMember::query()
-            ->where('study_group_id', $assignment->study_group_id)
-            ->whereDate('joined_at', '<=', $term->ends_at)
-            ->where(fn ($query) => $query->whereNull('left_at')->orWhereDate('left_at', '>', $term->starts_at))
-            ->pluck('student_id');
-
         $extraIds = $assignment->grades()->where('kind', GradeKind::Regular)->pluck('student_id');
 
-        $enrolledIds = Enrollment::query()
-            ->where('status', EnrollmentStatus::Approved)
-            ->whereHas('items', fn ($query) => $query->where('teaching_assignment_id', $assignment->id))
-            ->pluck('student_id');
-
-        return Student::query()->whereIn('id', $memberIds->merge($extraIds)->merge($enrolledIds)->unique())->orderBy('name')->get();
+        return Student::query()->whereIn('id', $this->classRoster->studentIds($assignment)->merge($extraIds)->unique())->orderBy('name')->get();
     }
 
     /**

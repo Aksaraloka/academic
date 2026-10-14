@@ -75,19 +75,18 @@ class Navigation
             $items[] = ['label' => 'Nilai', 'icon' => 'check-badge', 'match' => 'grades.*', 'children' => $grades];
         }
 
-        if ($user->role === Role::Student) {
-            $items[] = self::item('KRS', 'enrollment.plan', 'clipboard-document-list', 'enrollment.plan');
-        } elseif ($user->hasRole(Role::Admin, Role::Principal, Role::Curriculum, Role::Teacher)) {
-            $items[] = self::item('Persetujuan KRS', 'enrollment.approvals', 'clipboard-document-list', 'enrollment.approvals');
-        }
-
-        $items[] = self::item('Kalender akademik', 'academic.calendar', 'calendar-days', 'academic.calendar');
+        $items[] = [
+            'label' => 'Akademik',
+            'icon' => 'academic-cap',
+            'match' => ['academic.calendar', 'enrollment.*', 'status.*', 'advising.*', 'curricula.*'],
+            'children' => self::academicChildren($user),
+        ];
 
         if ($user->role === Role::Admin) {
             $items[] = [
                 'label' => 'Pengaturan',
                 'icon' => 'cog-6-tooth',
-                'match' => 'settings.*',
+                'match' => ['settings.*', 'academic.terms'],
                 'children' => [
                     self::item('Pengaturan kampus', 'settings.campus', 'building-office', 'settings.campus'),
                     self::item('Semester akademik', 'academic.terms', 'calendar-days', 'academic.terms'),
@@ -108,6 +107,37 @@ class Navigation
         $items[] = self::item('Masukan', 'feedback.index', 'chat-bubble-left-right', 'feedback.*');
 
         return $items;
+    }
+
+    /**
+     * Submenu Akademik: KRS, perwalian, kurikulum, status, dan kalender akademik menurut peran.
+     *
+     * @return array<int, array{label: string, route: string, icon: string, match: string}>
+     */
+    private static function academicChildren(User $user): array
+    {
+        $children = [];
+
+        if ($user->role === Role::Student) {
+            $children[] = self::item('KRS', 'enrollment.plan', 'clipboard-document-list');
+            $children[] = self::item('Bimbingan akademik', 'advising.mine', 'user-group');
+            $children[] = self::item('Kurikulum', 'curricula.mine', 'academic-cap');
+            $children[] = self::item('Status akademik', 'status.mine', 'identification');
+        } else {
+            if ($user->hasRole(Role::Admin, Role::Principal, Role::Curriculum, Role::Teacher)) {
+                $children[] = self::item('Persetujuan KRS', 'enrollment.approvals', 'clipboard-document-list');
+                $children[] = self::item('Perwalian', 'advising.index', 'user-group');
+            }
+
+            if ($user->hasRole(Role::Admin, Role::Principal, Role::Curriculum)) {
+                $children[] = self::item('Kurikulum', 'curricula.index', 'academic-cap');
+                $children[] = self::item('Status mahasiswa', 'status.manage', 'identification');
+            }
+        }
+
+        $children[] = self::item('Kalender akademik', 'academic.calendar', 'calendar-days');
+
+        return $children;
     }
 
     /**

@@ -103,6 +103,16 @@ class Student extends Model
         return $this->hasMany(StudyGroupMember::class);
     }
 
+    public function advisingNotes(): HasMany
+    {
+        return $this->hasMany(AdvisingNote::class);
+    }
+
+    public function termStatuses(): HasMany
+    {
+        return $this->hasMany(StudentTermStatus::class);
+    }
+
     public function records(): HasMany
     {
         return $this->hasMany(AttendanceRecord::class);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Room;
+use App\Models\Student;
 use App\Models\StudyGroup;
 use App\Models\Teacher;
 use App\Services\ScheduleBoard;
@@ -49,6 +50,7 @@ class ScheduleExportController extends Controller
         $label = match ($view) {
             'teacher' => Teacher::query()->findOrFail($targetId)->name,
             'room' => Room::query()->findOrFail($targetId)->name,
+            'student' => Student::query()->findOrFail($targetId)->name,
             default => StudyGroup::query()->where('academic_term_id', $term->id)->findOrFail($targetId)->name,
         };
 
@@ -58,7 +60,7 @@ class ScheduleExportController extends Controller
         $html = view('pdf.schedule', $data + [
             'term' => $term,
             'view' => $view,
-            'viewLabel' => ['group' => 'Kelas', 'teacher' => 'Dosen', 'room' => 'Ruang'][$view],
+            'viewLabel' => ['group' => 'Kelas', 'student' => 'Mahasiswa', 'teacher' => 'Dosen', 'room' => 'Ruang'][$view],
             'targetLabel' => $label,
             'tenant' => $user->tenant,
             'printedBy' => $user->name,

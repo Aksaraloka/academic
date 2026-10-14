@@ -18,6 +18,7 @@ class AttendanceService
 {
     public function __construct(
         private readonly AuditLogger $audit,
+        private readonly ClassRoster $classRoster,
     ) {}
 
     /**
@@ -125,7 +126,10 @@ class AttendanceService
 
             if ($session->wasRecentlyCreated || $session->records()->doesntExist()) {
                 $onLeave = $this->studentsOnApprovedLeave($group);
-                $rows = $group->activeStudents()->pluck('students.id')->map(fn (int $studentId): array => [
+                $studentIds = $schedule
+                    ? $this->classRoster->studentIds($schedule->assignment, activeOnly: true)
+                    : $group->activeStudents()->pluck('students.id');
+                $rows = $studentIds->map(fn (int $studentId): array => [
                     'attendance_session_id' => $session->id,
                     'student_id' => $studentId,
                     'status' => ($onLeave[$studentId] ?? AttendanceStatus::Present)->value,

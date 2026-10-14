@@ -216,6 +216,7 @@ SVG;
                     'tenant_id' => $tenant->id, 'academic_term_id' => $term->id,
                     'teacher_id' => $teachers[$subjectIndex]->id,
                     'subject_id' => $subject->id, 'study_group_id' => $group->id, 'hours_per_week' => 2,
+                    'section' => substr($group->name, -1), 'capacity' => 20,
                 ]);
 
                 // Mata kuliah ketiga berlangsung Senin dan Sabtu; lainnya Senin dan Rabu.

@@ -172,8 +172,27 @@ Alur: mahasiswa memilih mata kuliah, mengajukan ke dosen wali, dosen wali menyet
 - **Mahasiswa** (`/enrollment`, menu KRS): daftar mata kuliah prodi yang dibuka semester aktif, dengan paket kelas sendiri sudah tercentang. Tersedia penghitung SKS dan peringatan jadwal bentrok. **Simpan draf** kapan saja, lalu **Ajukan ke dosen wali**. Pengajuan bisa ditarik selama belum diputuskan. Bila ditolak, alasannya tampil dan KRS bisa diubah lagi.
 - **Batas SKS** mengikuti IPS semester sebelumnya: IPS 3,00 ke atas 24 SKS, 2,50–2,99 21 SKS, 2,00–2,49 18 SKS, di bawah 2,00 15 SKS; mahasiswa tanpa riwayat 20 SKS. Mata kuliah yang sudah lulus (di atas huruf remedial) tidak ditawarkan lagi, sedangkan yang bernilai D atau E bisa diulang. Satu mata kuliah hanya boleh di satu kelas.
 - **Persetujuan** (`/enrollment/approvals`, menu Persetujuan KRS): dosen wali melihat mahasiswa perwaliannya; admin, Kaprodi, dan wakil dekan akademik melihat semuanya. Filter semester dan status, lihat daftar mata kuliah, **Setujui** atau **Tolak** (alasan wajib). Keputusan tercatat di log audit.
-- **Dampak ke nilai:** mahasiswa ber-KRS disetujui otomatis masuk daftar peserta di Input nilai dosen, termasuk bila kelasnya berbeda (mengulang atau mengambil kuliah kelas lain). Karena itu fitur tambah mahasiswa mengulang lewat NIM tidak lagi wajib.
-- Kode: `EnrollmentService`, `AcademicCalendar::isOpen()`.
+- **Dampak ke nilai, presensi, dan jadwal:** mahasiswa ber-KRS disetujui otomatis masuk daftar peserta di Input nilai dan sesi presensi kelas yang dipilihnya, termasuk dari kelas angkatan lain. Anggota kelas yang pindah ke seksi lain lewat KRS dikeluarkan dari daftar kelas asal. Halaman Jadwal mahasiswa dan orang tua mengikuti KRS yang disetujui (bila belum ada, mengikuti paket kelas angkatan).
+- **Kelas paralel:** satu mata kuliah bisa dibuka di beberapa kelas sekaligus. Admin dan wakil dekan menentukan **seksi** (A, B, ...) dan **kuota KRS** saat menyusun jadwal (Jadwal, Atur jadwal). KRS menolak kelas yang penuh, dan sisa kuota tampil di daftar pilihan.
+- Kode: `EnrollmentService`, `ClassRoster`, `AcademicCalendar::isOpen()`.
+
+### Kurikulum
+
+- **Kelola** (`/curricula`, admin, Kaprodi, wakil dekan akademik): pilih program studi, buat kurikulum (nama, angkatan mulai, angkatan akhir opsional), lalu tambahkan mata kuliah per semester sebagai **Wajib** atau **Pilihan**. Mata kuliah baru bisa dibuat langsung dari halaman ini. **Prasyarat** diatur per mata kuliah; kurikulum bisa dinonaktifkan.
+- **Berlaku otomatis:** kurikulum aktif terbaru yang mencakup angkatan mahasiswa dipakai KRS. Hanya mata kuliah di kurikulum itu yang ditawarkan, dan mata kuliah dengan prasyarat belum lulus (hasil terbaik E tidak dihitung lulus) tidak bisa dipilih.
+- **Mahasiswa** (`/my-curriculum`, menu Kurikulum): daftar mata kuliah per semester dengan status Lulus, Di KRS semester ini, Belum lulus, atau Belum diambil, serta SKS wajib yang tersisa.
+
+### Perwalian dan bimbingan
+
+- **Dosen wali** (`/advising`, menu Perwalian): daftar mahasiswa perwalian semester aktif, status KRS masing-masing, dan riwayat bimbingan. Dosen wali menambah dan mengubah **catatan bimbingan** (tanggal, topik, catatan, tindak lanjut). Admin, Kaprodi, dan wakil dekan bisa melihat seluruhnya tetapi tidak menambah catatan. Dari halaman Persetujuan KRS ada pintasan Bimbingan per mahasiswa.
+- **Mahasiswa** (`/my-advising`): melihat nama dosen wali dan riwayat catatan bimbingannya.
+
+### Status mahasiswa, cuti, dan aktif kembali
+
+- **Status** per mahasiswa: Aktif, Cuti akademik, Non-aktif, Mutasi, Lulus, Drop out (DO). Setiap perubahan pada semester aktif tercatat di **riwayat status per semester** dan log audit. Mahasiswa yang tidak aktif tidak bisa mengisi KRS dan tidak ikut sesi presensi baru.
+- **Mahasiswa** (`/academic-status`, menu Status akademik): melihat status dan riwayat, **mengajukan cuti akademik** (hanya saat masa Pengajuan cuti akademik di Kalender akademik dibuka) atau **aktif kembali** (bila sedang cuti atau non-aktif), disertai alasan. Satu pengajuan tertunda pada satu waktu.
+- **Staf** (`/academic-status/manage`, menu Status mahasiswa; admin, Kaprodi, wakil dekan): menyetujui atau menolak pengajuan (penolakan wajib beralasan), dan mencatat status manual (non-aktif, DO, lulus, dan lainnya) per semester lewat pencarian nama atau NIM.
+
 
 ### Nilai, KHS, dan transkrip
 
@@ -326,7 +345,7 @@ Hal-hal berikut **belum ada** atau perlu keputusan lanjutan:
 
 - **Ganti kata sandi dari profil dan reset oleh admin.** Lupa kata sandi lewat email sudah tersedia (`/forgot-password`); email dikirim lewat `MAIL_MAILER` (bawaan `log`, isi surat ada di `storage/logs`). Atur SMTP di `.env` untuk produksi.
 - Layar pengaturan kampus dan aktivasi semester (saat ini lewat data atau tinker).
-- Kuota kelas paralel pada KRS, jadwal dan presensi mahasiswa yang mengambil kuliah di kelas lain (jadwal dan presensi masih mengikuti kelas angkatan), serta cetak KRS PDF.
+- Cetak KRS PDF, status otomatis "lulus" setelah wisuda, dan kuliah tanpa kelas angkatan (kelas terbuka murni lintas prodi).
 - Presensi saat offline, notifikasi WhatsApp otomatis ke orang tua, dan presensi gerbang.
 - Impor Excel (baru CSV), ekspor format Dapodik atau Neo Feeder PDDikti.
 - Foto profil.

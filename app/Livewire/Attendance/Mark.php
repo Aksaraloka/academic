@@ -4,6 +4,7 @@ namespace App\Livewire\Attendance;
 
 use App\Enums\AttendanceStatus;
 use App\Models\AttendanceSession;
+use App\Models\Student;
 use App\Services\AttendanceService;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -72,7 +73,7 @@ class Mark extends Component
 
     public function render(AttendanceService $service)
     {
-        $students = $this->session->studyGroup->activeStudents()->orderBy('students.name')->get()->keyBy('id');
+        $students = Student::query()->whereIn('id', array_keys($this->statuses))->orderBy('name')->get()->keyBy('id');
         $counts = collect($this->statuses)->countBy();
 
         return view('livewire.attendance.mark', [

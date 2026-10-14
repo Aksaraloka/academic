@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['tenant_id', 'academic_term_id', 'teacher_id', 'subject_id', 'study_group_id', 'hours_per_week', 'weight_assignment', 'weight_midterm', 'weight_final', 'weight_attendance', 'grades_locked_at', 'grades_locked_by', 'grading_extended_until'])]
+#[Fillable(['tenant_id', 'academic_term_id', 'teacher_id', 'subject_id', 'study_group_id', 'section', 'capacity', 'hours_per_week', 'weight_assignment', 'weight_midterm', 'weight_final', 'weight_attendance', 'grades_locked_at', 'grades_locked_by', 'grading_extended_until'])]
 class TeachingAssignment extends Model
 {
     use BelongsToTenant;
@@ -32,6 +32,14 @@ class TeachingAssignment extends Model
     public function grades(): HasMany
     {
         return $this->hasMany(Grade::class);
+    }
+
+    /**
+     * Nama kelas untuk tampilan: kelas angkatan, ditambah seksi bila kuliah dibuka paralel.
+     */
+    public function classLabel(): string
+    {
+        return $this->studyGroup->name.($this->section ? ' · Seksi '.$this->section : '');
     }
 
     public function areGradesLocked(): bool

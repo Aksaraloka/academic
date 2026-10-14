@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Enums\AcademicEventType;
 use App\Enums\EnrollmentStatus;
 use App\Enums\Role;
+use App\Enums\StudentStatus;
 use App\Models\AcademicTerm;
 use App\Models\Enrollment;
+use App\Models\EnrollmentItem;
 use App\Models\Student;
 use App\Models\StudyGroup;
 use App\Models\TeachingAssignment;
@@ -37,6 +39,7 @@ class EnrollmentService
     public function __construct(
         private readonly AcademicCalendar $calendar,
         private readonly AcademicRecord $records,
+        private readonly CurriculumService $curricula,
         private readonly AuditLogger $audit,
     ) {}
 
@@ -100,19 +103,53 @@ class EnrollmentService
     {
         $groupId = $this->groupFor($student, $term)?->id;
         $passed = $this->passedSubjectIds($student);
+        $passedForPrerequisites = $this->curricula->passedForPrerequisites($student);
+        $items = $this->curricula->itemsFor($student);
 
-        return TeachingAssignment::query()
-            ->with(['subject', 'teacher', 'studyGroup', 'schedules.timeSlot'])
+        $assignments = TeachingAssignment::query()
+            ->with(['subject.prerequisites', 'teacher', 'studyGroup', 'schedules.timeSlot'])
             ->where('academic_term_id', $term->id)
             ->whereHas('subject', fn ($query) => $query->where('program_id', $student->program_id))
             ->get()
             ->reject(fn (TeachingAssignment $assignment): bool => $passed->contains($assignment->subject_id))
+            ->when($items->isNotEmpty(), fn (Collection $all) => $all->filter(fn (TeachingAssignment $assignment): bool => $items->has($assignment->subject_id)));
+
+        $seats = $this->seatsTaken($assignments->pluck('id')->all());
+
+        return $assignments
+            ->each(function (TeachingAssignment $assignment) use ($items, $passedForPrerequisites, $seats): void {
+                $item = $items->get($assignment->subject_id);
+
+                $assignment->setAttribute('krs_type', $item?->type);
+                $assignment->setAttribute('krs_semester', $item?->semester ?? $assignment->subject->semester);
+                $assignment->setAttribute('krs_unmet', $this->curricula->unmetPrerequisites($assignment->subject, $passedForPrerequisites));
+                $assignment->setAttribute('krs_seats_taken', $seats[$assignment->id] ?? 0);
+            })
             ->sortBy([
                 fn (TeachingAssignment $a, TeachingAssignment $b): int => (int) ($b->study_group_id === $groupId) <=> (int) ($a->study_group_id === $groupId),
-                fn (TeachingAssignment $a, TeachingAssignment $b): int => $a->subject->semester <=> $b->subject->semester,
+                fn (TeachingAssignment $a, TeachingAssignment $b): int => $a->krs_semester <=> $b->krs_semester,
                 fn (TeachingAssignment $a, TeachingAssignment $b): int => strcmp($a->subject->name, $b->subject->name),
             ])
             ->values();
+    }
+
+    /**
+     * Jumlah kursi terpakai per penugasan kuliah: KRS yang diajukan atau disetujui.
+     *
+     * @param  array<int, int>  $assignmentIds
+     * @return array<int, int>
+     */
+    public function seatsTaken(array $assignmentIds, ?int $exceptEnrollmentId = null): array
+    {
+        return EnrollmentItem::query()
+            ->whereIn('teaching_assignment_id', $assignmentIds)
+            ->whereHas('enrollment', fn ($query) => $query->whereIn('status', [EnrollmentStatus::Submitted, EnrollmentStatus::Approved])
+                ->when($exceptEnrollmentId, fn ($inner) => $inner->whereKeyNot($exceptEnrollmentId)))
+            ->selectRaw('teaching_assignment_id, count(*) as taken')
+            ->groupBy('teaching_assignment_id')
+            ->pluck('taken', 'teaching_assignment_id')
+            ->map(fn ($count): int => (int) $count)
+            ->all();
     }
 
     /**
@@ -167,7 +204,7 @@ class EnrollmentService
         $term = $enrollment->academicTerm;
 
         $chosen = $this->offerings($student, $term)->whereIn('id', array_map('intval', $assignmentIds))->values();
-        $this->guardSelection($student, $term, $chosen);
+        $this->guardSelection($student, $term, $chosen, $enrollment);
 
         $enrollment->assignments()->sync($chosen->pluck('id')->all());
     }
@@ -176,13 +213,13 @@ class EnrollmentService
     {
         $this->guardEditable($enrollment);
 
-        $chosen = $enrollment->assignments()->with(['subject', 'schedules.timeSlot'])->get();
+        $chosen = $enrollment->assignments()->with(['subject.prerequisites', 'studyGroup', 'schedules.timeSlot'])->get();
 
         if ($chosen->isEmpty()) {
             throw ValidationException::withMessages(['selection' => 'Pilih minimal satu mata kuliah sebelum mengajukan KRS.']);
         }
 
-        $this->guardSelection($enrollment->student, $enrollment->academicTerm, $chosen);
+        $this->guardSelection($enrollment->student, $enrollment->academicTerm, $chosen, $enrollment);
 
         $enrollment->update(['status' => EnrollmentStatus::Submitted, 'submitted_at' => now(), 'advisor_note' => null, 'decided_by' => null, 'decided_at' => null]);
         $this->audit->log('enrollment.submitted', $enrollment, [], ['credits' => $chosen->sum(fn ($a): int => (int) $a->subject->credits)]);
@@ -271,6 +308,10 @@ class EnrollmentService
 
     private function guardEditable(Enrollment $enrollment): void
     {
+        if ($enrollment->student->status !== StudentStatus::Active) {
+            throw ValidationException::withMessages(['selection' => "Status akademikmu {$enrollment->student->status->label()}, jadi KRS tidak bisa diisi. Ajukan aktif kembali di menu Status akademik."]);
+        }
+
         if (! $enrollment->status->isEditable()) {
             throw ValidationException::withMessages(['selection' => 'KRS yang sedang diajukan atau sudah disetujui tidak bisa diubah. Tarik pengajuan dulu bila perlu.']);
         }
@@ -283,7 +324,7 @@ class EnrollmentService
     /**
      * @param  Collection<int, TeachingAssignment>  $chosen
      */
-    private function guardSelection(Student $student, AcademicTerm $term, Collection $chosen): void
+    private function guardSelection(Student $student, AcademicTerm $term, Collection $chosen, ?Enrollment $enrollment = null): void
     {
         $credits = $chosen->sum(fn (TeachingAssignment $assignment): int => (int) $assignment->subject->credits);
         $max = $this->maxCredits($student, $term);
@@ -294,6 +335,24 @@ class EnrollmentService
 
         if ($chosen->pluck('subject_id')->duplicates()->isNotEmpty()) {
             throw ValidationException::withMessages(['selection' => 'Satu mata kuliah hanya boleh dipilih di satu kelas.']);
+        }
+
+        $passed = $this->curricula->passedForPrerequisites($student);
+
+        foreach ($chosen as $assignment) {
+            $unmet = $this->curricula->unmetPrerequisites($assignment->subject, $passed);
+
+            if ($unmet->isNotEmpty()) {
+                throw ValidationException::withMessages(['selection' => "{$assignment->subject->name} butuh prasyarat yang belum lulus: ".$unmet->pluck('name')->implode(', ').'.']);
+            }
+        }
+
+        $seats = $this->seatsTaken($chosen->pluck('id')->all(), $enrollment?->id);
+
+        foreach ($chosen as $assignment) {
+            if ($assignment->capacity !== null && ($seats[$assignment->id] ?? 0) >= $assignment->capacity) {
+                throw ValidationException::withMessages(['selection' => "Kelas {$assignment->subject->name} ({$assignment->classLabel()}) sudah penuh. Pilih seksi lain."]);
+            }
         }
 
         if ($conflicts = $this->conflicts($chosen)) {

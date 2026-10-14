@@ -45,6 +45,12 @@
                             @foreach ($rooms as $room)<option value="{{ $room->id }}">{{ $room->name }}</option>@endforeach
                         </select>
                     </x-field>
+                    <x-field label="Seksi" name="section" hint="Mis. A, B untuk kelas paralel.">
+                        <input id="section" type="text" maxlength="10" wire:model="section" class="input" placeholder="A">
+                    </x-field>
+                    <x-field label="Kuota KRS" name="capacity" hint="Kosongkan bila tanpa batas.">
+                        <input id="capacity" type="number" min="1" wire:model="capacity" class="input" inputmode="numeric">
+                    </x-field>
                 </div>
 
                 @if ($conflicts)

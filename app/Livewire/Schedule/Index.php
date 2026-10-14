@@ -29,7 +29,7 @@ class Index extends Component
     {
         $this->termId = (string) ($board->resolveTerm($board->terms(), $this->termId)?->id ?? '');
 
-        if ($this->targetId === '') {
+        if ($this->targetId === '' || ! auth()->user()->role->isStaff()) {
             $this->resolveDefaultTarget($board);
         }
     }
@@ -58,6 +58,10 @@ class Index extends Component
         $user = auth()->user();
         $terms = $board->terms();
         $term = $terms->get((int) $this->termId);
+
+        if (! $user->role->isStaff()) {
+            $this->resolveDefaultTarget($board);
+        }
 
         $options = match ($this->view) {
             'teacher' => Teacher::query()->orderBy('name')->pluck('name', 'id'),

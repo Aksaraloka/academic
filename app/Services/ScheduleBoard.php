@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\EnrollmentStatus;
 use App\Enums\Role;
 use App\Models\AcademicTerm;
+use App\Models\Enrollment;
 use App\Models\Schedule;
 use App\Models\StudyGroup;
 use App\Models\StudyGroupMember;
@@ -57,11 +59,7 @@ class ScheduleBoard
             : ($user->hasRole(Role::Guardian) ? $user->guardian?->students()->first() : null);
 
         if ($student) {
-            return ['view' => 'group', 'id' => (string) (StudyGroupMember::query()
-                ->where('student_id', $student->id)
-                ->whereHas('studyGroup', fn ($query) => $query->where('academic_term_id', $termId))
-                ->latest('joined_at')
-                ->value('study_group_id') ?? '')];
+            return ['view' => 'student', 'id' => (string) $student->id];
         }
 
         if ($view === 'group') {
@@ -69,6 +67,29 @@ class ScheduleBoard
         }
 
         return ['view' => $view, 'id' => ''];
+    }
+
+    /**
+     * Kuliah yang diikuti mahasiswa pada semester itu: sesuai KRS yang disetujui; bila belum ada KRS, paket kelas angkatannya.
+     *
+     * @return array<int, int>
+     */
+    private function assignmentIdsForStudent(int $studentId, AcademicTerm $term): array
+    {
+        $enrolled = Enrollment::query()
+            ->where('academic_term_id', $term->id)->where('student_id', $studentId)->where('status', EnrollmentStatus::Approved)
+            ->with('items')->first();
+
+        if ($enrolled && $enrolled->items->isNotEmpty()) {
+            return $enrolled->items->pluck('teaching_assignment_id')->all();
+        }
+
+        $groupIds = StudyGroupMember::query()
+            ->where('student_id', $studentId)
+            ->whereHas('studyGroup', fn ($query) => $query->where('academic_term_id', $term->id))
+            ->pluck('study_group_id');
+
+        return TeachingAssignment::query()->where('academic_term_id', $term->id)->whereIn('study_group_id', $groupIds)->pluck('id')->all();
     }
 
     /**
@@ -89,6 +110,7 @@ class ScheduleBoard
                 ->when($view === 'teacher', fn ($query) => $query->whereHas('assignment', fn ($inner) => $inner->where('teacher_id', $targetId)))
                 ->when($view === 'room', fn ($query) => $query->where('room_id', $targetId))
                 ->when($view === 'group', fn ($query) => $query->whereHas('assignment', fn ($inner) => $inner->where('study_group_id', $targetId)))
+                ->when($view === 'student', fn ($query) => $query->whereIn('teaching_assignment_id', $this->assignmentIdsForStudent((int) $targetId, $term)))
                 ->get();
         }
 

@@ -35,7 +35,7 @@
         <nav class="flex-1 space-y-1 overflow-y-auto p-3">
             @foreach ($items as $item)
                 @if (isset($item['children']))
-                    @php $groupActive = request()->routeIs($item['match']); @endphp
+                    @php $groupActive = request()->routeIs(...(array) $item['match']); @endphp
                     <div x-data="{ open: {{ $groupActive ? 'true' : 'false' }} }">
                         <button type="button" @click="collapsed ? (collapsed = false, open = true) : open = !open" :aria-expanded="open"
                                 title="{{ $item['label'] }}"
@@ -46,7 +46,7 @@
                         </button>
                         <div x-show="open && !collapsed" x-cloak class="mt-1 space-y-1 border-l border-border pl-3 ml-5">
                             @foreach ($item['children'] as $child)
-                                @php $childActive = request()->routeIs($child['match']); @endphp
+                                @php $childActive = request()->routeIs(...(array) $child['match']); @endphp
                                 <a href="{{ route($child['route']) }}" wire:navigate @if ($childActive) aria-current="page" @endif
                                    class="flex min-h-10 items-center rounded-lg px-3 text-sm transition {{ $childActive ? 'bg-primary/15 font-medium text-primary' : 'text-text-muted hover:bg-surface-muted' }}">{{ $child['label'] }}</a>
                             @endforeach
@@ -54,7 +54,7 @@
                     </div>
                     @continue
                 @endif
-                @php $active = request()->routeIs($item['match']); @endphp
+                @php $active = request()->routeIs(...(array) $item['match']); @endphp
                 <a href="{{ route($item['route']) }}" wire:navigate @if ($active) aria-current="page" @endif
                    title="{{ $item['label'] }}"
                    class="flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition {{ $active ? 'bg-primary/15 text-primary' : 'text-text-muted hover:bg-surface-muted' }}">
@@ -129,7 +129,7 @@
     <nav class="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface lg:hidden" aria-label="Navigasi utama">
         <ul class="mx-auto flex max-w-xl">
             @foreach ($primaryItems as $item)
-                @php $active = request()->routeIs($item['match']); @endphp
+                @php $active = request()->routeIs(...(array) $item['match']); @endphp
                 <li class="min-w-0 flex-1">
                     <a href="{{ route($item['route']) }}" wire:navigate @if ($active) aria-current="page" @endif
                        class="flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-xs font-medium {{ $active ? 'text-primary' : 'text-text-muted hover:bg-surface-muted' }}">

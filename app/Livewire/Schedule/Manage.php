@@ -27,6 +27,10 @@ class Manage extends Component
 
     public string $roomId = '';
 
+    public string $section = '';
+
+    public string $capacity = '';
+
     public string $newSubject = '';
 
     public string $newSubjectCode = '';
@@ -94,9 +98,11 @@ class Manage extends Component
             'subjectId' => ['required', 'exists:subjects,id'],
             'timeSlotId' => ['required', 'exists:time_slots,id'],
             'roomId' => ['nullable', 'exists:rooms,id'],
+            'section' => ['nullable', 'string', 'max:10'],
+            'capacity' => ['nullable', 'integer', 'between:1,500'],
         ], [], [
             'groupId' => 'kelas', 'teacherId' => 'dosen', 'subjectId' => 'mata kuliah',
-            'timeSlotId' => 'sesi kuliah', 'roomId' => 'ruang',
+            'timeSlotId' => 'sesi kuliah', 'roomId' => 'ruang', 'section' => 'seksi', 'capacity' => 'kuota',
         ]);
 
         $group = StudyGroup::findOrFail($this->groupId);
@@ -106,6 +112,11 @@ class Manage extends Component
             'teacher_id' => $this->teacherId,
             'subject_id' => $this->subjectId,
             'study_group_id' => $group->id,
+        ]);
+
+        $assignment->update([
+            'section' => $this->section !== '' ? $this->section : $assignment->section,
+            'capacity' => $this->capacity !== '' ? (int) $this->capacity : $assignment->capacity,
         ]);
 
         $roomId = $this->roomId !== '' ? (int) $this->roomId : null;
