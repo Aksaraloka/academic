@@ -15,6 +15,7 @@ use App\Livewire\Checkin;
 use App\Livewire\Dashboard;
 use App\Livewire\Feedback;
 use App\Livewire\Grades;
+use App\Livewire\Graduation;
 use App\Livewire\Groups;
 use App\Livewire\Leaves;
 use App\Livewire\News;
@@ -25,20 +26,19 @@ use App\Livewire\Schedule;
 use App\Livewire\Students;
 use App\Livewire\Survey;
 use App\Livewire\Teachers;
-use App\Livewire\Wisuda;
 use App\Services\StudentImporter;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/beranda');
+Route::redirect('/', '/home');
 
 Route::middleware('guest')->group(function () {
-    Route::livewire('/masuk', Login::class)->name('login');
-    Route::livewire('/lupa-kata-sandi', ForgotPassword::class)->name('password.request');
-    Route::livewire('/atur-ulang-kata-sandi/{token}', ResetPassword::class)->name('password.reset');
+    Route::livewire('/login', Login::class)->name('login');
+    Route::livewire('/forgot-password', ForgotPassword::class)->name('password.request');
+    Route::livewire('/reset-password/{token}', ResetPassword::class)->name('password.reset');
 });
 
-Route::post('/keluar', function () {
+Route::post('/logout', function () {
     Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
@@ -47,70 +47,70 @@ Route::post('/keluar', function () {
 })->middleware('auth')->name('logout');
 
 Route::middleware('auth')->group(function () {
-    Route::livewire('/beranda', News\Index::class)->name('dashboard');
-    Route::livewire('/ringkasan', Dashboard::class)->name('summary');
+    Route::livewire('/home', News\Index::class)->name('dashboard');
+    Route::livewire('/summary', Dashboard::class)->name('summary');
 
-    Route::livewire('/profil', Profile\Show::class)->name('profile.show');
-    Route::livewire('/profil/ubah', Profile\Edit::class)->name('profile.edit');
+    Route::livewire('/profile', Profile\Show::class)->name('profile.show');
+    Route::livewire('/profile/edit', Profile\Edit::class)->name('profile.edit');
 
-    Route::livewire('/survei', Survey\Home::class)->name('survey.home');
-    Route::livewire('/survei/kuesioner', Survey\Index::class)->name('survey.index');
-    Route::livewire('/survei/bantuan', Survey\Help::class)->name('survey.help');
+    Route::livewire('/survey', Survey\Home::class)->name('survey.home');
+    Route::livewire('/survey/questionnaires', Survey\Index::class)->name('survey.index');
+    Route::livewire('/survey/help', Survey\Help::class)->name('survey.help');
 
     Route::middleware('role:admin')->group(function () {
-        Route::livewire('/survei/kelola/baru', Survey\Form::class)->name('survey.create');
-        Route::livewire('/survei/{survey}/ubah', Survey\Form::class)->name('survey.edit');
+        Route::livewire('/survey/manage/new', Survey\Form::class)->name('survey.create');
+        Route::livewire('/survey/{survey}/edit', Survey\Form::class)->name('survey.edit');
     });
 
     Route::middleware('role:admin,principal')->group(function () {
-        Route::livewire('/survei/{survey}/hasil', Survey\Results::class)->name('survey.results');
-        Route::get('/survei/{survey}/hasil/ekspor', SurveyExportController::class)->name('survey.export');
+        Route::livewire('/survey/{survey}/results', Survey\Results::class)->name('survey.results');
+        Route::get('/survey/{survey}/results/export', SurveyExportController::class)->name('survey.export');
     });
 
-    Route::livewire('/survei/{survey}/isi', Survey\Fill::class)->name('survey.fill');
+    Route::livewire('/survey/{survey}/fill', Survey\Fill::class)->name('survey.fill');
 
-    Route::livewire('/masukan', Feedback\Index::class)->name('feedback.index');
-    Route::livewire('/masukan/baru', Feedback\Create::class)->name('feedback.create');
-    Route::livewire('/masukan/{ticket}', Feedback\Show::class)->name('feedback.show');
-    Route::get('/masukan/{ticket}/lampiran', FeedbackAttachmentController::class)->name('feedback.attachment');
+    Route::livewire('/feedback', Feedback\Index::class)->name('feedback.index');
+    Route::livewire('/feedback/new', Feedback\Create::class)->name('feedback.create');
+    Route::livewire('/feedback/{ticket}', Feedback\Show::class)->name('feedback.show');
+    Route::get('/feedback/{ticket}/attachment', FeedbackAttachmentController::class)->name('feedback.attachment');
 
     Route::middleware('role:admin')->group(function () {
-        Route::livewire('/berita/kelola', News\Manage::class)->name('news.manage');
+        Route::livewire('/news/manage', News\Manage::class)->name('news.manage');
     });
 
-    Route::livewire('/berita/{news}', News\Show::class)->name('news.show');
-    Route::get('/berita/{news}/poster', NewsPosterController::class)->name('news.poster');
+    Route::livewire('/news/{news}', News\Show::class)->name('news.show');
+    Route::get('/news/{news}/poster', NewsPosterController::class)->name('news.poster');
 
     Route::middleware('role:admin,principal,curriculum,teacher,duty')->group(function () {
-        Route::livewire('/mahasiswa', Students\Index::class)->name('students.index');
-        Route::livewire('/kelas', Groups\Index::class)->name('groups.index');
-        Route::livewire('/kelas/{group}', Groups\Show::class)->name('groups.show');
+        Route::livewire('/students', Students\Index::class)->name('students.index');
+        Route::livewire('/groups', Groups\Index::class)->name('groups.index');
+        Route::livewire('/groups/{group}', Groups\Show::class)->name('groups.show');
     });
 
     Route::middleware('role:admin')->group(function () {
-        Route::get('/mahasiswa/templat', fn () => response(StudentImporter::template(), 200, [
+        Route::get('/students/template', fn () => response(StudentImporter::template(), 200, [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="templat-mahasiswa.csv"',
         ]))->name('students.template');
-        Route::livewire('/mahasiswa/baru', Students\Form::class)->name('students.create');
-        Route::livewire('/mahasiswa/impor', Students\Import::class)->name('students.import');
-        Route::livewire('/mahasiswa/{student}/ubah', Students\Form::class)->name('students.edit');
-        Route::livewire('/dosen', Teachers\Index::class)->name('teachers.index');
-        Route::livewire('/prodi', Programs\Index::class)->name('programs.index');
+        Route::livewire('/students/new', Students\Form::class)->name('students.create');
+        Route::livewire('/students/import', Students\Import::class)->name('students.import');
+        Route::livewire('/students/{student}/edit', Students\Form::class)->name('students.edit');
+        Route::livewire('/teachers', Teachers\Index::class)->name('teachers.index');
+        Route::livewire('/programs', Programs\Index::class)->name('programs.index');
     });
 
-    Route::livewire('/jadwal', Schedule\Index::class)->name('schedule.index');
-    Route::get('/jadwal/unduh', ScheduleExportController::class)->name('schedule.export');
+    Route::livewire('/schedule', Schedule\Index::class)->name('schedule.index');
+    Route::get('/schedule/download', ScheduleExportController::class)->name('schedule.export');
 
     Route::middleware('role:admin,curriculum')->group(function () {
-        Route::livewire('/jadwal/atur', Schedule\Manage::class)->name('schedule.manage');
+        Route::livewire('/schedule/manage', Schedule\Manage::class)->name('schedule.manage');
     });
 
-    Route::livewire('/presensi-saya', Attendance\Mine::class)->name('attendance.mine')->middleware('role:student');
+    Route::livewire('/my-attendance', Attendance\Mine::class)->name('attendance.mine')->middleware('role:student');
 
     Route::middleware('role:admin,principal,teacher,duty')->group(function () {
-        Route::livewire('/presensi', Attendance\Index::class)->name('attendance.index');
-        Route::livewire('/presensi/{session}', Attendance\Mark::class)->name('attendance.mark');
+        Route::livewire('/attendance', Attendance\Index::class)->name('attendance.index');
+        Route::livewire('/attendance/{session}', Attendance\Mark::class)->name('attendance.mark');
     });
 
     Route::middleware('role:principal,curriculum,teacher,duty')->group(function () {
@@ -118,41 +118,41 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('role:admin,principal,curriculum,student')->group(function () {
-        Route::livewire('/wisuda', Wisuda\Overview::class)->name('wisuda.overview');
+        Route::livewire('/graduation', Graduation\Overview::class)->name('graduation.overview');
     });
 
     Route::middleware('role:admin')->group(function () {
-        Route::livewire('/wisuda/periode', Wisuda\Periods::class)->name('wisuda.periods');
+        Route::livewire('/graduation/periods', Graduation\Periods::class)->name('graduation.periods');
     });
 
     Route::middleware('role:admin,principal,curriculum')->group(function () {
-        Route::livewire('/wisuda/{period}/pendaftar', Wisuda\Registrations::class)->name('wisuda.registrations');
-        Route::livewire('/wisuda/{period}/berita-acara', Wisuda\Minutes::class)->name('wisuda.minutes');
-        Route::get('/wisuda/{period}/berita-acara/cetak', GraduationMinutesPrintController::class)->name('wisuda.minutes.print');
+        Route::livewire('/graduation/{period}/registrations', Graduation\Registrations::class)->name('graduation.registrations');
+        Route::livewire('/graduation/{period}/minutes', Graduation\Minutes::class)->name('graduation.minutes');
+        Route::get('/graduation/{period}/minutes/print', GraduationMinutesPrintController::class)->name('graduation.minutes.print');
     });
 
     Route::middleware('role:student')->group(function () {
-        Route::livewire('/wisuda/{period}/daftar', Wisuda\Register::class)->name('wisuda.register');
+        Route::livewire('/graduation/{period}/register', Graduation\Register::class)->name('graduation.register');
     });
 
     Route::middleware('role:student,guardian,admin,principal,curriculum')->group(function () {
-        Route::livewire('/nilai/khs', Grades\Khs::class)->name('grades.khs');
-        Route::livewire('/nilai/transkrip', Grades\Transcript::class)->name('grades.transcript');
-        Route::get('/nilai/khs/unduh', [GradeReportController::class, 'khs'])->name('grades.khs.pdf');
-        Route::get('/nilai/transkrip/unduh', [GradeReportController::class, 'transcript'])->name('grades.transcript.pdf');
+        Route::livewire('/grades/khs', Grades\Khs::class)->name('grades.khs');
+        Route::livewire('/grades/transcript', Grades\Transcript::class)->name('grades.transcript');
+        Route::get('/grades/khs/download', [GradeReportController::class, 'khs'])->name('grades.khs.pdf');
+        Route::get('/grades/transcript/download', [GradeReportController::class, 'transcript'])->name('grades.transcript.pdf');
     });
 
     Route::middleware('role:teacher,curriculum,principal,duty,admin')->group(function () {
-        Route::livewire('/nilai/input', Grades\Courses::class)->name('grades.input.index');
-        Route::livewire('/nilai/input/{assignment}', Grades\Sheet::class)->name('grades.input.sheet');
+        Route::livewire('/grades/input', Grades\Courses::class)->name('grades.input.index');
+        Route::livewire('/grades/input/{assignment}', Grades\Sheet::class)->name('grades.input.sheet');
     });
 
-    Route::livewire('/nilai/revisi', Grades\Revisions::class)->name('grades.revisions')->middleware('role:teacher,principal,admin');
-    Route::livewire('/nilai/kelengkapan', Grades\Completeness::class)->name('grades.completeness')->middleware('role:admin,principal,curriculum');
-    Route::livewire('/nilai/pengaturan', Grades\Settings::class)->name('grades.settings')->middleware('role:admin');
+    Route::livewire('/grades/revisions', Grades\Revisions::class)->name('grades.revisions')->middleware('role:teacher,principal,admin');
+    Route::livewire('/grades/completeness', Grades\Completeness::class)->name('grades.completeness')->middleware('role:admin,principal,curriculum');
+    Route::livewire('/grades/settings', Grades\Settings::class)->name('grades.settings')->middleware('role:admin');
 
-    Route::livewire('/rekap', Reports\Index::class)->name('reports.index');
-    Route::get('/rekap/ekspor', ReportExportController::class)->name('reports.export');
+    Route::livewire('/reports', Reports\Index::class)->name('reports.index');
+    Route::get('/reports/export', ReportExportController::class)->name('reports.export');
 
-    Route::livewire('/izin', Leaves\Index::class)->name('leaves.index')->middleware('role:admin,principal,teacher,duty,curriculum');
+    Route::livewire('/leaves', Leaves\Index::class)->name('leaves.index')->middleware('role:admin,principal,teacher,duty,curriculum');
 });

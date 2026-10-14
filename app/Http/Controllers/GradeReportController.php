@@ -53,7 +53,7 @@ class GradeReportController extends Controller
 
     private function student(Request $request, AcademicRecord $records): Student
     {
-        $student = $records->resolveStudent($request->user(), $request->integer('mahasiswa') ?: null, $request->integer('anak') ?: null);
+        $student = $records->resolveStudent($request->user(), $request->integer('student') ?: null, $request->integer('child') ?: null);
 
         abort_if($student === null, 404);
 

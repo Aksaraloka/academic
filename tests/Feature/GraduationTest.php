@@ -1,10 +1,10 @@
 <?php
 
 use App\Enums\GraduationStatus;
-use App\Livewire\Wisuda\Minutes;
-use App\Livewire\Wisuda\Periods;
-use App\Livewire\Wisuda\Register;
-use App\Livewire\Wisuda\Registrations;
+use App\Livewire\Graduation\Minutes;
+use App\Livewire\Graduation\Periods;
+use App\Livewire\Graduation\Register;
+use App\Livewire\Graduation\Registrations;
 use App\Models\GraduationPeriod;
 use App\Models\GraduationRegistration;
 use App\Models\Program;
@@ -33,17 +33,17 @@ function candidateUser(): User
 it('renders the wisuda home for every allowed role and blocks others', function () {
     foreach (['admin@', 'kaprodi@', 'akademik@', 'mahasiswa@'] as $prefix) {
         $this->actingAs(User::where('email', $prefix.'aksaraloka.test')->firstOrFail())
-            ->get('/wisuda')->assertOk()->assertSee('Wisuda Periode II Tahun 2026');
+            ->get('/graduation')->assertOk()->assertSee('Wisuda Periode II Tahun 2026');
     }
 
-    $this->actingAs(User::where('email', 'dosen@aksaraloka.test')->firstOrFail())->get('/wisuda')->assertForbidden();
-    $this->actingAs(User::where('email', 'ortu@aksaraloka.test')->firstOrFail())->get('/wisuda')->assertForbidden();
+    $this->actingAs(User::where('email', 'dosen@aksaraloka.test')->firstOrFail())->get('/graduation')->assertForbidden();
+    $this->actingAs(User::where('email', 'ortu@aksaraloka.test')->firstOrFail())->get('/graduation')->assertForbidden();
 });
 
 it('hides unpublished periods from students', function () {
     $this->period->update(['is_published' => false]);
 
-    $this->actingAs(candidateUser())->get('/wisuda')->assertOk()->assertDontSee('Wisuda Periode II Tahun 2026');
+    $this->actingAs(candidateUser())->get('/graduation')->assertOk()->assertDontSee('Wisuda Periode II Tahun 2026');
 });
 
 it('registers a student and rejects values below the requirements', function () {
@@ -132,18 +132,18 @@ it('only issues the minutes when nothing is pending, then freezes the participan
 });
 
 it('serves the printable minutes only after they are issued', function () {
-    $this->actingAs($this->admin)->get(route('wisuda.minutes.print', $this->period))->assertNotFound();
+    $this->actingAs($this->admin)->get(route('graduation.minutes.print', $this->period))->assertNotFound();
 
     GraduationRegistration::where('status', GraduationStatus::Submitted)->update(['status' => GraduationStatus::Approved]);
     Livewire::actingAs($this->admin)->test(Minutes::class, ['period' => $this->period])
         ->set('chair_name', 'Dr. Hendra Wijaya')->set('approver_name', 'Prof. Sinta Dewi')->call('finalize');
 
     $this->actingAs(User::where('email', 'kaprodi@aksaraloka.test')->firstOrFail())
-        ->get(route('wisuda.minutes.print', $this->period))
+        ->get(route('graduation.minutes.print', $this->period))
         ->assertOk()->assertSee('Berita Acara Pendaftaran Wisuda', false)->assertSee('Anindya Putri Lestari')->assertSee('Dr. Hendra Wijaya');
 
     $this->actingAs(User::where('email', 'mahasiswa@aksaraloka.test')->firstOrFail())
-        ->get(route('wisuda.minutes.print', $this->period))->assertForbidden();
+        ->get(route('graduation.minutes.print', $this->period))->assertForbidden();
 });
 
 it('creates a period with validated dates', function () {

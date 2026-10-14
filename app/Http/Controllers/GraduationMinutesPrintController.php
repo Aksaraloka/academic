@@ -16,7 +16,7 @@ class GraduationMinutesPrintController extends Controller
 
         abort_unless($minute?->finalized_at, 404, 'Berita acara belum diterbitkan.');
 
-        return view('wisuda.minutes-print', [
+        return view('graduation.minutes-print', [
             'period' => $period,
             'minute' => $minute,
             'participants' => collect($minute->participants),

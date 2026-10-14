@@ -14,13 +14,13 @@ it('renders every page for its intended roles with seeded data', function (strin
         $this->actingAs($user)->get($path)->assertOk();
     }
 })->with([
-    'admin' => ['admin@aksaraloka.test', ['/beranda', '/ringkasan', '/wisuda', '/wisuda/periode', '/berita/kelola', '/mahasiswa', '/mahasiswa/baru', '/mahasiswa/impor', '/dosen', '/prodi', '/kelas', '/jadwal', '/jadwal/atur', '/presensi', '/rekap', '/izin']],
-    'principal' => ['kaprodi@aksaraloka.test', ['/beranda', '/presensi', '/rekap', '/check-in', '/jadwal', '/izin']],
-    'curriculum' => ['akademik@aksaraloka.test', ['/beranda', '/jadwal', '/jadwal/atur', '/kelas', '/rekap', '/check-in']],
-    'teacher' => ['dosen@aksaraloka.test', ['/beranda', '/jadwal', '/presensi', '/check-in', '/rekap', '/izin']],
-    'duty' => ['petugas@aksaraloka.test', ['/beranda', '/presensi', '/check-in', '/jadwal']],
-    'student' => ['mahasiswa@aksaraloka.test', ['/beranda', '/ringkasan', '/jadwal', '/presensi-saya', '/rekap', '/wisuda']],
-    'guardian' => ['ortu@aksaraloka.test', ['/beranda', '/ringkasan', '/jadwal', '/rekap']],
+    'admin' => ['admin@aksaraloka.test', ['/home', '/summary', '/graduation', '/graduation/periods', '/news/manage', '/students', '/students/new', '/students/import', '/teachers', '/programs', '/groups', '/schedule', '/schedule/manage', '/attendance', '/reports', '/leaves']],
+    'principal' => ['kaprodi@aksaraloka.test', ['/home', '/attendance', '/reports', '/check-in', '/schedule', '/leaves']],
+    'curriculum' => ['akademik@aksaraloka.test', ['/home', '/schedule', '/schedule/manage', '/groups', '/reports', '/check-in']],
+    'teacher' => ['dosen@aksaraloka.test', ['/home', '/schedule', '/attendance', '/check-in', '/reports', '/leaves']],
+    'duty' => ['petugas@aksaraloka.test', ['/home', '/attendance', '/check-in', '/schedule']],
+    'student' => ['mahasiswa@aksaraloka.test', ['/home', '/summary', '/schedule', '/my-attendance', '/reports', '/graduation']],
+    'guardian' => ['ortu@aksaraloka.test', ['/home', '/summary', '/schedule', '/reports']],
 ]);
 
 it('renders the group page and attendance sheet', function () {
@@ -32,5 +32,5 @@ it('renders the group page and attendance sheet', function () {
 
     $this->get(route('groups.show', $group))->assertOk()->assertSee($group->name);
     $this->get(route('attendance.mark', $session))->assertOk();
-    $this->get(route('reports.export', ['group' => $group->id, 'bulan' => now()->format('Y-m')]))->assertOk();
+    $this->get(route('reports.export', ['group' => $group->id, 'month' => now()->format('Y-m')]))->assertOk();
 });

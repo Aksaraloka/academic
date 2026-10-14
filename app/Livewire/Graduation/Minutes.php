@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Wisuda;
+namespace App\Livewire\Graduation;
 
 use App\Enums\GraduationStatus;
 use App\Models\GraduationPeriod;
@@ -89,7 +89,7 @@ class Minutes extends Component
                     'thesis_title' => $registration->thesis_title,
                 ]);
 
-        return view('livewire.wisuda.minutes', [
+        return view('livewire.graduation.minutes', [
             'finalized' => $finalized,
             'minute' => $minute,
             'participants' => $participants,

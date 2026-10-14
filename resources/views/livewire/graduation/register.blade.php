@@ -1,7 +1,7 @@
 <div class="mx-auto max-w-2xl space-y-6">
     <x-page-header :title="'Daftar wisuda'" :subtitle="$period->name">
         <x-slot:actions>
-            <x-button :href="route('wisuda.overview', ['periode' => $period->id])" wire:navigate variant="secondary" icon="arrow-left">Kembali</x-button>
+            <x-button :href="route('graduation.overview', ['period' => $period->id])" wire:navigate variant="secondary" icon="arrow-left">Kembali</x-button>
         </x-slot:actions>
     </x-page-header>
 
@@ -69,7 +69,7 @@
 
             <div class="flex flex-wrap gap-2">
                 <x-button type="submit" wire:loading.attr="disabled" wire:target="save" :disabled="! $eligibility['eligible']">Kirim pendaftaran</x-button>
-                <x-button :href="route('wisuda.overview', ['periode' => $period->id])" wire:navigate variant="secondary">Batal</x-button>
+                <x-button :href="route('graduation.overview', ['period' => $period->id])" wire:navigate variant="secondary">Batal</x-button>
             </div>
         </form>
     @endif

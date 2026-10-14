@@ -23,7 +23,7 @@ Stack: Laravel 13, Livewire 4 (komponen kelas), Alpine, Tailwind v4, GSAP lazy, 
 - **Nilai terbaik:** `AcademicRecord::best()` memilih angka mutu tertinggi (lalu nilai angka, lalu semester terbaru) untuk mata kuliah yang diremedial atau diulang. KHS, IPS, IPK, transkrip, dan syarat wisuda **hanya menghitung nilai terkunci**. Remedial adalah baris `grades` ber-`kind = remedial`.
 - **Nilai awal:** `students.legacy_credits` dan `legacy_quality_points` menampung riwayat sebelum sistem dipakai (mahasiswa pindahan atau migrasi) dan ikut IPK dan SKS lulus.
 - **Wisuda:** SKS lulus dan IPK **tidak lagi diisi manual**; `GraduationService::eligibility()` mengambilnya dari transkrip dan menyimpan snapshot pada pendaftaran.
-- **Beranda (`/beranda`) = berita kampus** (banner + grid kartu), bukan dashboard. Dashboard harian ada di `/ringkasan`, **tanpa menu di sidebar** (sengaja dihapus dari navigasi atas permintaan pemilik produk; halamannya tetap ada).
+- **Beranda (`/home`) = berita kampus** (banner + grid kartu), bukan dashboard. Dashboard harian ada di `/summary`, **tanpa menu di sidebar** (sengaja dihapus dari navigasi atas permintaan pemilik produk; halamannya tetap ada).
 - **Halaman lebar penuh:** Beranda dan Jadwal memakai `#[Layout('layouts.app', ['fullWidth' => true])]`; halaman lain dibatasi `max-w-6xl`.
 
 ## Model data dan multi-tenant
@@ -36,7 +36,7 @@ Stack: Laravel 13, Livewire 4 (komponen kelas), Alpine, Tailwind v4, GSAP lazy, 
 
 ## Konvensi
 
-- **Bahasa:** semua teks antarmuka Bahasa Indonesia, nada ramah dan lugas ("Kamu belum mengumpulkan", "Simpan perubahan"). Identifier kode dan nama tabel berbahasa Inggris; rute berbahasa Indonesia (`/mahasiswa`, `/jadwal`).
+- **Bahasa:** semua teks antarmuka Bahasa Indonesia, nada ramah dan lugas ("Kamu belum mengumpulkan", "Simpan perubahan"). Identifier kode dan nama tabel berbahasa Inggris; rute berbahasa Indonesia (`/students`, `/schedule`).
 - **Livewire:** komponen berbasis kelas di `app/Livewire/<Modul>` dengan view di `resources/views/livewire/<modul>`. Logika bisnis ada di `app/Services`, bukan di komponen. Otorisasi **dilapis**: middleware `role:` di rute **dan** dicek ulang di aksi Livewire.
 - **Desain:** hanya token warna (`bg-surface`, `text-text-muted`, `bg-primary`, …), tanpa hex di komponen (pengecualian: dokumen PDF/cetak yang berdiri sendiri). Target sentuh ≥ 44 px, fokus terlihat, status tidak hanya dengan warna.
 - **Gerak:** hanya `opacity`/`transform`, GSAP dimuat lazy lewat `resources/js/motion.js`, mati pada `prefers-reduced-motion` dan Save-Data, konten tidak pernah tertahan lebih dari 600 ms.
@@ -50,7 +50,7 @@ Stack: Laravel 13, Livewire 4 (komponen kelas), Alpine, Tailwind v4, GSAP lazy, 
 - **Validasi Livewire membuang field tanpa aturan.** Field seperti `parents.*.id` harus punya aturan (`nullable|integer`) agar tetap ada di hasil `validate()`.
 - **Kolom `date` di SQLite** tersimpan sebagai datetime; cari dengan `whereDate`, jangan `where('date', 'Y-m-d')`.
 - **`$user->student`/`->teacher` bisa null** (akun belum tertaut). Selalu tangani, dan tampilkan keadaan kosong yang menjelaskan langkah berikutnya.
-- **Rute literal harus didaftar sebelum rute berparameter** (mis. `/berita/kelola` sebelum `/berita/{news}`).
+- **Rute literal harus didaftar sebelum rute berparameter** (mis. `/news/manage` sebelum `/news/{news}`).
 - **Tes memakai data seeder yang acak sebagian.** Tes tidak boleh bergantung pada status acak; atur datanya dulu (lihat `setCourseAttendance()` di `AttendanceAnalyticsTest`).
 - **Shell Bash di Windows** sering gagal mengurai heredoc panjang; untuk skrip penyunting, tulis ke berkas lalu jalankan.
 - **dompdf** wajib ≥ 3.1.6 (versi lebih lama punya advisori keamanan). Jalankan `composer audit` setelah memperbarui dependensi.

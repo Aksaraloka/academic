@@ -110,7 +110,7 @@ it('lets only teachers record attendance and never students themselves', functio
     $this->actingAs($studentUser)->get(route('attendance.mark', $session))->assertForbidden();
     $this->actingAs($studentUser)->get(route('attendance.index'))->assertForbidden();
     $this->actingAs($studentUser)->get('/pindai')->assertNotFound();
-    $this->actingAs($studentUser)->get("/presensi/{$session->id}/qr")->assertNotFound();
+    $this->actingAs($studentUser)->get("/attendance/{$session->id}/qr")->assertNotFound();
 
     expect(method_exists(AttendanceService::class, 'scanQr'))->toBeFalse()
         ->and(Route::has('scan'))->toBeFalse()

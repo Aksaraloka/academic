@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Wisuda;
+namespace App\Livewire\Graduation;
 
 use App\Enums\GraduationStatus;
 use App\Enums\Role;
@@ -15,7 +15,7 @@ use Livewire\Component;
 #[Title('Pendaftaran wisuda')]
 class Overview extends Component
 {
-    #[Url(as: 'periode')]
+    #[Url(as: 'period')]
     public string $periodId = '';
 
     public function render()
@@ -35,7 +35,7 @@ class Overview extends Component
         $data = ['periods' => $periods, 'period' => $period, 'isStudent' => $isStudent];
 
         if ($period === null) {
-            return view('livewire.wisuda.overview', $data);
+            return view('livewire.graduation.overview', $data);
         }
 
         if ($isStudent) {
@@ -63,7 +63,7 @@ class Overview extends Component
                 ],
             ];
 
-            return view('livewire.wisuda.overview', $data);
+            return view('livewire.graduation.overview', $data);
         }
 
         $registrations = $period->registrations()->with('student.program')->latest()->get();
@@ -85,6 +85,6 @@ class Overview extends Component
             'canManage' => $user->isAdmin(),
         ];
 
-        return view('livewire.wisuda.overview', $data);
+        return view('livewire.graduation.overview', $data);
     }
 }

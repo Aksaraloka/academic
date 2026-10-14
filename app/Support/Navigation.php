@@ -23,7 +23,7 @@ class Navigation
                 self::item('Dosen', 'teachers.index', 'identification', 'teachers.*'),
                 self::item('Kelas', 'groups.index', 'user-group', 'groups.*'),
                 self::item('Prodi', 'programs.index', 'building-library', 'programs.*'),
-                self::item('Wisuda', 'wisuda.overview', 'academic-cap', 'wisuda.*'),
+                self::item('Wisuda', 'graduation.overview', 'academic-cap', 'graduation.*'),
                 self::item('Rekap', 'reports.index', 'chart-bar', 'reports.*'),
                 self::item('Izin', 'leaves.index', 'envelope', 'leaves.*'),
             ],
@@ -33,7 +33,7 @@ class Navigation
                 self::item('Rekap', 'reports.index', 'chart-bar', 'reports.*'),
                 self::item('Check-in', 'checkin', 'map-pin'),
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
-                self::item('Wisuda', 'wisuda.overview', 'academic-cap', 'wisuda.*'),
+                self::item('Wisuda', 'graduation.overview', 'academic-cap', 'graduation.*'),
                 self::item('Izin', 'leaves.index', 'envelope', 'leaves.*'),
             ],
             Role::Curriculum => [
@@ -42,7 +42,7 @@ class Navigation
                 self::item('Kelas', 'groups.index', 'user-group', 'groups.*'),
                 self::item('Rekap', 'reports.index', 'chart-bar', 'reports.*'),
                 self::item('Check-in', 'checkin', 'map-pin'),
-                self::item('Wisuda', 'wisuda.overview', 'academic-cap', 'wisuda.*'),
+                self::item('Wisuda', 'graduation.overview', 'academic-cap', 'graduation.*'),
             ],
             Role::Teacher => [
                 self::item('Beranda', 'dashboard', 'home'),
@@ -62,7 +62,7 @@ class Navigation
                 self::item('Beranda', 'dashboard', 'home'),
                 self::item('Status Kehadiran', 'attendance.mine', 'clipboard-document-check', 'attendance.mine'),
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
-                self::item('Wisuda', 'wisuda.overview', 'academic-cap', 'wisuda.*'),
+                self::item('Wisuda', 'graduation.overview', 'academic-cap', 'graduation.*'),
             ],
             Role::Guardian => [
                 self::item('Beranda', 'dashboard', 'home'),

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Wisuda;
+namespace App\Livewire\Graduation;
 
 use App\Enums\GraduationStatus;
 use App\Models\GraduationPeriod;
@@ -64,7 +64,7 @@ class Registrations extends Component
 
     public function render()
     {
-        return view('livewire.wisuda.registrations', [
+        return view('livewire.graduation.registrations', [
             'registrations' => $this->period->registrations()
                 ->with('student.program')
                 ->when($this->filter !== '', fn ($query) => $query->where('status', $this->filter))

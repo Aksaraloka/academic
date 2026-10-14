@@ -23,7 +23,7 @@ class ScheduleExportController extends Controller
         $user = $request->user();
         $input = $request->validate([
             'semester' => ['nullable', 'integer'],
-            'lihat' => ['nullable', 'in:group,teacher,room'],
+            'view' => ['nullable', 'in:group,teacher,room'],
             'id' => ['nullable', 'integer'],
         ]);
 
@@ -34,7 +34,7 @@ class ScheduleExportController extends Controller
         $targetId = '';
 
         if ($user->role->isStaff()) {
-            $view = $input['lihat'] ?? 'group';
+            $view = $input['view'] ?? 'group';
             $targetId = (string) ($input['id'] ?? '');
         }
 

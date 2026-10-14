@@ -44,7 +44,7 @@ it('calculates attendance per course for the exam eligibility rule', function ()
 it('shows the student their per-course eligibility', function () {
     $student = User::where('email', 'mahasiswa@aksaraloka.test')->firstOrFail();
 
-    $this->actingAs($student)->get('/rekap')->assertOk()->assertSee('Per mata kuliah')->assertSee('Algoritma dan Pemrograman');
+    $this->actingAs($student)->get('/reports')->assertOk()->assertSee('Per mata kuliah')->assertSee('Algoritma dan Pemrograman');
 });
 
 it('lets an admin create a faculty and a program', function () {
@@ -76,5 +76,5 @@ it('keeps non-admin staff away from faculty management', function () {
     $lecturer = User::where('email', 'dosen@aksaraloka.test')->firstOrFail();
 
     expect($lecturer->hasRole(Role::Admin))->toBeFalse();
-    $this->actingAs($lecturer)->get('/prodi')->assertForbidden();
+    $this->actingAs($lecturer)->get('/programs')->assertForbidden();
 });

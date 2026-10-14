@@ -2,7 +2,7 @@
     <x-page-header title="Pendaftaran wisuda" subtitle="Status pendaftaran, antrean verifikasi, dan berita acara.">
         @if (! $isStudent && auth()->user()->isAdmin())
             <x-slot:actions>
-                <x-button :href="route('wisuda.periods')" wire:navigate icon="cog-6-tooth" variant="secondary">Kelola periode</x-button>
+                <x-button :href="route('graduation.periods')" wire:navigate icon="cog-6-tooth" variant="secondary">Kelola periode</x-button>
             </x-slot:actions>
         @endif
     </x-page-header>
@@ -23,7 +23,7 @@
             <x-empty-state icon="academic-cap" title="Belum ada periode wisuda"
                 :description="$isStudent ? 'Periode wisuda akan diumumkan oleh BAAK. Cek lagi nanti.' : 'Buat periode wisuda pertama agar mahasiswa bisa mendaftar.'">
                 @if (! $isStudent && auth()->user()->isAdmin())
-                    <x-button :href="route('wisuda.periods')" wire:navigate icon="plus">Buat periode</x-button>
+                    <x-button :href="route('graduation.periods')" wire:navigate icon="plus">Buat periode</x-button>
                 @endif
             </x-empty-state>
         </x-card>
@@ -54,7 +54,7 @@
                     @elseif (! $registration)
                         <p class="text-sm text-text-muted">Kamu belum mendaftar di periode ini.</p>
                         @if ($period->isOpen())
-                            <div class="mt-4"><x-button :href="route('wisuda.register', $period)" wire:navigate icon="academic-cap">Daftar wisuda</x-button></div>
+                            <div class="mt-4"><x-button :href="route('graduation.register', $period)" wire:navigate icon="academic-cap">Daftar wisuda</x-button></div>
                         @else
                             <p class="mt-2 text-sm font-medium text-warning">Pendaftaran tidak sedang dibuka ({{ $period->phaseLabel() }}).</p>
                         @endif
@@ -68,7 +68,7 @@
                         @if ($registration->status === \App\Enums\GraduationStatus::Rejected)
                             <p class="mt-3 rounded-lg border border-danger bg-danger/15 p-3 text-sm text-danger" role="alert">Ditolak: {{ $registration->rejection_reason }}</p>
                             @if ($period->isOpen())
-                                <div class="mt-3"><x-button :href="route('wisuda.register', $period)" wire:navigate icon="arrow-path">Ajukan ulang</x-button></div>
+                                <div class="mt-3"><x-button :href="route('graduation.register', $period)" wire:navigate icon="arrow-path">Ajukan ulang</x-button></div>
                             @endif
                         @elseif ($registration->status === \App\Enums\GraduationStatus::Approved)
                             <p class="mt-3 text-sm text-success">Pendaftaranmu disetujui. Informasi gladi dan toga akan menyusul dari panitia.</p>
@@ -117,7 +117,7 @@
                         <x-empty-state icon="check-circle" title="Tidak ada antrean verifikasi" description="Pendaftaran baru akan muncul di sini." />
                     @endforelse
                     <div class="border-t border-border p-4">
-                        <x-button :href="route('wisuda.registrations', $period)" wire:navigate variant="secondary" size="sm" icon="clipboard-document-check">Semua pendaftar</x-button>
+                        <x-button :href="route('graduation.registrations', $period)" wire:navigate variant="secondary" size="sm" icon="clipboard-document-check">Semua pendaftar</x-button>
                     </div>
                 </x-card>
 
@@ -143,7 +143,7 @@
                             <x-badge variant="warning" icon="clock">Belum diterbitkan</x-badge>
                             <p class="mt-2 text-sm text-text-muted">Terbitkan setelah semua pendaftaran selesai diverifikasi.</p>
                         @endif
-                        <div class="mt-4"><x-button :href="route('wisuda.minutes', $period)" wire:navigate icon="document-text">Buka berita acara</x-button></div>
+                        <div class="mt-4"><x-button :href="route('graduation.minutes', $period)" wire:navigate icon="document-text">Buka berita acara</x-button></div>
                     </x-card>
                 </div>
             </div>

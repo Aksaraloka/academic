@@ -18,7 +18,7 @@ class Index extends Component
     #[Url(as: 'status')]
     public string $status = '';
 
-    #[Url(as: 'jenis')]
+    #[Url(as: 'type')]
     public string $type = '';
 
     public function updated(string $property): void

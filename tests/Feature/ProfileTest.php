@@ -21,20 +21,20 @@ it('adds a Profil option to the user menu for every role', function () {
     foreach (['admin@', 'kaprodi@', 'akademik@', 'dosen@', 'petugas@', 'mahasiswa@', 'ortu@'] as $prefix) {
         $user = User::where('email', $prefix.'aksaraloka.test')->firstOrFail();
 
-        $this->actingAs($user)->get('/beranda')->assertOk()->assertSee(route('profile.show'), false);
-        $this->actingAs($user)->get('/profil')->assertOk()->assertSee($user->name);
-        $this->actingAs($user)->get('/profil/ubah')->assertOk();
+        $this->actingAs($user)->get('/home')->assertOk()->assertSee(route('profile.show'), false);
+        $this->actingAs($user)->get('/profile')->assertOk()->assertSee($user->name);
+        $this->actingAs($user)->get('/profile/edit')->assertOk();
     }
 });
 
 it('requires login to view the profile', function () {
-    $this->get('/profil')->assertRedirect('/masuk');
+    $this->get('/profile')->assertRedirect('/login');
 });
 
 it('shows the complete student profile including academic data and parents', function () {
     $this->student->refresh();
 
-    $this->actingAs($this->user)->get('/profil')->assertOk()
+    $this->actingAs($this->user)->get('/profile')->assertOk()
         ->assertSee('Data pribadi')->assertSee('Alamat sesuai KTP')->assertSee('Alamat domisili')->assertSee('Data akademik')->assertSee('Data orang tua / wali')
         ->assertSee($this->student->name)->assertSee($this->student->nim)
         ->assertSee('Teknik Informatika')->assertSee('Fakultas Teknik')->assertSee('TI-2024-A')->assertSee('Budi Santoso')
@@ -43,32 +43,32 @@ it('shows the complete student profile including academic data and parents', fun
 });
 
 it('lists the father before the mother', function () {
-    $this->actingAs($this->user)->get('/profil')->assertSeeInOrder(['Ayah', 'Bambang Hartono', 'Ibu', 'Orang Tua Contoh']);
+    $this->actingAs($this->user)->get('/profile')->assertSeeInOrder(['Ayah', 'Bambang Hartono', 'Ibu', 'Orang Tua Contoh']);
 });
 
 it('masks the NIK on screen', function () {
     $nik = $this->student->nik;
     expect($nik)->toHaveLength(16);
 
-    $this->actingAs($this->user)->get('/profil')->assertSee(substr($nik, 0, 4).'••••••••'.substr($nik, -4))->assertDontSee($nik);
+    $this->actingAs($this->user)->get('/profile')->assertSee(substr($nik, 0, 4).'••••••••'.substr($nik, -4))->assertDontSee($nik);
 });
 
 it('shows a hint when parent data is missing', function () {
     $this->student->guardians()->detach();
 
-    $this->actingAs($this->user)->get('/profil')->assertSee('Data orang tua belum diisi');
+    $this->actingAs($this->user)->get('/profile')->assertSee('Data orang tua belum diisi');
 });
 
 it('only shows the own profile and never another students data', function () {
     $other = Student::where('id', '!=', $this->student->id)->firstOrFail();
 
-    $this->actingAs($this->user)->get('/profil')->assertDontSee($other->nim)->assertDontSee($other->maskedNik());
+    $this->actingAs($this->user)->get('/profile')->assertDontSee($other->nim)->assertDontSee($other->maskedNik());
 });
 
 it('shows lecturer and guardian profiles', function () {
-    $this->actingAs(User::where('email', 'dosen@aksaraloka.test')->firstOrFail())->get('/profil')->assertSee('Data dosen')->assertSee('Dosen tetap');
+    $this->actingAs(User::where('email', 'dosen@aksaraloka.test')->firstOrFail())->get('/profile')->assertSee('Data dosen')->assertSee('Dosen tetap');
 
-    $this->actingAs(User::where('email', 'ortu@aksaraloka.test')->firstOrFail())->get('/profil')
+    $this->actingAs(User::where('email', 'ortu@aksaraloka.test')->firstOrFail())->get('/profile')
         ->assertSee('Anak')->assertSee($this->student->name)->assertSee($this->student->nim)->assertSee('Guru SD');
 });
 
@@ -112,7 +112,7 @@ it('clears the domicile fields when the student marks it the same as KTP', funct
 it('shows KTP and domicile addresses separately on the profile', function () {
     $this->student->refresh();
 
-    $response = $this->actingAs($this->user)->get('/profil')->assertOk()
+    $response = $this->actingAs($this->user)->get('/profile')->assertOk()
         ->assertSee('Alamat sesuai KTP')->assertSee('Alamat domisili')
         ->assertSee($this->student->address)->assertSee($this->student->city)
         ->assertSee($this->student->domicile_address)->assertSee('Kos/kontrakan')->assertSee('Perantau');
@@ -123,7 +123,7 @@ it('shows KTP and domicile addresses separately on the profile', function () {
 it('says so when the domicile is the same as the KTP', function () {
     $this->student->update(['is_domicile_same' => true]);
 
-    $this->actingAs($this->user)->get('/profil')->assertSee('Sama dengan alamat sesuai KTP')->assertDontSee('Perantau');
+    $this->actingAs($this->user)->get('/profile')->assertSee('Sama dengan alamat sesuai KTP')->assertDontSee('Perantau');
 });
 
 it('detects migrants by differing cities', function () {
@@ -148,7 +148,7 @@ it('resolves the current address from domicile or KTP', function () {
 });
 
 it('flags migrants in the admin student list', function () {
-    $this->actingAs($this->admin)->get('/mahasiswa')->assertOk()->assertSee('Perantau');
+    $this->actingAs($this->admin)->get('/students')->assertOk()->assertSee('Perantau');
 });
 
 it('lets an admin save a migrant student with a separate domicile', function () {

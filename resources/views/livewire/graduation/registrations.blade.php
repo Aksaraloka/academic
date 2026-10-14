@@ -1,8 +1,8 @@
 <div class="space-y-6">
     <x-page-header :title="'Pendaftar · '.$period->name" subtitle="Periksa berkas lalu setujui atau tolak dengan alasan.">
         <x-slot:actions>
-            <x-button :href="route('wisuda.overview', ['periode' => $period->id])" wire:navigate variant="secondary" icon="arrow-left">Pendaftaran wisuda</x-button>
-            <x-button :href="route('wisuda.minutes', $period)" wire:navigate icon="document-text">Berita acara</x-button>
+            <x-button :href="route('graduation.overview', ['period' => $period->id])" wire:navigate variant="secondary" icon="arrow-left">Pendaftaran wisuda</x-button>
+            <x-button :href="route('graduation.minutes', $period)" wire:navigate icon="document-text">Berita acara</x-button>
         </x-slot:actions>
     </x-page-header>
 

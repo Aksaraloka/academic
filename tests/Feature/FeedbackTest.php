@@ -27,16 +27,16 @@ it('adds the feedback option to every role sidebar', function () {
     foreach (['admin@', 'kaprodi@', 'akademik@', 'dosen@', 'petugas@', 'mahasiswa@', 'ortu@'] as $prefix) {
         $user = User::where('email', $prefix.'aksaraloka.test')->firstOrFail();
 
-        $this->actingAs($user)->get('/beranda')->assertOk()->assertSee('Masukan')->assertSee(route('feedback.index'), false);
-        $this->actingAs($user)->get('/masukan')->assertOk();
+        $this->actingAs($user)->get('/home')->assertOk()->assertSee('Masukan')->assertSee(route('feedback.index'), false);
+        $this->actingAs($user)->get('/feedback')->assertOk();
     }
 });
 
 it('shows a badge with the number of new tickets to handlers only', function () {
     $new = FeedbackTicket::where('status', FeedbackStatus::New)->count();
 
-    $this->actingAs($this->admin)->get('/beranda')->assertSee("{$new} baru");
-    $this->actingAs($this->student)->get('/beranda')->assertDontSee("{$new} baru");
+    $this->actingAs($this->admin)->get('/home')->assertSee("{$new} baru");
+    $this->actingAs($this->student)->get('/home')->assertDontSee("{$new} baru");
 });
 
 it('lets anyone submit feedback and creates a numbered ticket', function () {
@@ -106,7 +106,7 @@ it('hides the identity of anonymous senders from handlers but not from the sende
 
     $this->actingAs($this->admin)->get(route('feedback.show', $anonymous))->assertOk()->assertSee('dari Anonim')->assertDontSee($this->student->name);
     $this->actingAs($this->student)->get(route('feedback.show', $anonymous))->assertOk()->assertSee('dari Kamu');
-    $this->actingAs($this->admin)->get('/masukan')->assertSee('Anonim');
+    $this->actingAs($this->admin)->get('/feedback')->assertSee('Anonim');
 });
 
 it('moves a new ticket to in-progress when a handler replies', function () {

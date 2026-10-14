@@ -34,7 +34,7 @@
 </head>
 <body>
 <div class="toolbar">
-    <a href="{{ route('wisuda.minutes', $period) }}">Kembali</a>
+    <a href="{{ route('graduation.minutes', $period) }}">Kembali</a>
     <button type="button" onclick="window.print()">Cetak / simpan PDF</button>
 </div>
 

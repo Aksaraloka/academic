@@ -1,7 +1,7 @@
 <div class="space-y-6">
     <x-page-header title="Periode wisuda" subtitle="Atur jadwal pendaftaran dan pelaksanaan wisuda.">
         <x-slot:actions>
-            <x-button :href="route('wisuda.overview')" wire:navigate variant="secondary" icon="arrow-left">Pendaftaran wisuda</x-button>
+            <x-button :href="route('graduation.overview')" wire:navigate variant="secondary" icon="arrow-left">Pendaftaran wisuda</x-button>
         </x-slot:actions>
     </x-page-header>
 
@@ -41,8 +41,8 @@
                 @if ($period->minute?->finalized_at)<x-badge variant="success" icon="document-text">Berita acara terbit</x-badge>@endif
                 <div class="flex gap-2">
                     <x-button size="sm" variant="secondary" wire:click="togglePublished({{ $period->id }})">{{ $period->is_published ? 'Sembunyikan' : 'Terbitkan' }}</x-button>
-                    <x-button size="sm" variant="secondary" :href="route('wisuda.registrations', $period)" wire:navigate>Pendaftar</x-button>
-                    <x-button size="sm" :href="route('wisuda.minutes', $period)" wire:navigate>Berita acara</x-button>
+                    <x-button size="sm" variant="secondary" :href="route('graduation.registrations', $period)" wire:navigate>Pendaftar</x-button>
+                    <x-button size="sm" :href="route('graduation.minutes', $period)" wire:navigate>Berita acara</x-button>
                 </div>
             </div>
         @empty

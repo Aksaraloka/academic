@@ -1,9 +1,9 @@
 <div class="space-y-6">
     <x-page-header title="Berita acara pendaftaran wisuda" :subtitle="$period->name">
         <x-slot:actions>
-            <x-button :href="route('wisuda.overview', ['periode' => $period->id])" wire:navigate variant="secondary" icon="arrow-left">Pendaftaran wisuda</x-button>
+            <x-button :href="route('graduation.overview', ['period' => $period->id])" wire:navigate variant="secondary" icon="arrow-left">Pendaftaran wisuda</x-button>
             @if ($finalized)
-                <x-button :href="route('wisuda.minutes.print', $period)" target="_blank" rel="noopener" icon="document-text">Cetak</x-button>
+                <x-button :href="route('graduation.minutes.print', $period)" target="_blank" rel="noopener" icon="document-text">Cetak</x-button>
             @endif
         </x-slot:actions>
     </x-page-header>

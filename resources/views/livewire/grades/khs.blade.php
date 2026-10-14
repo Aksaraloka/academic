@@ -6,7 +6,7 @@
     <x-page-header title="Kartu Hasil Studi (KHS)" :subtitle="$student ? $student->name.' · NIM '.$student->nim : 'Hasil studi per semester'">
         @if ($khs)
             <x-slot:actions>
-                <x-button :href="route('grades.transcript', array_filter(['mahasiswa' => $studentId, 'anak' => $childId]))" wire:navigate variant="secondary" icon="document-text">Transkrip</x-button>
+                <x-button :href="route('grades.transcript', array_filter(['student' => $studentId, 'child' => $childId]))" wire:navigate variant="secondary" icon="document-text">Transkrip</x-button>
                 <x-button :href="route('grades.khs.pdf', $pdfQuery)" icon="arrow-down-tray" download>Unduh PDF</x-button>
             </x-slot:actions>
         @endif

@@ -16,10 +16,10 @@ class Index extends Component
 {
     use WithPagination;
 
-    #[Url(as: 'kategori')]
+    #[Url(as: 'category')]
     public string $category = '';
 
-    #[Url(as: 'cari')]
+    #[Url(as: 'search')]
     public string $search = '';
 
     public function setCategory(string $category): void

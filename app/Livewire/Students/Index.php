@@ -13,7 +13,7 @@ class Index extends Component
 {
     use WithPagination;
 
-    #[Url(as: 'cari')]
+    #[Url(as: 'search')]
     public string $search = '';
 
     #[Url(as: 'status')]

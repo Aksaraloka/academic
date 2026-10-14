@@ -10,7 +10,7 @@ use Illuminate\Http\UploadedFile;
 use Livewire\Livewire;
 
 it('redirects guests to the login page', function () {
-    $this->get('/beranda')->assertRedirect('/masuk');
+    $this->get('/home')->assertRedirect('/login');
 });
 
 it('logs in with valid credentials and rejects invalid ones', function () {
@@ -33,17 +33,17 @@ it('logs in with valid credentials and rejects invalid ones', function () {
 it('renders the dashboard for every role', function (Role $role) {
     $user = User::factory()->role($role)->create();
 
-    $this->actingAs($user)->get('/beranda')->assertOk()->assertSee('Berita terbaru');
+    $this->actingAs($user)->get('/home')->assertOk()->assertSee('Berita terbaru');
 })->with(Role::cases());
 
 it('blocks roles from pages they may not open', function () {
     $student = User::factory()->role(Role::Student)->create();
     $teacher = User::factory()->role(Role::Teacher)->create();
 
-    $this->actingAs($student)->get('/mahasiswa')->assertForbidden();
-    $this->actingAs($student)->get('/presensi')->assertForbidden();
-    $this->actingAs($teacher)->get('/mahasiswa/baru')->assertForbidden();
-    $this->actingAs($teacher)->get('/jadwal/atur')->assertForbidden();
+    $this->actingAs($student)->get('/students')->assertForbidden();
+    $this->actingAs($student)->get('/attendance')->assertForbidden();
+    $this->actingAs($teacher)->get('/students/new')->assertForbidden();
+    $this->actingAs($teacher)->get('/schedule/manage')->assertForbidden();
 });
 
 it('scopes students to the signed-in tenant', function () {
@@ -51,7 +51,7 @@ it('scopes students to the signed-in tenant', function () {
     Student::factory()->create(['tenant_id' => $admin->tenant_id, 'name' => 'Mahasiswa Sendiri']);
     Student::factory()->create(['name' => 'Mahasiswa Kampus Lain']);
 
-    $this->actingAs($admin)->get('/mahasiswa')->assertSee('Mahasiswa Sendiri')->assertDontSee('Mahasiswa Kampus Lain');
+    $this->actingAs($admin)->get('/students')->assertSee('Mahasiswa Sendiri')->assertDontSee('Mahasiswa Kampus Lain');
 });
 
 it('imports students from a CSV and reports bad rows', function () {

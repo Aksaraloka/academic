@@ -13,11 +13,11 @@ class Khs extends Component
     #[Url(as: 'semester')]
     public string $termId = '';
 
-    /** Staf melihat mahasiswa tertentu lewat ?mahasiswa=ID; orang tua memilih anak lewat ?anak=ID. */
-    #[Url(as: 'mahasiswa')]
+    /** Staf melihat mahasiswa tertentu lewat ?student=ID; orang tua memilih anak lewat ?child=ID. */
+    #[Url(as: 'student')]
     public ?int $studentId = null;
 
-    #[Url(as: 'anak')]
+    #[Url(as: 'child')]
     public ?int $childId = null;
 
     public function render(AcademicRecord $records)
@@ -34,7 +34,7 @@ class Khs extends Component
             'term' => $term,
             'khs' => $student && $term ? $records->khs($student, $term) : null,
             'children' => $user->guardian?->students()->get() ?? collect(),
-            'pdfQuery' => array_filter(['semester' => $term?->id, 'mahasiswa' => $this->studentId, 'anak' => $this->childId]),
+            'pdfQuery' => array_filter(['semester' => $term?->id, 'student' => $this->studentId, 'child' => $this->childId]),
         ]);
     }
 }

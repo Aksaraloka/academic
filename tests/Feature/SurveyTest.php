@@ -44,7 +44,7 @@ it('adds a Survey group with Beranda, Kuesioner and Bantuan to every role sideba
     foreach (['admin@', 'kaprodi@', 'akademik@', 'dosen@', 'petugas@', 'mahasiswa@', 'ortu@'] as $prefix) {
         $user = User::where('email', $prefix.'aksaraloka.test')->firstOrFail();
 
-        $this->actingAs($user)->get('/beranda')->assertOk()
+        $this->actingAs($user)->get('/home')->assertOk()
             ->assertSee('Survey')->assertSee('Kuesioner')->assertSee('Bantuan')
             ->assertSee(route('survey.home'), false)->assertSee(route('survey.index'), false)->assertSee(route('survey.help'), false);
     }
@@ -54,29 +54,29 @@ it('renders the three survey pages for every role', function () {
     foreach (['admin@', 'kaprodi@', 'akademik@', 'dosen@', 'petugas@', 'mahasiswa@', 'ortu@'] as $prefix) {
         $user = User::where('email', $prefix.'aksaraloka.test')->firstOrFail();
 
-        foreach (['/survei', '/survei/kuesioner', '/survei/bantuan'] as $path) {
+        foreach (['/survey', '/survey/questionnaires', '/survey/help'] as $path) {
             $this->actingAs($user)->get($path)->assertOk();
         }
     }
 });
 
 it('lists only the surveys targeted at the viewer role', function () {
-    $this->actingAs($this->student)->get('/survei/kuesioner')
+    $this->actingAs($this->student)->get('/survey/questionnaires')
         ->assertSee('Evaluasi Layanan Akademik')->assertSee('Evaluasi Dosen Semester')
         ->assertDontSee('Survey Kepuasan Dosen terhadap Sistem Akademik');
 
-    $this->actingAs($this->lecturer)->get('/survei/kuesioner')
+    $this->actingAs($this->lecturer)->get('/survey/questionnaires')
         ->assertSee('Survey Kepuasan Dosen terhadap Sistem Akademik')->assertDontSee('Evaluasi Layanan Akademik');
 
-    $this->actingAs($this->guardian)->get('/survei/kuesioner')->assertSee('Belum ada kuesioner untukmu');
+    $this->actingAs($this->guardian)->get('/survey/questionnaires')->assertSee('Belum ada kuesioner untukmu');
 });
 
 it('never exposes unpublished surveys to respondents', function () {
     $draft = Survey::where('title', 'Survey Fasilitas Kampus')->firstOrFail();
 
     $this->actingAs($this->student)->get(route('survey.fill', $draft))->assertNotFound();
-    $this->actingAs($this->student)->get('/survei/kuesioner')->assertDontSee('Survey Fasilitas Kampus');
-    $this->actingAs($this->admin)->get('/survei/kuesioner')->assertSee('Survey Fasilitas Kampus');
+    $this->actingAs($this->student)->get('/survey/questionnaires')->assertDontSee('Survey Fasilitas Kampus');
+    $this->actingAs($this->admin)->get('/survey/questionnaires')->assertSee('Survey Fasilitas Kampus');
 });
 
 it('blocks surveys aimed at other roles', function () {
@@ -255,11 +255,11 @@ it('keeps non-admins from managing surveys through the list', function () {
 });
 
 it('shows pending surveys and response monitoring on the survey home', function () {
-    $this->actingAs($this->student)->get('/survei')->assertSee('Perlu kamu isi')->assertSee('Evaluasi Layanan Akademik');
-    $this->actingAs($this->admin)->get('/survei')->assertSee('Tingkat respons kuesioner aktif');
+    $this->actingAs($this->student)->get('/survey')->assertSee('Perlu kamu isi')->assertSee('Evaluasi Layanan Akademik');
+    $this->actingAs($this->admin)->get('/survey')->assertSee('Tingkat respons kuesioner aktif');
 
     $this->service->submit($this->satisfaction, $this->student, validAnswers($this->satisfaction));
-    $this->actingAs($this->student)->get('/survei')->assertSee('Sudah diisi');
+    $this->actingAs($this->student)->get('/survey')->assertSee('Sudah diisi');
 });
 
 it('lists the survey roles as selectable audience', function () {

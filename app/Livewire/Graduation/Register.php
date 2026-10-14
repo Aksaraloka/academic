@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Wisuda;
+namespace App\Livewire\Graduation;
 
 use App\Enums\GraduationStatus;
 use App\Models\GraduationPeriod;
@@ -63,14 +63,14 @@ class Register extends Component
 
         session()->flash('toast', 'Pendaftaran wisuda dikirim.');
 
-        return $this->redirectRoute('wisuda.overview', ['periode' => $this->period->id], navigate: true);
+        return $this->redirectRoute('graduation.overview', ['period' => $this->period->id], navigate: true);
     }
 
     public function render(GraduationService $service)
     {
         $existing = $this->existing();
 
-        return view('livewire.wisuda.register', [
+        return view('livewire.graduation.register', [
             'existing' => $existing,
             'locked' => $existing !== null && $existing->status !== GraduationStatus::Rejected,
             'eligibility' => $service->eligibility(auth()->user()->student),

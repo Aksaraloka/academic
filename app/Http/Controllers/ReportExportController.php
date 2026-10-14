@@ -22,16 +22,16 @@ class ReportExportController extends Controller
 
         $data = $request->validate([
             'group' => ['required', 'integer'],
-            'matkul' => ['nullable', 'integer'],
-            'bulan' => ['nullable', 'date_format:Y-m'],
+            'subject' => ['nullable', 'integer'],
+            'month' => ['nullable', 'date_format:Y-m'],
         ]);
 
         $group = StudyGroup::query()->visibleTo($request->user())->findOrFail($data['group']);
 
-        if (! empty($data['bulan'])) {
-            $from = CarbonImmutable::createFromFormat('Y-m', $data['bulan'])->startOfMonth();
+        if (! empty($data['month'])) {
+            $from = CarbonImmutable::createFromFormat('Y-m', $data['month'])->startOfMonth();
             $to = $from->endOfMonth();
-            $label = $data['bulan'];
+            $label = $data['month'];
         } else {
             $term = AcademicTerm::current();
             $from = CarbonImmutable::parse($term?->starts_at ?? now()->startOfYear());
@@ -39,7 +39,7 @@ class ReportExportController extends Controller
             $label = 'semester';
         }
 
-        $recap = $report->groupRecap($group, $from, $to, isset($data['matkul']) ? (int) $data['matkul'] : null);
+        $recap = $report->groupRecap($group, $from, $to, isset($data['subject']) ? (int) $data['subject'] : null);
         $statuses = $request->user()->attendanceStatuses();
         $minPercent = (int) $request->user()->tenant->setting('min_attendance_percent');
 

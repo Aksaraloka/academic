@@ -10,10 +10,10 @@ use Livewire\Component;
 #[Title('Transkrip nilai')]
 class Transcript extends Component
 {
-    #[Url(as: 'mahasiswa')]
+    #[Url(as: 'student')]
     public ?int $studentId = null;
 
-    #[Url(as: 'anak')]
+    #[Url(as: 'child')]
     public ?int $childId = null;
 
     public function render(AcademicRecord $records)
@@ -25,7 +25,7 @@ class Transcript extends Component
             'student' => $student?->load('program.faculty'),
             'transcript' => $student ? $records->transcript($student) : null,
             'children' => $user->guardian?->students()->get() ?? collect(),
-            'pdfQuery' => array_filter(['mahasiswa' => $this->studentId, 'anak' => $this->childId]),
+            'pdfQuery' => array_filter(['student' => $this->studentId, 'child' => $this->childId]),
         ]);
     }
 }

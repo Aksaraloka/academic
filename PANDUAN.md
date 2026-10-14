@@ -90,13 +90,13 @@ Di HP, empat menu pertama tampil di bar bawah dan sisanya ada di **Lainnya**. Di
 
 ### Masuk dan keluar
 
-Buka `/masuk`, isi email dan kata sandi. Percobaan salah dibatasi 5 kali per menit. **Keluar** ada di menu pengguna. Pilihan tema (Terang, Gelap, Ikuti sistem) ada di ikon matahari/bulan di header, dan tahun ajaran aktif tampil di sebelahnya.
+Buka `/login`, isi email dan kata sandi. Percobaan salah dibatasi 5 kali per menit. **Keluar** ada di menu pengguna. Pilihan tema (Terang, Gelap, Ikuti sistem) ada di ikon matahari/bulan di header, dan tahun ajaran aktif tampil di sebelahnya.
 
 ### Beranda (berita kampus)
 
-`/beranda` menampilkan kabar terbaru kampus: banner utama yang bergeser otomatis, lalu kartu berita. Cari berita lewat kolom cari atau filter kategori (Program baru, Beasiswa, Akademik, Kegiatan, Prestasi, Wisuda, Pengumuman).
+`/home` menampilkan kabar terbaru kampus: banner utama yang bergeser otomatis, lalu kartu berita. Cari berita lewat kolom cari atau filter kategori (Program baru, Beasiswa, Akademik, Kegiatan, Prestasi, Wisuda, Pengumuman).
 
-**Admin mengelola berita** lewat tombol **Kelola berita** (`/berita/kelola`):
+**Admin mengelola berita** lewat tombol **Kelola berita** (`/news/manage`):
 
 - Isi judul, kategori, ringkasan, isi, dan unggah poster (JPG/PNG/WebP, maksimal 3 MB, ideal lanskap 16:9).
 - Centang **Tampilkan di banner utama** agar berita masuk banner (maksimal 5 terbaru).
@@ -104,22 +104,22 @@ Buka `/masuk`, isi email dan kata sandi. Percobaan salah dibatasi 5 kali per men
 
 ### Ringkasan
 
-`/ringkasan` (tidak ada di sidebar; buka lewat alamatnya) merangkum hari ini sesuai peran: jadwal hari ini, status presensi, kehadiran keseluruhan, dan (untuk admin dan pimpinan) kelas yang belum diisi serta dosen yang belum check-in.
+`/summary` (tidak ada di sidebar; buka lewat alamatnya) merangkum hari ini sesuai peran: jadwal hari ini, status presensi, kehadiran keseluruhan, dan (untuk admin dan pimpinan) kelas yang belum diisi serta dosen yang belum check-in.
 
 ### Profil
 
-`/profil` menampilkan data diri. Untuk **mahasiswa** isinya lengkap:
+`/profile` menampilkan data diri. Untuk **mahasiswa** isinya lengkap:
 
 - **Data pribadi:** nama, NIM, NIK (tersamar), tempat dan tanggal lahir, jenis kelamin, agama, kewarganegaraan.
 - **Kontak**, **Alamat sesuai KTP**, dan **Alamat domisili** (dipisah untuk mahasiswa perantau; mahasiswa ditandai _Perantau_ bila kota domisili berbeda dari kota KTP).
 - **Data akademik:** program studi, fakultas, angkatan, kelas, dosen wali, jalur masuk, asal sekolah.
 - **Data orang tua/wali:** nama, pekerjaan, pendidikan, telepon, alamat.
 
-Tombol **Ubah profil** (`/profil/ubah`) memungkinkan mahasiswa memperbarui telepon dan **alamat domisili**, serta mengganti kata sandi. Identitas, alamat KTP, dan data akademik hanya bisa diubah BAAK; ajukan koreksi lewat menu Masukan.
+Tombol **Ubah profil** (`/profile/edit`) memungkinkan mahasiswa memperbarui telepon dan **alamat domisili**, serta mengganti kata sandi. Identitas, alamat KTP, dan data akademik hanya bisa diubah BAAK; ajukan koreksi lewat menu Masukan.
 
 ### Jadwal
 
-`/jadwal` menampilkan jadwal kuliah mingguan **Senin sampai Sabtu**.
+`/schedule` menampilkan jadwal kuliah mingguan **Senin sampai Sabtu**.
 
 - **Desktop:** grid hari × sesi, hari ini disorot, kuliah yang sedang berlangsung diberi penanda.
 - **HP:** tab hari dengan daftar kuliah per hari.
@@ -127,7 +127,7 @@ Tombol **Ubah profil** (`/profil/ubah`) memungkinkan mahasiswa memperbarui telep
 - **Staf** bisa memilih tampilan menurut Kelas, Dosen, atau Ruang. Mahasiswa dan orang tua otomatis melihat kelasnya pada semester terpilih.
 - **Unduh PDF:** tombol di header mengunduh jadwal yang sedang tampil (A4 lanskap). Mahasiswa dan orang tua hanya bisa mengunduh jadwal kelas mereka.
 
-**Mengatur jadwal** (admin dan wakil dekan akademik): klik **Atur jadwal** (`/jadwal/atur`).
+**Mengatur jadwal** (admin dan wakil dekan akademik): klik **Atur jadwal** (`/schedule/manage`).
 
 1. Bila belum ada jam kuliah, klik **Buat jam standar** (Senin–Sabtu, 6 sesi per hari mulai pukul 07.00).
 2. Tambah mata kuliah (kode, SKS, semester) dan ruang bila perlu.
@@ -138,7 +138,7 @@ Tombol **Ubah profil** (`/profil/ubah`) memungkinkan mahasiswa memperbarui telep
 
 **Presensi hanya dicatat oleh dosen.** Mahasiswa tidak dapat mengisi presensi sendiri.
 
-**Dosen** (`/presensi`):
+**Dosen** (`/attendance`):
 
 1. Buka menu Presensi; daftar kuliah hari ini tampil.
 2. Klik **Mulai presensi** pada kuliah yang berlangsung. Semua mahasiswa otomatis berstatus _Hadir_ (kecuali yang punya izin atau sakit yang sudah disetujui hari itu).
@@ -150,7 +150,7 @@ Status kehadiran di kampus: **Hadir, Izin, Sakit, Alpa**.
 
 **Admin** bisa melihat dan membuka sesi untuk jadwal mana pun; **pimpinan** hanya memantau.
 
-**Mahasiswa** (`/presensi-saya`) melihat analitik kehadiran per mata kuliah semester aktif:
+**Mahasiswa** (`/my-attendance`) melihat analitik kehadiran per mata kuliah semester aktif:
 
 - Ringkasan: kehadiran keseluruhan, jumlah mata kuliah, jumlah yang perlu diwaspadai, total alpa.
 - **Pie chart** distribusi kehadiran, ditambah mini pie di tiap mata kuliah.
@@ -171,7 +171,7 @@ Menu **Nilai** adalah grup menu dengan isi berbeda per peran:
 | Wakil dekan akademik | Kelengkapan nilai |
 | Mahasiswa dan orang tua | KHS, Transkrip |
 
-**Dosen mengisi nilai** (`/nilai/input`):
+**Dosen mengisi nilai** (`/grades/input`):
 
 1. Pilih kelas yang diampu, lalu **Input nilai**. Daftar mahasiswa tampil dengan kolom Tugas, UTS, UAS, Kehadiran, Nilai akhir, dan Huruf.
 2. Isi nilai 0–100. **Kehadiran dihitung otomatis** dari presensi yang kamu catat. Nilai akhir dan huruf mutu (A–E) langsung dihitung dengan bobot yang berlaku (bawaan 30% tugas, 25% UTS, 35% UAS, 10% kehadiran). Bobot bisa diubah per kelas selama belum dikunci; jumlahnya harus 100.
@@ -183,7 +183,7 @@ Menu **Nilai** adalah grup menu dengan isi berbeda per peran:
 
 **Remedial:** untuk mahasiswa berhuruf yang berhak remedial (bawaan D dan E), dosen mengisi nilai remedial setelah nilai dikunci. **Aturan nilai terbaik:** untuk mata kuliah yang diremedial atau diulang di semester lain, KHS dan transkrip memakai hasil dengan angka mutu tertinggi.
 
-**Mahasiswa dan orang tua** (`/nilai/khs`, `/nilai/transkrip`):
+**Mahasiswa dan orang tua** (`/grades/khs`, `/grades/transcript`):
 
 - **KHS** per semester: kode, mata kuliah, SKS, nilai, huruf, mutu, **IPS**, serta **IPK** dan SKS lulus kumulatif. Mata kuliah yang nilainya belum dikunci dosen ditandai belum dirilis.
 - **Transkrip** seluruh semester dengan hasil terbaik tiap mata kuliah, **IPK**, dan **SKS lulus** (nilai D ke atas). Nilai awal (riwayat sebelum sistem dipakai) ikut dihitung.
@@ -197,14 +197,14 @@ Menu **Nilai** adalah grup menu dengan isi berbeda per peran:
 
 ### Izin
 
-`/izin` (admin, pimpinan, dosen, petugas, wakil dekan):
+`/leaves` (admin, pimpinan, dosen, petugas, wakil dekan):
 
 - **Dosen wali** atau admin mencatat izin/sakit mahasiswa (dengan lampiran foto surat), langsung berstatus disetujui, dan terisi otomatis saat sesi presensi dibuka.
 - **Dosen** mengajukan izin sendiri (izin, sakit, dinas, cuti); **admin atau pimpinan** menyetujui atau menolak.
 
 ### Rekap kehadiran
 
-`/rekap`:
+`/reports`:
 
 - **Dosen, admin, pimpinan:** pilih kelas, mata kuliah (opsional), dan bulan (kosong = satu semester). Tabel menampilkan jumlah per status dan **syarat ujian** (memenuhi bila ≥ 75%). Mahasiswa yang alpa berulang (≥ 3 hari) muncul di daftar tindak lanjut. **Ekspor CSV** tersedia.
 - **Orang tua:** melihat kehadiran anak per mata kuliah.
@@ -213,20 +213,20 @@ Menu **Nilai** adalah grup menu dengan isi berbeda per peran:
 
 | Menu                         | Fungsi                                                                                                                                                                                                                          |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Mahasiswa** (`/mahasiswa`) | Cari dan filter mahasiswa. **Tambah mahasiswa** mengisi data pribadi, alamat KTP dan domisili, data akademik, serta orang tua/wali (Ayah, Ibu, Wali).                                                                           |
+| **Mahasiswa** (`/students`) | Cari dan filter mahasiswa. **Tambah mahasiswa** mengisi data pribadi, alamat KTP dan domisili, data akademik, serta orang tua/wali (Ayah, Ibu, Wali).                                                                           |
 | **Impor**                    | Unggah CSV (kolom `nim, nama, jenis_kelamin, tanggal_lahir, alamat, telepon, prodi, angkatan, kelas`). Sistem menampilkan pratinjau dan baris yang gagal (NIM duplikat dan sebagainya) sebelum menyimpan. Templat bisa diunduh. |
-| **Dosen** (`/dosen`)         | Daftar dan tambah dosen.                                                                                                                                                                                                        |
-| **Prodi** (`/prodi`)         | Fakultas dan program studi.                                                                                                                                                                                                     |
-| **Kelas** (`/kelas`)         | Buat kelas (kelompok mahasiswa per prodi dan angkatan), tentukan dosen wali, dan tempatkan mahasiswa. Riwayat penempatan tersimpan.                                                                                             |
+| **Dosen** (`/teachers`)         | Daftar dan tambah dosen.                                                                                                                                                                                                        |
+| **Prodi** (`/programs`)         | Fakultas dan program studi.                                                                                                                                                                                                     |
+| **Kelas** (`/groups`)         | Buat kelas (kelompok mahasiswa per prodi dan angkatan), tentukan dosen wali, dan tempatkan mahasiswa. Riwayat penempatan tersimpan.                                                                                             |
 
 Perubahan data mahasiswa dan koreksi presensi dicatat di log audit.
 
 ### Wisuda
 
-`/wisuda` (**Pendaftaran wisuda**):
+`/graduation` (**Pendaftaran wisuda**):
 
 - **Mahasiswa:** melihat periode berjalan, status pendaftaran, dan persyaratan (SKS lulus minimal 144, IPK minimal 2,00). **SKS dan IPK dihitung otomatis dari transkrip**, tidak diisi manual, dan pendaftaran hanya bisa dikirim bila syarat terpenuhi. Klik **Daftar wisuda**, isi judul tugas akhir, tanggal sidang, dan ukuran toga. Pendaftaran yang ditolak bisa diajukan ulang.
-- **Admin:** kelola periode di `/wisuda/periode` (tanggal buka/tutup, tanggal wisuda, tempat, kuota, terbitkan), lalu verifikasi pendaftar di **Pendaftar** (setujui, atau tolak dengan alasan).
+- **Admin:** kelola periode di `/graduation/periods` (tanggal buka/tutup, tanggal wisuda, tempat, kuota, terbitkan), lalu verifikasi pendaftar di **Pendaftar** (setujui, atau tolak dengan alasan).
 - **Berita acara pendaftaran wisuda:** setelah semua pendaftar diverifikasi, admin mengisi nomor, tanggal, ketua panitia, dan pejabat pengesah, lalu **Terbitkan**. Daftar peserta dibekukan dan keputusan verifikasi dikunci. Versi cetak (A4, bisa disimpan sebagai PDF) tersedia bagi admin, pimpinan, dan wakil dekan.
 
 ### Survey
@@ -241,7 +241,7 @@ Responden mengisi **sekali** dan jawaban tidak bisa diubah. Pada kuesioner anoni
 
 ### Masukan dan komplain
 
-`/masukan`: kirim **masukan** atau **komplain** dengan kategori, judul, isi, dan lampiran (opsional), boleh **anonim** (nama disembunyikan dari penanganan, tetapi pengirim tetap bisa membalas). Tiap pesan mendapat nomor tiket (mis. `MK-2026-0001`). **Admin dan pimpinan** menanggapi lewat percakapan dan mengubah status: _Baru, Diproses, Selesai, Ditutup_. Jumlah tiket baru tampil di samping menu. Pengiriman dibatasi 5 pesan per jam.
+`/feedback`: kirim **masukan** atau **komplain** dengan kategori, judul, isi, dan lampiran (opsional), boleh **anonim** (nama disembunyikan dari penanganan, tetapi pengirim tetap bisa membalas). Tiap pesan mendapat nomor tiket (mis. `MK-2026-0001`). **Admin dan pimpinan** menanggapi lewat percakapan dan mengubah status: _Baru, Diproses, Selesai, Ditutup_. Jumlah tiket baru tampil di samping menu. Pengiriman dibatasi 5 pesan per jam.
 
 ### Helpdesk WhatsApp
 
@@ -308,7 +308,7 @@ Beberapa prinsip yang dipakai:
 
 Hal-hal berikut **belum ada** atau perlu keputusan lanjutan:
 
-- **Ganti kata sandi dari profil dan reset oleh admin.** Lupa kata sandi lewat email sudah tersedia (`/lupa-kata-sandi`); email dikirim lewat `MAIL_MAILER` (bawaan `log`, isi surat ada di `storage/logs`). Atur SMTP di `.env` untuk produksi.
+- **Ganti kata sandi dari profil dan reset oleh admin.** Lupa kata sandi lewat email sudah tersedia (`/forgot-password`); email dikirim lewat `MAIL_MAILER` (bawaan `log`, isi surat ada di `storage/logs`). Atur SMTP di `.env` untuk produksi.
 - Layar pengaturan kampus dan aktivasi semester (saat ini lewat data atau tinker).
 - KRS online dan persetujuan dosen wali; kuota kelas paralel.
 - Presensi saat offline, notifikasi WhatsApp otomatis ke orang tua, dan presensi gerbang.

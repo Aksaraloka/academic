@@ -75,7 +75,7 @@
 
             <x-card :title="$group->name" :padding="false">
                 <x-slot:actions>
-                    <x-button size="sm" variant="secondary" icon="arrow-down-tray" :href="route('reports.export', array_filter(['group' => $group->id, 'matkul' => $subjectId, 'bulan' => $month]))">Ekspor CSV</x-button>
+                    <x-button size="sm" variant="secondary" icon="arrow-down-tray" :href="route('reports.export', array_filter(['group' => $group->id, 'subject' => $subjectId, 'month' => $month]))">Ekspor CSV</x-button>
                 </x-slot:actions>
 
                 @if ($recap->isEmpty())

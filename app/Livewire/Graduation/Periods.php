@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Wisuda;
+namespace App\Livewire\Graduation;
 
 use App\Models\GraduationPeriod;
 use Livewire\Attributes\Title;
@@ -64,7 +64,7 @@ class Periods extends Component
 
     public function render()
     {
-        return view('livewire.wisuda.periods', [
+        return view('livewire.graduation.periods', [
             'periods' => GraduationPeriod::query()->with('minute')->withCount('registrations')->orderByDesc('ceremony_on')->get(),
         ]);
     }

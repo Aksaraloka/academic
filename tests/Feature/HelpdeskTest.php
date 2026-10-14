@@ -12,7 +12,7 @@ beforeEach(function () {
 
 it('shows the WhatsApp helpdesk button under Masukan in the sidebar for every role', function () {
     foreach (['admin@', 'kaprodi@', 'akademik@', 'dosen@', 'petugas@', 'mahasiswa@', 'ortu@'] as $prefix) {
-        $html = $this->actingAs(User::where('email', $prefix.'aksaraloka.test')->firstOrFail())->get('/beranda')->assertOk()->getContent();
+        $html = $this->actingAs(User::where('email', $prefix.'aksaraloka.test')->firstOrFail())->get('/home')->assertOk()->getContent();
 
         expect($html)->toContain('Hubungi Helpdesk')
             ->toContain('https://wa.me/6281234567800?text=')
@@ -58,20 +58,20 @@ it('hides the button when no helpdesk number is configured', function () {
     $this->tenant->update(['settings' => array_merge($this->tenant->settings, ['helpdesk_whatsapp' => null])]);
     config(['services.helpdesk.whatsapp' => null]);
 
-    $this->actingAs($this->student->refresh())->get('/beranda')->assertOk()->assertDontSee('Hubungi Helpdesk')->assertDontSee('wa.me');
-    $this->actingAs($this->student)->get('/masukan')->assertOk()->assertDontSee('Helpdesk via WhatsApp');
+    $this->actingAs($this->student->refresh())->get('/home')->assertOk()->assertDontSee('Hubungi Helpdesk')->assertDontSee('wa.me');
+    $this->actingAs($this->student)->get('/feedback')->assertOk()->assertDontSee('Helpdesk via WhatsApp');
 });
 
 it('also offers the helpdesk shortcut on the feedback page', function () {
-    $this->actingAs($this->student)->get('/masukan')->assertOk()->assertSee('Helpdesk via WhatsApp')->assertSee('https://wa.me/6281234567800', false);
+    $this->actingAs($this->student)->get('/feedback')->assertOk()->assertSee('Helpdesk via WhatsApp')->assertSee('https://wa.me/6281234567800', false);
 });
 
 it('does not expose the helpdesk link to guests', function () {
-    $this->get('/masuk')->assertOk()->assertDontSee('wa.me');
+    $this->get('/login')->assertOk()->assertDontSee('wa.me');
 });
 
 it('puts the helpdesk link in the mobile more-menu sheet', function () {
-    $html = $this->actingAs($this->student)->get('/beranda')->getContent();
+    $html = $this->actingAs($this->student)->get('/home')->getContent();
 
     expect(substr_count($html, 'https://wa.me/6281234567800'))->toBeGreaterThanOrEqual(2);
 });

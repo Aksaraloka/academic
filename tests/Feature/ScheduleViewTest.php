@@ -25,9 +25,9 @@ beforeEach(function () {
 });
 
 it('renders the schedule page at full width', function () {
-    $this->actingAs($this->student)->get('/jadwal')->assertOk()->assertSee('max-w-none', false)->assertDontSee('<main id="konten" class="mx-auto w-full max-w-6xl', false);
-    $this->actingAs($this->student)->get('/beranda')->assertOk()->assertSee('max-w-none', false);
-    $this->actingAs($this->student)->get('/ringkasan')->assertOk()->assertSee('max-w-6xl', false);
+    $this->actingAs($this->student)->get('/schedule')->assertOk()->assertSee('max-w-none', false)->assertDontSee('<main id="konten" class="mx-auto w-full max-w-6xl', false);
+    $this->actingAs($this->student)->get('/home')->assertOk()->assertSee('max-w-none', false);
+    $this->actingAs($this->student)->get('/summary')->assertOk()->assertSee('max-w-6xl', false);
 });
 
 it('lists lectures from Monday to Saturday', function () {
@@ -69,7 +69,7 @@ it('lets the user switch to a previous semester and see its archived schedule', 
 });
 
 it('lists every semester in the selector with the active one marked', function () {
-    $html = $this->actingAs($this->student)->get('/jadwal')->getContent();
+    $html = $this->actingAs($this->student)->get('/schedule')->getContent();
 
     expect($html)->toContain('2026/2027 · Ganjil (aktif)')->toContain('2025/2026 · Genap');
 });
@@ -165,14 +165,14 @@ it('creates the standard time slots for Monday through Saturday', function () {
 
 it('keeps the schedule page available to every role', function () {
     foreach (['admin@', 'kaprodi@', 'akademik@', 'dosen@', 'petugas@', 'mahasiswa@', 'ortu@'] as $prefix) {
-        $this->actingAs(User::where('email', $prefix.'aksaraloka.test')->firstOrFail())->get('/jadwal')->assertOk()->assertSee('Semester');
+        $this->actingAs(User::where('email', $prefix.'aksaraloka.test')->firstOrFail())->get('/schedule')->assertOk()->assertSee('Semester');
     }
 });
 
 it('adds a PDF download button that follows the selected semester and target', function () {
-    $html = $this->actingAs($this->student)->get('/jadwal')->getContent();
+    $html = $this->actingAs($this->student)->get('/schedule')->getContent();
 
-    expect($html)->toContain('Unduh PDF')->toContain(e(route('schedule.export', ['semester' => $this->current->id, 'lihat' => 'group', 'id' => $this->student->student->currentGroup()->id])));
+    expect($html)->toContain('Unduh PDF')->toContain(e(route('schedule.export', ['semester' => $this->current->id, 'view' => 'group', 'id' => $this->student->student->currentGroup()->id])));
 
     $component = Livewire::actingAs($this->student)->test(Index::class)->set('termId', (string) $this->previous->id);
     expect($component->viewData('exportQuery')['semester'])->toBe((string) $this->previous->id);
@@ -200,7 +200,7 @@ it('exports archived semesters too', function () {
 it('gives students only their own class even when they request another one', function () {
     $other = StudyGroup::where('academic_term_id', $this->current->id)->where('name', 'TI-2024-B')->firstOrFail();
 
-    $response = $this->actingAs($this->student)->get(route('schedule.export', ['lihat' => 'room', 'id' => $other->id]));
+    $response = $this->actingAs($this->student)->get(route('schedule.export', ['view' => 'room', 'id' => $other->id]));
 
     expect($response->headers->get('Content-Disposition'))->toContain('ti-2024-a')->not->toContain('ti-2024-b');
 });
@@ -210,10 +210,10 @@ it('lets staff export any class, lecturer or room', function () {
     $teacher = Teacher::firstOrFail();
     $room = Room::firstOrFail();
 
-    $this->actingAs($this->admin)->get(route('schedule.export', ['lihat' => 'group', 'id' => $group->id]))
+    $this->actingAs($this->admin)->get(route('schedule.export', ['view' => 'group', 'id' => $group->id]))
         ->assertOk()->assertHeader('Content-Disposition', 'attachment; filename="jadwal-ti-2024-b-2026-2027-ganjil.pdf"');
-    $this->actingAs($this->admin)->get(route('schedule.export', ['lihat' => 'teacher', 'id' => $teacher->id]))->assertOk();
-    $this->actingAs($this->admin)->get(route('schedule.export', ['lihat' => 'room', 'id' => $room->id]))->assertOk();
+    $this->actingAs($this->admin)->get(route('schedule.export', ['view' => 'teacher', 'id' => $teacher->id]))->assertOk();
+    $this->actingAs($this->admin)->get(route('schedule.export', ['view' => 'room', 'id' => $room->id]))->assertOk();
 });
 
 it('defaults a lecturer export to their own teaching schedule', function () {
@@ -224,16 +224,16 @@ it('defaults a lecturer export to their own teaching schedule', function () {
 });
 
 it('rejects invalid or unknown export requests', function () {
-    $this->get(route('schedule.export'))->assertRedirect('/masuk');
+    $this->get(route('schedule.export'))->assertRedirect('/login');
 
-    $this->actingAs($this->admin)->get(route('schedule.export', ['lihat' => 'hacker']))->assertSessionHasErrors('lihat');
-    $this->actingAs($this->admin)->get(route('schedule.export', ['lihat' => 'group', 'id' => 999999]))->assertNotFound();
+    $this->actingAs($this->admin)->get(route('schedule.export', ['view' => 'hacker']))->assertSessionHasErrors('view');
+    $this->actingAs($this->admin)->get(route('schedule.export', ['view' => 'group', 'id' => 999999]))->assertNotFound();
 });
 
 it('returns 404 when the selected schedule is empty', function () {
     $empty = StudyGroup::create(['tenant_id' => $this->admin->tenant_id, 'academic_term_id' => $this->current->id, 'name' => 'KOSONG-1']);
 
-    $this->actingAs($this->admin)->get(route('schedule.export', ['lihat' => 'group', 'id' => $empty->id]))->assertNotFound();
+    $this->actingAs($this->admin)->get(route('schedule.export', ['view' => 'group', 'id' => $empty->id]))->assertNotFound();
 });
 
 it('renders the PDF template with the grid, saturday column and legend', function () {

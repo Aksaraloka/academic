@@ -105,39 +105,39 @@ it('ignores other students records', function () {
 it('renders the student presensi page with per-course analytics', function () {
     setCourseAttendance('MK101', 5);
 
-    $this->actingAs($this->user)->get('/presensi-saya')->assertOk()
+    $this->actingAs($this->user)->get('/my-attendance')->assertOk()
         ->assertSee('Presensi saya')->assertSee('Algoritma dan Pemrograman')->assertSee('Basis Data')->assertSee('Kalkulus')
         ->assertSee('Perbandingan kehadiran')->assertSee('Riwayat pertemuan')->assertSee('Tidak memenuhi')->assertSee('sudah melebihi batas 4 pertemuan');
 });
 
 it('puts a Presensi link in the student sidebar pointing to the analytics page', function () {
-    $this->actingAs($this->user)->get('/beranda')->assertSee(route('attendance.mine'), false)->assertSee('Presensi');
+    $this->actingAs($this->user)->get('/home')->assertSee(route('attendance.mine'), false)->assertSee('Presensi');
 });
 
 it('keeps the analytics page for students only', function () {
-    $this->get('/presensi-saya')->assertRedirect('/masuk');
+    $this->get('/my-attendance')->assertRedirect('/login');
 
     foreach (['admin@', 'kaprodi@', 'dosen@', 'ortu@'] as $prefix) {
-        $this->actingAs(User::where('email', $prefix.'aksaraloka.test')->firstOrFail())->get('/presensi-saya')->assertForbidden();
+        $this->actingAs(User::where('email', $prefix.'aksaraloka.test')->firstOrFail())->get('/my-attendance')->assertForbidden();
     }
 
-    $this->actingAs($this->user)->get('/presensi')->assertForbidden();
+    $this->actingAs($this->user)->get('/attendance')->assertForbidden();
 });
 
 it('shows a friendly empty state for a student without a class', function () {
     StudyGroupMember::where('student_id', $this->student->id)->delete();
 
-    $this->actingAs($this->user)->get('/presensi-saya')->assertOk()->assertSee('Belum ada mata kuliah yang kamu ikuti');
+    $this->actingAs($this->user)->get('/my-attendance')->assertOk()->assertSee('Belum ada mata kuliah yang kamu ikuti');
 });
 
 it('shows an empty state when no semester is active', function () {
     AcademicTerm::query()->update(['is_active' => false]);
 
-    $this->actingAs($this->user)->get('/presensi-saya')->assertOk()->assertSee('Belum ada semester aktif');
+    $this->actingAs($this->user)->get('/my-attendance')->assertOk()->assertSee('Belum ada semester aktif');
 });
 
 it('shows an overall pie chart and a mini pie per course on the presensi page', function () {
-    $response = $this->actingAs($this->user)->get('/presensi-saya');
+    $response = $this->actingAs($this->user)->get('/my-attendance');
 
     $response->assertOk()
         ->assertSee('Distribusi kehadiran')

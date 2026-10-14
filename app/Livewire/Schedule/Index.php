@@ -19,7 +19,7 @@ class Index extends Component
     #[Url(as: 'semester')]
     public string $termId = '';
 
-    #[Url(as: 'lihat')]
+    #[Url(as: 'view')]
     public string $view = 'group';
 
     #[Url(as: 'id')]
@@ -78,7 +78,7 @@ class Index extends Component
             'todayDay' => $todayDay,
             'initialDay' => $data['days']->has($todayDay) ? $todayDay : ($data['byDay']->keys()->sort()->first() ?? 1),
             'nowTime' => now()->format('H:i:s'),
-            'exportQuery' => array_filter(['semester' => $this->termId, 'lihat' => $this->view, 'id' => $this->targetId], fn ($value) => $value !== ''),
+            'exportQuery' => array_filter(['semester' => $this->termId, 'view' => $this->view, 'id' => $this->targetId], fn ($value) => $value !== ''),
         ]);
     }
 }

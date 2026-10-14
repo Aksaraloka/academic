@@ -19,7 +19,7 @@ beforeEach(function () {
 it('shows the latest university news on the home page for every role', function () {
     foreach (['admin@', 'kaprodi@', 'akademik@', 'dosen@', 'petugas@', 'mahasiswa@', 'ortu@'] as $prefix) {
         $this->actingAs(User::where('email', $prefix.'aksaraloka.test')->firstOrFail())
-            ->get('/beranda')
+            ->get('/home')
             ->assertOk()
             ->assertSee('Berita terbaru')
             ->assertSee('Program Studi Baru: Sains Data dan Kecerdasan Buatan')
@@ -28,12 +28,12 @@ it('shows the latest university news on the home page for every role', function 
 });
 
 it('redirects the root and guests to the right pages', function () {
-    $this->get('/')->assertRedirect('/beranda');
-    $this->get('/beranda')->assertRedirect('/masuk');
+    $this->get('/')->assertRedirect('/home');
+    $this->get('/home')->assertRedirect('/login');
 });
 
 it('orders news from newest to oldest with the newest featured', function () {
-    $this->actingAs($this->student)->get('/beranda')
+    $this->actingAs($this->student)->get('/home')
         ->assertSeeInOrder(['Program Studi Baru', 'Beasiswa Prestasi Akademik', 'Pendaftaran Wisuda Periode II Dibuka', 'Jadwal Pengisian KRS']);
 });
 
@@ -55,8 +55,8 @@ it('searches news by title', function () {
 });
 
 it('hides drafts from everyone except admin', function () {
-    $this->actingAs($this->student)->get('/beranda')->assertDontSee('Gladi Bersih Wisuda');
-    $this->actingAs($this->admin)->get('/beranda')->assertSee('Gladi Bersih Wisuda')->assertSee('Draf');
+    $this->actingAs($this->student)->get('/home')->assertDontSee('Gladi Bersih Wisuda');
+    $this->actingAs($this->admin)->get('/home')->assertSee('Gladi Bersih Wisuda')->assertSee('Draf');
 
     $draft = News::where('title', 'Gladi Bersih Wisuda')->firstOrFail();
     $this->actingAs($this->student)->get(route('news.show', $draft))->assertNotFound();
@@ -74,7 +74,7 @@ it('serves posters through an access-checked route', function () {
     $published = News::where('title', 'Beasiswa Prestasi Akademik 2026/2027 Dibuka')->firstOrFail();
     $draft = News::where('title', 'Gladi Bersih Wisuda')->firstOrFail();
 
-    $this->get(route('news.poster', $published))->assertRedirect('/masuk');
+    $this->get(route('news.poster', $published))->assertRedirect('/login');
     $this->actingAs($this->student)->get(route('news.poster', $published))
         ->assertOk()->assertHeader('Content-Type', 'image/svg+xml')->assertHeader('X-Content-Type-Options', 'nosniff');
     $this->actingAs($this->student)->get(route('news.poster', $draft))->assertNotFound();
@@ -144,7 +144,7 @@ it('shows featured published news in the banner and keeps them out of the grid',
         'Pendaftaran Wisuda Periode II Dibuka',
     ])->and($grid->pluck('id')->intersect($banner->pluck('id')))->toBeEmpty();
 
-    $this->actingAs($this->student)->get('/beranda')->assertSee('aria-roledescription="carousel"', false)->assertSee('Baca selengkapnya');
+    $this->actingAs($this->student)->get('/home')->assertSee('aria-roledescription="carousel"', false)->assertSee('Baca selengkapnya');
 });
 
 it('drops the banner while searching or filtering and lists every match', function () {
@@ -171,7 +171,7 @@ it('lets an admin flag news for the banner', function () {
 });
 
 it('shows the active academic year and semester in the header on every page', function () {
-    foreach (['/beranda', '/jadwal', '/rekap'] as $path) {
+    foreach (['/home', '/schedule', '/reports'] as $path) {
         $this->actingAs($this->student)->get($path)->assertOk()->assertSee('2026/2027')->assertSee('Ganjil');
     }
 });
@@ -179,23 +179,23 @@ it('shows the active academic year and semester in the header on every page', fu
 it('omits the academic year badge when no term is active', function () {
     AcademicTerm::query()->update(['is_active' => false]);
 
-    $this->actingAs($this->student)->get('/beranda')->assertOk()->assertDontSee('Tahun ajaran 2026/2027');
+    $this->actingAs($this->student)->get('/home')->assertOk()->assertDontSee('Tahun ajaran 2026/2027');
 });
 
 it('no longer shows the greeting header on the home page but keeps the admin shortcut', function () {
-    $this->actingAs($this->student)->get('/beranda')->assertOk()->assertDontSee('Halo,')->assertDontSee('Kabar terbaru dari')->assertDontSee('Kelola berita');
+    $this->actingAs($this->student)->get('/home')->assertOk()->assertDontSee('Halo,')->assertDontSee('Kabar terbaru dari')->assertDontSee('Kelola berita');
 
-    $this->actingAs($this->admin)->get('/beranda')->assertOk()->assertDontSee('Halo,')->assertSee('Kelola berita');
+    $this->actingAs($this->admin)->get('/home')->assertOk()->assertDontSee('Halo,')->assertSee('Kelola berita');
 });
 
 it('does not list the summary page in the sidebar or the mobile menu for any role', function () {
     foreach (['admin@', 'kaprodi@', 'akademik@', 'dosen@', 'petugas@', 'mahasiswa@', 'ortu@'] as $prefix) {
         $user = User::where('email', $prefix.'aksaraloka.test')->firstOrFail();
 
-        $this->actingAs($user)->get('/beranda')->assertOk()->assertDontSee(route('summary'), false)->assertDontSee('>Ringkasan<', false);
+        $this->actingAs($user)->get('/home')->assertOk()->assertDontSee(route('summary'), false)->assertDontSee('>Ringkasan<', false);
     }
 });
 
 it('keeps the summary page reachable by its address', function () {
-    $this->actingAs($this->student)->get('/ringkasan')->assertOk()->assertSee('Ringkasan hari ini');
+    $this->actingAs($this->student)->get('/summary')->assertOk()->assertSee('Ringkasan hari ini');
 });

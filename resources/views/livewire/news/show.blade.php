@@ -26,7 +26,7 @@
     @endif
 
     @if ($news->period && auth()->user()->hasRole(\App\Enums\Role::Student) && $news->period->isOpen())
-        <x-button :href="route('wisuda.overview', ['periode' => $news->period->id])" wire:navigate icon="academic-cap">Daftar wisuda</x-button>
+        <x-button :href="route('graduation.overview', ['period' => $news->period->id])" wire:navigate icon="academic-cap">Daftar wisuda</x-button>
     @endif
 
     @if ($related->isNotEmpty())

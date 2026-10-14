@@ -20,11 +20,11 @@ class Index extends Component
     #[Url(as: 'group')]
     public string $groupId = '';
 
-    #[Url(as: 'matkul')]
+    #[Url(as: 'subject')]
     public string $subjectId = '';
 
     /** Kosong berarti satu semester penuh; isi "YYYY-MM" untuk satu bulan. */
-    #[Url(as: 'bulan')]
+    #[Url(as: 'month')]
     public string $month = '';
 
     /**
