@@ -75,6 +75,12 @@ class Navigation
             $items[] = ['label' => 'Nilai', 'icon' => 'check-badge', 'match' => 'grades.*', 'children' => $grades];
         }
 
+        if ($user->role === Role::Student) {
+            $items[] = self::item('KRS', 'enrollment.plan', 'clipboard-document-list', 'enrollment.plan');
+        } elseif ($user->hasRole(Role::Admin, Role::Principal, Role::Curriculum, Role::Teacher)) {
+            $items[] = self::item('Persetujuan KRS', 'enrollment.approvals', 'clipboard-document-list', 'enrollment.approvals');
+        }
+
         $items[] = self::item('Kalender akademik', 'academic.calendar', 'calendar-days', 'academic.calendar');
 
         if ($user->role === Role::Admin) {

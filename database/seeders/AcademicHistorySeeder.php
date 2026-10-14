@@ -3,8 +3,10 @@
 namespace Database\Seeders;
 
 use App\Enums\AcademicEventType;
+use App\Enums\EnrollmentStatus;
 use App\Models\AcademicEvent;
 use App\Models\AcademicTerm;
+use App\Models\Enrollment;
 use App\Models\Grade;
 use App\Models\Program;
 use App\Models\Student;
@@ -167,6 +169,72 @@ class AcademicHistorySeeder extends Seeder
         foreach ($terms as $term) {
             $this->calendarFor($tenant, $term);
         }
+
+        // Mata kuliah semester berjalan untuk tiap kelas angkatan baru (tanpa jadwal), lalu KRS seluruh mahasiswa.
+        foreach (self::BATCHES as $batch => $perProgram) {
+            foreach (array_keys(self::PROGRAM_DIGITS) as $code) {
+                if ($batch === 2024 && $code === 'TI') {
+                    continue;
+                }
+
+                $currentSemester = (2026 - $batch) * 2 + 1;
+                $group = $groupFor($code, $batch, self::CURRENT_TERM_INDEX);
+
+                foreach (array_keys($curriculum[$code][$currentSemester] ?? []) as $position) {
+                    $subject = $subjectFor($code, $currentSemester, $position);
+
+                    TeachingAssignment::create([
+                        'tenant_id' => $tenant->id, 'academic_term_id' => $terms[self::CURRENT_TERM_INDEX]->id, 'teacher_id' => $teachers[$subject->id % 3]->id,
+                        'subject_id' => $subject->id, 'study_group_id' => $group->id, 'hours_per_week' => 2,
+                    ]);
+                }
+            }
+        }
+
+        $this->seedEnrollments($tenant, $terms[self::CURRENT_TERM_INDEX]);
+    }
+
+    /**
+     * KRS semester berjalan: sebagian besar disetujui, sisanya menunggu, ditolak, draf, atau belum dimulai. Mahasiswa contoh dibiarkan draf agar alur pengisian bisa dicoba.
+     */
+    private function seedEnrollments(Tenant $tenant, AcademicTerm $term): void
+    {
+        $demoStudentId = Student::query()->withoutGlobalScopes()->where('tenant_id', $tenant->id)->orderBy('id')->value('id');
+
+        $groups = StudyGroup::query()->withoutGlobalScopes()->with('homeroomTeacher')->where('tenant_id', $tenant->id)->where('academic_term_id', $term->id)->get();
+
+        foreach ($groups as $group) {
+            $assignmentIds = TeachingAssignment::query()->withoutGlobalScopes()->where('study_group_id', $group->id)->pluck('id');
+
+            if ($assignmentIds->isEmpty()) {
+                continue;
+            }
+
+            foreach ($group->members()->whereNull('left_at')->pluck('student_id') as $studentId) {
+                $roll = $studentId === $demoStudentId ? 90 : random_int(1, 100);
+
+                if ($roll > 92) {
+                    continue;
+                }
+
+                $status = match (true) {
+                    $roll <= 65 => EnrollmentStatus::Approved,
+                    $roll <= 80 => EnrollmentStatus::Submitted,
+                    $roll <= 86 => EnrollmentStatus::Rejected,
+                    default => EnrollmentStatus::Draft,
+                };
+                $decided = in_array($status, [EnrollmentStatus::Approved, EnrollmentStatus::Rejected], true);
+
+                $enrollment = Enrollment::create([
+                    'tenant_id' => $tenant->id, 'academic_term_id' => $term->id, 'student_id' => $studentId, 'status' => $status,
+                    'submitted_at' => $status === EnrollmentStatus::Draft ? null : now()->subDays(random_int(5, 40)),
+                    'decided_by' => $decided ? $group->homeroomTeacher?->user_id : null,
+                    'decided_at' => $decided ? now()->subDays(random_int(1, 4)) : null,
+                    'advisor_note' => $status === EnrollmentStatus::Rejected ? 'Mohon konsultasikan dulu rencana studimu dengan dosen wali.' : null,
+                ]);
+                $enrollment->assignments()->sync($assignmentIds->all());
+            }
+        }
     }
 
     /**
@@ -186,6 +254,10 @@ class AcademicHistorySeeder extends Seeder
 
         if ($term->semester === 'Ganjil') {
             $agenda[] = [AcademicEventType::Holiday, 'Libur Natal dan Tahun Baru', $end->copy()->setDate($end->year - 1, 12, 24), $end->copy()->setDate($end->year, 1, 1)];
+        }
+
+        if ($term->is_active) {
+            $agenda[0] = [AcademicEventType::Enrollment, 'Pengisian dan perubahan KRS', $start->copy()->subDays(14), today()->addDays(10)];
         }
 
         foreach ($agenda as [$type, $title, $from, $to]) {

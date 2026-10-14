@@ -15,10 +15,11 @@ Stack: Laravel 13, Livewire 4 (komponen kelas), Alpine, Tailwind v4, GSAP lazy, 
 - **Syarat ujian 75%** per mata kuliah. Status mahasiswa memakai proyeksi 16 pertemuan per semester (boleh tidak hadir 4 kali): Aman / Waspada (sisa toleransi ≤ 1) / Tidak memenuhi.
 - **Hari kuliah Senin–Sabtu.** Kolom Sabtu selalu tampil di Jadwal.
 - **Alamat:** kolom `address/city/province/postal_code` pada `students` berarti **alamat sesuai KTP**; alamat tinggal sekarang ada di kolom `domicile_*` (+ `is_domicile_same`, `residence_type`). Mahasiswa hanya boleh mengubah domisili. _Perantau_ = kota domisili ≠ kota KTP.
-- **"Kelas"** = kelompok mahasiswa per prodi dan angkatan (model `StudyGroup`, nama tabel masih `study_groups`; kolom `homeroom_teacher_id` = **dosen wali**). Bukan kelas paralel per mata kuliah; itu menunggu fitur KRS.
+- **"Kelas"** = kelompok mahasiswa per prodi dan angkatan (model `StudyGroup`, nama tabel masih `study_groups`; kolom `homeroom_teacher_id` = **dosen wali**). Bukan kelas paralel per mata kuliah. KRS memilih `TeachingAssignment` (kuliah satu kelas pada satu semester), jadi "paket kelas" = penugasan milik kelas mahasiswa.
 - **Penangani masukan/komplain dan pembaca hasil survey = admin dan Kaprodi/Pimpinan.** Wakil dekan akademik tidak termasuk.
 - **Survey anonim tidak menyimpan `user_id`**; pengisian ganda dicegah lewat hash HMAC. Pertanyaan dikunci setelah ada responden.
 - **Wisuda:** berita acara satu dokumen **per periode**, dibekukan (snapshot peserta) saat diterbitkan. SKS dan IPK diisi mahasiswa lalu diverifikasi admin (belum ada modul nilai).
+- **KRS:** `enrollments` (satu per mahasiswa per semester; status draft, submitted, approved, rejected) dan `enrollment_items` (ke `teaching_assignments`). Edit hanya sah saat `AcademicCalendar::isOpen(Enrollment)`; batas SKS dari IPS semester sebelumnya (`EnrollmentService::CREDIT_LIMITS`). KRS **disetujui** menambah mahasiswa ke `GradingService::roster()`. Jadwal dan presensi belum mengikuti KRS (masih per kelas angkatan).
 - **Kalender akademik:** tabel `academic_events` hanya menyimpan agenda KRS, UTS, UAS, cuti, libur, dan lainnya. Perkuliahan (`starts_at`–`ends_at`) dan batas input nilai (`grading_closes_on`) tetap di `academic_terms` dan ditampilkan sebagai agenda turunan oleh `AcademicCalendar`, supaya hanya ada satu sumber kebenaran. Batas input nilai diedit di halaman Semester akademik, bukan di Pengaturan nilai.
 - **Nilai:** komponen tugas, UTS, UAS, dan kehadiran (otomatis dari presensi) berbobot; huruf mutu A–E dengan angka mutu 4/3/2/1/0 dan batas di `Tenant::DEFAULT_SETTINGS`. Nilai baru tampil ke mahasiswa setelah dosen **mengunci** kelas. Setelah dikunci, perubahan hanya lewat revisi yang **disetujui Kaprodi (`principal`)**, bukan admin. Batas waktu input ada di `academic_terms.grading_closes_on` (+ perpanjangan per kelas oleh admin).
 - **Nilai terbaik:** `AcademicRecord::best()` memilih angka mutu tertinggi (lalu nilai angka, lalu semester terbaru) untuk mata kuliah yang diremedial atau diulang. KHS, IPS, IPK, transkrip, dan syarat wisuda **hanya menghitung nilai terkunci**. Remedial adalah baris `grades` ber-`kind = remedial`.
@@ -58,4 +59,4 @@ Stack: Laravel 13, Livewire 4 (komponen kelas), Alpine, Tailwind v4, GSAP lazy, 
 
 ## Yang belum ada
 
-**ganti kata sandi dari profil** dan reset oleh admin; KRS dan kelas paralel; presensi offline; notifikasi WhatsApp otomatis; impor Excel dan ekspor Dapodik/PDDikti; foto profil; pemisahan schema PostgreSQL.
+**ganti kata sandi dari profil** dan reset oleh admin; kuota kelas paralel; presensi offline; notifikasi WhatsApp otomatis; impor Excel dan ekspor Dapodik/PDDikti; foto profil; pemisahan schema PostgreSQL.

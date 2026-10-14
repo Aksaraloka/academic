@@ -164,7 +164,16 @@ Status dihitung dari proyeksi: target 16 pertemuan per semester dan syarat kehad
 - **Pengaturan kampus** (`/settings/campus`, admin, menu Pengaturan): nama kampus, WhatsApp helpdesk, mode presensi, minimal kehadiran, batas alpa, jumlah pertemuan, jam dan lokasi check-in dosen, serta syarat wisuda (SKS dan IPK minimal). Perubahan tercatat di log audit.
 - **Semester akademik** (`/academic-terms`, admin): tambah semester (tahun ajaran `2026/2027`, Ganjil atau Genap, tanggal perkuliahan, batas input nilai), **Aktifkan** satu semester berjalan (semester lain otomatis nonaktif), **Kunci** semester selesai sebagai arsip. Semester aktif tidak bisa dikunci dan semester terkunci tidak bisa diaktifkan.
 - **Kalender akademik** (`/academic-calendar`, semua peran): masa KRS, perkuliahan, UTS, UAS, batas input nilai, cuti akademik, libur, dan agenda lain per semester, lengkap dengan kartu "Sedang berlangsung" dan "Segera datang". Admin dan Wakil dekan akademik menambah, mengubah, dan menghapus agenda. **Perkuliahan** dan **batas input nilai** diambil dari data semester sehingga tidak ganda; batas input nilai inilah yang menutup input dosen (menu Nilai).
-- Kode: `AcademicCalendar::isOpen()` menyediakan cek "apakah masa KRS sedang dibuka" untuk fitur KRS nanti.
+
+### KRS (Kartu Rencana Studi)
+
+Alur: mahasiswa memilih mata kuliah, mengajukan ke dosen wali, dosen wali menyetujui atau menolak. KRS hanya bisa diisi **selama masa KRS di Kalender akademik**; di luar masa itu halaman hanya menampilkan status.
+
+- **Mahasiswa** (`/enrollment`, menu KRS): daftar mata kuliah prodi yang dibuka semester aktif, dengan paket kelas sendiri sudah tercentang. Tersedia penghitung SKS dan peringatan jadwal bentrok. **Simpan draf** kapan saja, lalu **Ajukan ke dosen wali**. Pengajuan bisa ditarik selama belum diputuskan. Bila ditolak, alasannya tampil dan KRS bisa diubah lagi.
+- **Batas SKS** mengikuti IPS semester sebelumnya: IPS 3,00 ke atas 24 SKS, 2,50–2,99 21 SKS, 2,00–2,49 18 SKS, di bawah 2,00 15 SKS; mahasiswa tanpa riwayat 20 SKS. Mata kuliah yang sudah lulus (di atas huruf remedial) tidak ditawarkan lagi, sedangkan yang bernilai D atau E bisa diulang. Satu mata kuliah hanya boleh di satu kelas.
+- **Persetujuan** (`/enrollment/approvals`, menu Persetujuan KRS): dosen wali melihat mahasiswa perwaliannya; admin, Kaprodi, dan wakil dekan akademik melihat semuanya. Filter semester dan status, lihat daftar mata kuliah, **Setujui** atau **Tolak** (alasan wajib). Keputusan tercatat di log audit.
+- **Dampak ke nilai:** mahasiswa ber-KRS disetujui otomatis masuk daftar peserta di Input nilai dosen, termasuk bila kelasnya berbeda (mengulang atau mengambil kuliah kelas lain). Karena itu fitur tambah mahasiswa mengulang lewat NIM tidak lagi wajib.
+- Kode: `EnrollmentService`, `AcademicCalendar::isOpen()`.
 
 ### Nilai, KHS, dan transkrip
 
@@ -317,12 +326,11 @@ Hal-hal berikut **belum ada** atau perlu keputusan lanjutan:
 
 - **Ganti kata sandi dari profil dan reset oleh admin.** Lupa kata sandi lewat email sudah tersedia (`/forgot-password`); email dikirim lewat `MAIL_MAILER` (bawaan `log`, isi surat ada di `storage/logs`). Atur SMTP di `.env` untuk produksi.
 - Layar pengaturan kampus dan aktivasi semester (saat ini lewat data atau tinker).
-- KRS online dan persetujuan dosen wali; kuota kelas paralel.
+- Kuota kelas paralel pada KRS, jadwal dan presensi mahasiswa yang mengambil kuliah di kelas lain (jadwal dan presensi masih mengikuti kelas angkatan), serta cetak KRS PDF.
 - Presensi saat offline, notifikasi WhatsApp otomatis ke orang tua, dan presensi gerbang.
 - Impor Excel (baru CSV), ekspor format Dapodik atau Neo Feeder PDDikti.
 - Foto profil.
 - Notifikasi saat nilai dirilis atau revisi diputuskan, dan impor nilai massal dari Excel.
-- Mahasiswa mengulang masih ditambahkan dosen secara manual lewat NIM (belum ada KRS).
 - Pemisahan schema PostgreSQL (`core`, `academic`, `attend`) sesuai PRD.
 
 Fitur yang sengaja **tidak ada**: absen mandiri oleh mahasiswa (termasuk pindai QR). Presensi sepenuhnya dicatat oleh dosen.

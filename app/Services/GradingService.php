@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Enums\EnrollmentStatus;
 use App\Enums\GradeKind;
 use App\Enums\GradeRevisionStatus;
 use App\Enums\Role;
 use App\Models\AttendanceRecord;
+use App\Models\Enrollment;
 use App\Models\Grade;
 use App\Models\GradeRevision;
 use App\Models\Student;
@@ -75,7 +77,7 @@ class GradingService
     }
 
     /**
-     * Mahasiswa yang dinilai: anggota kelas pada semester itu ditambah mahasiswa yang mengulang dan sudah punya baris nilai.
+     * Mahasiswa yang dinilai: anggota kelas pada semester itu, peserta dengan KRS disetujui dari kelas lain, dan mahasiswa yang mengulang dan sudah punya baris nilai.
      *
      * @return Collection<int, Student>
      */
@@ -91,7 +93,12 @@ class GradingService
 
         $extraIds = $assignment->grades()->where('kind', GradeKind::Regular)->pluck('student_id');
 
-        return Student::query()->whereIn('id', $memberIds->merge($extraIds)->unique())->orderBy('name')->get();
+        $enrolledIds = Enrollment::query()
+            ->where('status', EnrollmentStatus::Approved)
+            ->whereHas('items', fn ($query) => $query->where('teaching_assignment_id', $assignment->id))
+            ->pluck('student_id');
+
+        return Student::query()->whereIn('id', $memberIds->merge($extraIds)->merge($enrolledIds)->unique())->orderBy('name')->get();
     }
 
     /**

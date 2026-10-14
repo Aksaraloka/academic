@@ -14,6 +14,7 @@ use App\Livewire\Auth\Login;
 use App\Livewire\Auth\ResetPassword;
 use App\Livewire\Checkin;
 use App\Livewire\Dashboard;
+use App\Livewire\Enrollment;
 use App\Livewire\Feedback;
 use App\Livewire\Grades;
 use App\Livewire\Graduation;
@@ -51,6 +52,8 @@ Route::post('/logout', function () {
 Route::middleware('auth')->group(function () {
     Route::livewire('/home', News\Index::class)->name('dashboard');
     Route::livewire('/academic-calendar', Academic\Calendar::class)->name('academic.calendar');
+    Route::livewire('/enrollment', Enrollment\Plan::class)->name('enrollment.plan')->middleware('role:student');
+    Route::livewire('/enrollment/approvals', Enrollment\Approvals::class)->name('enrollment.approvals')->middleware('role:admin,principal,curriculum,teacher');
     Route::livewire('/summary', Dashboard::class)->name('summary');
 
     Route::livewire('/profile', Profile\Show::class)->name('profile.show');
