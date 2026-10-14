@@ -27,6 +27,11 @@ class AcademicTerm extends Model
         ];
     }
 
+    public function events(): HasMany
+    {
+        return $this->hasMany(AcademicEvent::class)->orderBy('starts_on');
+    }
+
     public function studyGroups(): HasMany
     {
         return $this->hasMany(StudyGroup::class);

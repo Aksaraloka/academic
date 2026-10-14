@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Grades;
 
-use App\Models\AcademicTerm;
 use App\Services\AuditLogger;
 use App\Support\GradeScale;
 use Illuminate\Validation\ValidationException;
@@ -21,9 +20,6 @@ class Settings extends Component
     /** @var array<int, string> */
     public array $remedialLetters = [];
 
-    /** @var array<int|string, string> term_id => tanggal batas input nilai */
-    public array $deadlines = [];
-
     public function mount(): void
     {
         $scale = GradeScale::for(auth()->user()->tenant);
@@ -31,10 +27,6 @@ class Settings extends Component
         $this->weights = array_map('strval', $scale->weights);
         $this->thresholds = array_map('strval', $scale->thresholds);
         $this->remedialLetters = $scale->remedialLetters;
-
-        foreach (AcademicTerm::query()->get() as $term) {
-            $this->deadlines[$term->id] = $term->grading_closes_on?->toDateString() ?? '';
-        }
     }
 
     public function save(AuditLogger $audit): void
@@ -50,7 +42,6 @@ class Settings extends Component
             'thresholds.D' => ['required', 'integer', 'between:1,100'],
             'remedialLetters' => ['array'],
             'remedialLetters.*' => ['in:C,D,E'],
-            'deadlines.*' => ['nullable', 'date'],
         ], [], [
             'weights.assignment' => 'bobot tugas', 'weights.midterm' => 'bobot UTS', 'weights.final' => 'bobot UAS', 'weights.attendance' => 'bobot kehadiran',
             'thresholds.A' => 'batas A', 'thresholds.B' => 'batas B', 'thresholds.C' => 'batas C', 'thresholds.D' => 'batas D',
@@ -75,10 +66,6 @@ class Settings extends Component
             'remedial_letters' => array_values($data['remedialLetters'] ?? []),
         ])]);
 
-        foreach ($data['deadlines'] ?? [] as $termId => $date) {
-            AcademicTerm::query()->whereKey($termId)->update(['grading_closes_on' => $date ?: null]);
-        }
-
         $audit->log('grades.settings_updated', $tenant, [], ['weights' => $data['weights'], 'scale' => $t]);
 
         $this->dispatch('toast', message: 'Pengaturan nilai disimpan. Berlaku untuk perhitungan berikutnya.', type: 'success');
@@ -87,7 +74,6 @@ class Settings extends Component
     public function render()
     {
         return view('livewire.grades.settings', [
-            'terms' => AcademicTerm::query()->orderByDesc('starts_at')->get(),
             'components' => GradeScale::COMPONENTS,
             'weightSum' => array_sum(array_map('intval', $this->weights)),
         ]);

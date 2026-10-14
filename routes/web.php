@@ -7,6 +7,7 @@ use App\Http\Controllers\NewsPosterController;
 use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\ScheduleExportController;
 use App\Http\Controllers\SurveyExportController;
+use App\Livewire\Academic;
 use App\Livewire\Attendance;
 use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
@@ -23,6 +24,7 @@ use App\Livewire\Profile;
 use App\Livewire\Programs;
 use App\Livewire\Reports;
 use App\Livewire\Schedule;
+use App\Livewire\Settings;
 use App\Livewire\Students;
 use App\Livewire\Survey;
 use App\Livewire\Teachers;
@@ -48,6 +50,7 @@ Route::post('/logout', function () {
 
 Route::middleware('auth')->group(function () {
     Route::livewire('/home', News\Index::class)->name('dashboard');
+    Route::livewire('/academic-calendar', Academic\Calendar::class)->name('academic.calendar');
     Route::livewire('/summary', Dashboard::class)->name('summary');
 
     Route::livewire('/profile', Profile\Show::class)->name('profile.show');
@@ -95,6 +98,8 @@ Route::middleware('auth')->group(function () {
         Route::livewire('/students/new', Students\Form::class)->name('students.create');
         Route::livewire('/students/import', Students\Import::class)->name('students.import');
         Route::livewire('/students/{student}/edit', Students\Form::class)->name('students.edit');
+        Route::livewire('/academic-terms', Academic\Terms::class)->name('academic.terms');
+        Route::livewire('/settings/campus', Settings\Campus::class)->name('settings.campus');
         Route::livewire('/teachers', Teachers\Index::class)->name('teachers.index');
         Route::livewire('/programs', Programs\Index::class)->name('programs.index');
     });

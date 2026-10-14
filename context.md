@@ -19,6 +19,7 @@ Stack: Laravel 13, Livewire 4 (komponen kelas), Alpine, Tailwind v4, GSAP lazy, 
 - **Penangani masukan/komplain dan pembaca hasil survey = admin dan Kaprodi/Pimpinan.** Wakil dekan akademik tidak termasuk.
 - **Survey anonim tidak menyimpan `user_id`**; pengisian ganda dicegah lewat hash HMAC. Pertanyaan dikunci setelah ada responden.
 - **Wisuda:** berita acara satu dokumen **per periode**, dibekukan (snapshot peserta) saat diterbitkan. SKS dan IPK diisi mahasiswa lalu diverifikasi admin (belum ada modul nilai).
+- **Kalender akademik:** tabel `academic_events` hanya menyimpan agenda KRS, UTS, UAS, cuti, libur, dan lainnya. Perkuliahan (`starts_at`–`ends_at`) dan batas input nilai (`grading_closes_on`) tetap di `academic_terms` dan ditampilkan sebagai agenda turunan oleh `AcademicCalendar`, supaya hanya ada satu sumber kebenaran. Batas input nilai diedit di halaman Semester akademik, bukan di Pengaturan nilai.
 - **Nilai:** komponen tugas, UTS, UAS, dan kehadiran (otomatis dari presensi) berbobot; huruf mutu A–E dengan angka mutu 4/3/2/1/0 dan batas di `Tenant::DEFAULT_SETTINGS`. Nilai baru tampil ke mahasiswa setelah dosen **mengunci** kelas. Setelah dikunci, perubahan hanya lewat revisi yang **disetujui Kaprodi (`principal`)**, bukan admin. Batas waktu input ada di `academic_terms.grading_closes_on` (+ perpanjangan per kelas oleh admin).
 - **Nilai terbaik:** `AcademicRecord::best()` memilih angka mutu tertinggi (lalu nilai angka, lalu semester terbaru) untuk mata kuliah yang diremedial atau diulang. KHS, IPS, IPK, transkrip, dan syarat wisuda **hanya menghitung nilai terkunci**. Remedial adalah baris `grades` ber-`kind = remedial`.
 - **Nilai awal:** `students.legacy_credits` dan `legacy_quality_points` menampung riwayat sebelum sistem dipakai (mahasiswa pindahan atau migrasi) dan ikut IPK dan SKS lulus.
@@ -57,4 +58,4 @@ Stack: Laravel 13, Livewire 4 (komponen kelas), Alpine, Tailwind v4, GSAP lazy, 
 
 ## Yang belum ada
 
-Layar pengaturan kampus dan aktivasi semester; **ganti kata sandi dari profil** dan reset oleh admin; KRS dan kelas paralel; presensi offline; notifikasi WhatsApp otomatis; impor Excel dan ekspor Dapodik/PDDikti; foto profil; pemisahan schema PostgreSQL.
+**ganti kata sandi dari profil** dan reset oleh admin; KRS dan kelas paralel; presensi offline; notifikasi WhatsApp otomatis; impor Excel dan ekspor Dapodik/PDDikti; foto profil; pemisahan schema PostgreSQL.

@@ -159,6 +159,13 @@ Status kehadiran di kampus: **Hadir, Izin, Sakit, Alpa**.
 
 Status dihitung dari proyeksi: target 16 pertemuan per semester dan syarat kehadiran 75% berarti mahasiswa boleh tidak hadir 4 kali. Izin dan sakit dihitung tidak hadir.
 
+### Pengaturan kampus, semester, dan kalender akademik
+
+- **Pengaturan kampus** (`/settings/campus`, admin, menu Pengaturan): nama kampus, WhatsApp helpdesk, mode presensi, minimal kehadiran, batas alpa, jumlah pertemuan, jam dan lokasi check-in dosen, serta syarat wisuda (SKS dan IPK minimal). Perubahan tercatat di log audit.
+- **Semester akademik** (`/academic-terms`, admin): tambah semester (tahun ajaran `2026/2027`, Ganjil atau Genap, tanggal perkuliahan, batas input nilai), **Aktifkan** satu semester berjalan (semester lain otomatis nonaktif), **Kunci** semester selesai sebagai arsip. Semester aktif tidak bisa dikunci dan semester terkunci tidak bisa diaktifkan.
+- **Kalender akademik** (`/academic-calendar`, semua peran): masa KRS, perkuliahan, UTS, UAS, batas input nilai, cuti akademik, libur, dan agenda lain per semester, lengkap dengan kartu "Sedang berlangsung" dan "Segera datang". Admin dan Wakil dekan akademik menambah, mengubah, dan menghapus agenda. **Perkuliahan** dan **batas input nilai** diambil dari data semester sehingga tidak ganda; batas input nilai inilah yang menutup input dosen (menu Nilai).
+- Kode: `AcademicCalendar::isOpen()` menyediakan cek "apakah masa KRS sedang dibuka" untuk fitur KRS nanti.
+
 ### Nilai, KHS, dan transkrip
 
 Menu **Nilai** adalah grup menu dengan isi berbeda per peran:
@@ -189,7 +196,7 @@ Menu **Nilai** adalah grup menu dengan isi berbeda per peran:
 - **Transkrip** seluruh semester dengan hasil terbaik tiap mata kuliah, **IPK**, dan **SKS lulus** (nilai D ke atas). Nilai awal (riwayat sebelum sistem dipakai) ikut dihitung.
 - Keduanya bisa diunduh sebagai **PDF**. Orang tua dengan lebih dari satu anak memilih anak dari kolom pilihan.
 
-**Admin / pimpinan** memantau di **Kelengkapan nilai** (kelas terkunci, draf, belum dimulai, dan terlambat) dan mengatur di **Pengaturan nilai**: bobot bawaan, batas huruf A–D, huruf yang berhak remedial, dan batas waktu input per semester. Transkrip mahasiswa tertentu dibuka lewat tombol **Transkrip** di daftar Mahasiswa. Nilai awal untuk mahasiswa pindahan diisi di formulir mahasiswa (SKS dan total mutu).
+**Admin / pimpinan** memantau di **Kelengkapan nilai** (kelas terkunci, draf, belum dimulai, dan terlambat) dan mengatur di **Pengaturan nilai**: bobot bawaan, batas huruf A–D, dan huruf yang berhak remedial (batas waktu input ada di Semester akademik). Transkrip mahasiswa tertentu dibuka lewat tombol **Transkrip** di daftar Mahasiswa. Nilai awal untuk mahasiswa pindahan diisi di formulir mahasiswa (SKS dan total mutu).
 
 ### Check-in dosen
 

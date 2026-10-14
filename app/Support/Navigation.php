@@ -75,6 +75,20 @@ class Navigation
             $items[] = ['label' => 'Nilai', 'icon' => 'check-badge', 'match' => 'grades.*', 'children' => $grades];
         }
 
+        $items[] = self::item('Kalender akademik', 'academic.calendar', 'calendar-days', 'academic.calendar');
+
+        if ($user->role === Role::Admin) {
+            $items[] = [
+                'label' => 'Pengaturan',
+                'icon' => 'cog-6-tooth',
+                'match' => 'settings.*',
+                'children' => [
+                    self::item('Pengaturan kampus', 'settings.campus', 'building-office', 'settings.campus'),
+                    self::item('Semester akademik', 'academic.terms', 'calendar-days', 'academic.terms'),
+                ],
+            ];
+        }
+
         $items[] = [
             'label' => 'Survey',
             'icon' => 'chart-pie',

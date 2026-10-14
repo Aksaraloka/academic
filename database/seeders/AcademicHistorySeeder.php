@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Enums\AcademicEventType;
+use App\Models\AcademicEvent;
 use App\Models\AcademicTerm;
 use App\Models\Grade;
 use App\Models\Program;
@@ -160,6 +162,37 @@ class AcademicHistorySeeder extends Seeder
                     }
                 }
             }
+        }
+
+        foreach ($terms as $term) {
+            $this->calendarFor($tenant, $term);
+        }
+    }
+
+    /**
+     * Kalender akademik contoh untuk satu semester: masa KRS, UTS, UAS, pengajuan cuti, dan libur akhir tahun.
+     */
+    private function calendarFor(Tenant $tenant, AcademicTerm $term): void
+    {
+        $start = $term->starts_at->copy();
+        $end = $term->ends_at->copy();
+
+        $agenda = [
+            [AcademicEventType::Enrollment, 'Pengisian KRS', $start->copy()->subDays(14), $start->copy()->addDays(7)],
+            [AcademicEventType::Midterm, 'Ujian Tengah Semester', $start->copy()->addDays(56), $start->copy()->addDays(63)],
+            [AcademicEventType::Final, 'Ujian Akhir Semester', $end->copy()->addDays(3), $end->copy()->addDays(10)],
+            [AcademicEventType::Leave, 'Pengajuan cuti akademik', $start->copy()->subDays(7), $start->copy()->addDays(14)],
+        ];
+
+        if ($term->semester === 'Ganjil') {
+            $agenda[] = [AcademicEventType::Holiday, 'Libur Natal dan Tahun Baru', $end->copy()->setDate($end->year - 1, 12, 24), $end->copy()->setDate($end->year, 1, 1)];
+        }
+
+        foreach ($agenda as [$type, $title, $from, $to]) {
+            AcademicEvent::create([
+                'tenant_id' => $tenant->id, 'academic_term_id' => $term->id, 'type' => $type, 'title' => $title,
+                'starts_on' => $from, 'ends_on' => $to,
+            ]);
         }
     }
 

@@ -1,6 +1,6 @@
 @php $letters = ['A' => 'A (angka mutu 4)', 'B' => 'B (angka mutu 3)', 'C' => 'C (angka mutu 2)', 'D' => 'D (angka mutu 1)']; @endphp
 <div class="mx-auto max-w-4xl space-y-6">
-    <x-page-header title="Pengaturan nilai" subtitle="Bobot bawaan, skala huruf mutu, remedial, dan batas waktu input nilai per semester.">
+    <x-page-header title="Pengaturan nilai" subtitle="Bobot bawaan, skala huruf mutu, dan remedial.">
         <x-slot:actions>
             <x-button :href="route('grades.completeness')" wire:navigate variant="secondary" icon="arrow-left">Kelengkapan nilai</x-button>
         </x-slot:actions>
@@ -46,14 +46,7 @@
         </x-card>
 
         <x-card title="Batas waktu input nilai">
-            <p class="mb-3 text-sm text-text-muted">Setelah tanggal ini dosen tidak bisa lagi mengisi atau mengunci nilai, kecuali BAAK memperpanjangnya per kelas. Kosongkan bila tanpa batas.</p>
-            <div class="grid gap-3 sm:grid-cols-2">
-                @foreach ($terms as $term)
-                    <x-field :label="$term->name.' · '.$term->semester.($term->is_active ? ' (aktif)' : '')" name="deadlines.{{ $term->id }}" wire:key="dl-{{ $term->id }}">
-                        <input id="deadlines.{{ $term->id }}" type="date" wire:model="deadlines.{{ $term->id }}" class="input">
-                    </x-field>
-                @endforeach
-            </div>
+            <p class="text-sm text-text-muted">Batas input nilai diatur per semester di <a href="{{ route('academic.terms') }}" wire:navigate class="font-medium text-primary hover:underline">Semester akademik</a> dan tampil di Kalender akademik. BAAK bisa memperpanjangnya per kelas dari menu Kelengkapan nilai.</p>
         </x-card>
 
         <x-button type="submit" wire:loading.attr="disabled" wire:target="save">Simpan pengaturan</x-button>
