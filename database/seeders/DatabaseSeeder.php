@@ -529,6 +529,7 @@ SVG;
 
         // Mahasiswa angkatan 2022–2026 di berbagai semester beserta riwayat nilainya.
         (new AcademicHistorySeeder)->seed($tenant, $teachers);
+        (new ThesisYudisiumSeeder)->seed($tenant, $adminUser);
         (new FinanceSeeder)->seed($tenant, $financeUser, app(FinanceService::class));
         (new ExamEvaluationSeeder)->seed($tenant, $adminUser);
 

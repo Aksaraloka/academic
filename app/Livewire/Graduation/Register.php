@@ -3,8 +3,10 @@
 namespace App\Livewire\Graduation;
 
 use App\Enums\GraduationStatus;
+use App\Enums\ThesisStatus;
 use App\Models\GraduationPeriod;
 use App\Models\GraduationRegistration;
+use App\Models\Thesis;
 use App\Services\GraduationService;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -27,6 +29,15 @@ class Register extends Component
         $this->period = $period;
 
         $existing = $this->existing();
+
+        if (! $existing) {
+            $thesis = Thesis::query()->with('latestDefense')->where('student_id', auth()->user()->student->id)->where('status', ThesisStatus::Completed)->latest('id')->first();
+
+            if ($thesis) {
+                $this->thesis_title = $thesis->title;
+                $this->defense_date = ($thesis->latestDefense?->scheduled_on ?? $thesis->completed_at)->toDateString();
+            }
+        }
 
         if ($existing) {
             $this->fill([

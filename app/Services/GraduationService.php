@@ -4,10 +4,12 @@ namespace App\Services;
 
 use App\Enums\GraduationStatus;
 use App\Enums\StudentStatus;
+use App\Enums\ThesisStatus;
 use App\Models\GraduationMinute;
 use App\Models\GraduationPeriod;
 use App\Models\GraduationRegistration;
 use App\Models\Student;
+use App\Models\Thesis;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -17,6 +19,7 @@ class GraduationService
     public function __construct(
         private readonly AuditLogger $audit,
         private readonly AcademicRecord $records,
+        private readonly YudisiumService $yudisium,
     ) {}
 
     /**
@@ -54,8 +57,20 @@ class GraduationService
             throw ValidationException::withMessages(['period' => 'Pendaftaran untuk periode ini sedang tidak dibuka.']);
         }
 
-        if ($student->status !== StudentStatus::Active) {
-            throw ValidationException::withMessages(['period' => 'Hanya mahasiswa berstatus aktif yang bisa mendaftar wisuda.']);
+        if (! in_array($student->status, [StudentStatus::Active, StudentStatus::Graduated], true)) {
+            throw ValidationException::withMessages(['period' => 'Hanya mahasiswa aktif atau yang sudah lulus yudisium yang bisa mendaftar wisuda.']);
+        }
+
+        if ($this->yudisium->decisionFor($student) === null) {
+            throw ValidationException::withMessages(['eligibility' => 'Kamu belum dinyatakan lulus yudisium. Pendaftaran wisuda dibuka setelah penetapan kelulusan.']);
+        }
+
+        // Judul dan tanggal sidang diambil dari tugas akhir yang lulus sidang bila ada.
+        $thesis = Thesis::query()->with('latestDefense')->where('student_id', $student->id)->where('status', ThesisStatus::Completed)->latest('id')->first();
+
+        if ($thesis) {
+            $data['thesis_title'] = $thesis->title;
+            $data['defense_date'] = ($thesis->latestDefense?->scheduled_on ?? $thesis->completed_at)->toDateString();
         }
 
         $existing = GraduationRegistration::query()

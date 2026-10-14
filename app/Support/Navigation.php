@@ -84,6 +84,15 @@ class Navigation
             $items[] = self::item('Keuangan', 'finance.index', 'banknotes', 'finance.*');
         }
 
+        if ($thesisChildren = self::thesisChildren($user)) {
+            $items[] = [
+                'label' => 'Tugas Akhir & Kelulusan',
+                'icon' => 'academic-cap',
+                'match' => ['thesis.*', 'yudisium.*'],
+                'children' => $thesisChildren,
+            ];
+        }
+
         if ($examChildren = self::examChildren($user)) {
             $items[] = [
                 'label' => 'Ujian & Evaluasi',
@@ -125,6 +134,27 @@ class Navigation
         $items[] = self::item('Masukan', 'feedback.index', 'chat-bubble-left-right', 'feedback.*');
 
         return $items;
+    }
+
+    /**
+     * Submenu Tugas Akhir & Kelulusan: skripsi, bimbingan, sidang, dan yudisium menurut peran.
+     *
+     * @return array<int, array{label: string, route: string, icon: string, match: string}>
+     */
+    private static function thesisChildren(User $user): array
+    {
+        return match ($user->role) {
+            Role::Student => [
+                self::item('Tugas akhir', 'thesis.mine', 'document-text'),
+                self::item('Status kelulusan', 'yudisium.mine', 'check-badge'),
+            ],
+            Role::Teacher => [self::item('Bimbingan tugas akhir', 'thesis.index', 'document-text', 'thesis.*')],
+            Role::Admin, Role::Principal, Role::Curriculum => [
+                self::item('Tugas akhir', 'thesis.index', 'document-text', 'thesis.*'),
+                self::item('Yudisium', 'yudisium.index', 'check-badge', 'yudisium.*'),
+            ],
+            default => [],
+        };
     }
 
     /**

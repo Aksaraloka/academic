@@ -64,6 +64,7 @@ Setelah `--seed`, semua akun memakai kata sandi **`password`**.
 | Dosen                | `dosen@aksaraloka.test`, `dosen2@aksaraloka.test`          |
 | Petugas presensi     | `petugas@aksaraloka.test`                                  |
 | Petugas keuangan     | `keuangan@aksaraloka.test`                                 |
+| Mahasiswa tingkat akhir (skripsi) | `skripsi@aksaraloka.test`                     |
 | Mahasiswa            | `mahasiswa@aksaraloka.test` (juga `mhs1@` sampai `mhs12@`) |
 | Orang tua            | `ortu@aksaraloka.test`                                     |
 
@@ -188,6 +189,24 @@ Alur: mahasiswa memilih mata kuliah, mengajukan ke dosen wali, dosen wali menyet
 
 - **Dosen wali** (`/advising`, menu Perwalian): daftar mahasiswa perwalian semester aktif, status KRS masing-masing, dan riwayat bimbingan. Dosen wali menambah dan mengubah **catatan bimbingan** (tanggal, topik, catatan, tindak lanjut). Admin, Kaprodi, dan wakil dekan bisa melihat seluruhnya tetapi tidak menambah catatan. Dari halaman Persetujuan KRS ada pintasan Bimbingan per mahasiswa.
 - **Mahasiswa** (`/my-advising`): melihat nama dosen wali dan riwayat catatan bimbingannya.
+
+### Tugas akhir
+
+Alur: mahasiswa mengajukan judul, program studi menyetujui sekaligus menetapkan pembimbing, mahasiswa mencatat bimbingan, pembimbing menyetujui maju sidang, program studi menjadwalkan sidang dan mencatat hasilnya.
+
+- **Mahasiswa** (`/my-thesis`, menu Tugas Akhir & Kelulusan): **ajukan judul** (SKS lulus minimal 100 secara bawaan), lalu setelah disetujui **catat bimbingan** (tanggal, pembimbing, topik, ringkasan, tindak lanjut). Papan *Persiapan sidang* menampilkan log terverifikasi (minimal 8), SKS minimal 120, dan persetujuan pembimbing utama; tombol **Ajukan sidang** aktif bila semuanya terpenuhi. Jadwal dan hasil sidang tampil di halaman yang sama.
+- **Program studi** (`/thesis`; Kaprodi, wakil dekan akademik, admin): daftar tugas akhir dengan filter status. Di detail: **setujui judul** sekaligus pilih pembimbing utama dan pendamping (atau **tolak** dengan alasan), ubah pembimbing, **jadwalkan sidang** (tanggal, jam, ruang, ketua, penguji), dan **catat hasil** (lulus, lulus dengan revisi, atau tidak lulus beserta nilai). Pembimbing utama tidak boleh menjadi ketua atau penguji sidangnya sendiri, dan jadwal ditolak bila penguji atau ruang bentrok.
+- **Dosen:** melihat mahasiswa yang dibimbing atau diuji, **memverifikasi** log bimbingan (atau meminta perbaikan dengan catatan), dan pembimbing utama menekan **Setujui maju sidang** setelah log cukup. Pembimbing utama juga bisa mencatat hasil sidang.
+- **Hasil sidang:** lulus (termasuk dengan revisi) menyelesaikan tugas akhir dan mengisi nilai akhir; tidak lulus mengembalikannya ke bimbingan dan persetujuan sidang harus diminta lagi.
+- Batas SKS, jumlah log, dan opsi *tugas akhir wajib lulus* diatur di Pengaturan kampus. Kode: `ThesisService`.
+
+### Yudisium dan kelulusan
+
+- **Syarat lulus dicek otomatis** (`YudisiumService::evaluate`) dari transkrip: status aktif, **SKS lulus** minimal (bawaan 144), **IPK** minimal (2,00), **tidak ada nilai E**, **nilai D maksimal 25%** dari SKS lulus, tugas akhir lulus sidang, dan tidak ada tunggakan pembayaran lewat jatuh tempo. Batas-batas ini bisa diubah di Pengaturan kampus.
+- **Predikat:** *Dengan Pujian* (IPK minimal 3,51, tanpa nilai D, masa studi paling lama 4,5 tahun), *Sangat Memuaskan* (IPK minimal 2,76), atau *Memuaskan*.
+- **Staf** (`/yudisium`; Kaprodi, wakil dekan, admin): buat yudisium (nama, tanggal, nomor SK), lihat calon (mahasiswa aktif yang tugas akhirnya lulus sidang) lengkap dengan rincian tiap syarat, **Pilih semua yang memenuhi syarat**, lalu **Tetapkan kelulusan**. Mahasiswa yang diluluskan berstatus **Lulus** dengan tanggal dan predikat tercatat. Rekap yudisium dan **Surat Keterangan Lulus** per mahasiswa tersedia sebagai PDF.
+- **Mahasiswa** (`/my-graduation`, Status kelulusan): daftar syarat beserta nilainya sekarang, perkiraan predikat, dan setelah ditetapkan, unduhan Surat Keterangan Lulus.
+- **Wisuda sekarang mengikuti yudisium:** pendaftaran wisuda hanya bisa oleh mahasiswa yang sudah dinyatakan lulus yudisium. SKS, IPK, **judul skripsi, dan tanggal sidang diambil otomatis** dari transkrip dan tugas akhir (tidak diisi manual).
 
 ### Ujian dan kartu ujian
 

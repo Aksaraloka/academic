@@ -14,6 +14,7 @@ use App\Models\AdvisingNote;
 use App\Models\Curriculum;
 use App\Models\Enrollment;
 use App\Models\Grade;
+use App\Models\GraduationRegistration;
 use App\Models\Program;
 use App\Models\StatusRequest;
 use App\Models\Student;
@@ -264,7 +265,9 @@ class AcademicHistorySeeder extends Seeder
     {
         $actor = $teachers[2]->user_id;
         $pick = fn (int $batch, int $take) => Student::query()->withoutGlobalScopes()
-            ->where('tenant_id', $tenant->id)->where('batch_year', $batch)->where('status', 'aktif')->inRandomOrder()->limit($take)->get();
+            ->where('tenant_id', $tenant->id)->where('batch_year', $batch)->where('status', 'aktif')
+            ->whereNotIn('id', GraduationRegistration::query()->withoutGlobalScopes()->select('student_id'))
+            ->inRandomOrder()->limit($take)->get();
 
         $set = function (Student $student, StudentStatus $status, string $reason) use ($tenant, $term, $actor): void {
             $student->update(['status' => $status]);

@@ -4,10 +4,12 @@ namespace App\Livewire\Graduation;
 
 use App\Enums\GraduationStatus;
 use App\Enums\Role;
-use App\Enums\StudentStatus;
+use App\Enums\ThesisStatus;
 use App\Models\GraduationPeriod;
 use App\Models\GraduationRegistration;
+use App\Models\Thesis;
 use App\Services\GraduationService;
+use App\Services\YudisiumService;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -55,11 +57,10 @@ class Overview extends Component
                 'student' => $student,
                 'registration' => $registration,
                 'requirements' => [
-                    ['label' => 'Berstatus mahasiswa aktif', 'met' => $student?->status === StudentStatus::Active],
-                    ['label' => 'Terdaftar pada program studi', 'met' => $student?->program_id !== null],
+                    ['label' => 'Dinyatakan lulus yudisium', 'met' => $student ? app(YudisiumService::class)->decisionFor($student) !== null : false],
+                    ['label' => 'Tugas akhir lulus sidang', 'met' => $student ? Thesis::query()->where('student_id', $student->id)->where('status', ThesisStatus::Completed)->exists() : false],
                     ['label' => 'SKS lulus minimal '.$eligibility['min_credits'].' (kamu: '.$eligibility['credits'].')', 'met' => $eligibility['meets_credits']],
                     ['label' => 'IPK minimal '.number_format($eligibility['min_gpa'], 2, ',', '.').' (kamu: '.($eligibility['gpa'] === null ? '–' : number_format($eligibility['gpa'], 2, ',', '.')).')', 'met' => $eligibility['meets_gpa']],
-                    ['label' => 'Sudah menyelesaikan sidang akhir', 'met' => null],
                 ],
             ];
 

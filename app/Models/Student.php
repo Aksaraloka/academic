@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['tenant_id', 'user_id', 'program_id', 'name', 'nim', 'batch_year', 'birth_date', 'birth_place', 'gender', 'religion', 'nik', 'nationality', 'address', 'city', 'province', 'postal_code', 'phone', 'photo_path', 'status', 'entry_date', 'previous_school', 'admission_path', 'ukt_group', 'is_domicile_same', 'residence_type', 'domicile_address', 'domicile_city', 'domicile_province', 'domicile_postal_code', 'legacy_credits', 'legacy_quality_points'])]
+#[Fillable(['tenant_id', 'user_id', 'program_id', 'name', 'nim', 'batch_year', 'birth_date', 'birth_place', 'gender', 'religion', 'nik', 'nationality', 'address', 'city', 'province', 'postal_code', 'phone', 'photo_path', 'status', 'entry_date', 'graduated_on', 'graduation_predicate', 'previous_school', 'admission_path', 'ukt_group', 'is_domicile_same', 'residence_type', 'domicile_address', 'domicile_city', 'domicile_province', 'domicile_postal_code', 'legacy_credits', 'legacy_quality_points'])]
 class Student extends Model
 {
     use BelongsToTenant, HasFactory;
@@ -42,6 +42,7 @@ class Student extends Model
             'legacy_credits' => 'integer',
             'legacy_quality_points' => 'decimal:2',
             'entry_date' => 'date',
+            'graduated_on' => 'date',
             'status' => StudentStatus::class,
         ];
     }
@@ -106,6 +107,16 @@ class Student extends Model
     public function advisingNotes(): HasMany
     {
         return $this->hasMany(AdvisingNote::class);
+    }
+
+    public function theses(): HasMany
+    {
+        return $this->hasMany(Thesis::class);
+    }
+
+    public function graduationDecisions(): HasMany
+    {
+        return $this->hasMany(GraduationDecision::class);
     }
 
     public function invoices(): HasMany

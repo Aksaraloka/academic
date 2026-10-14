@@ -61,6 +61,19 @@
             </div>
         </x-card>
 
+        <x-card title="Tugas akhir dan predikat kelulusan">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <x-field label="SKS minimal mengajukan judul" name="thesis_min_credits_propose" required><input id="thesis_min_credits_propose" type="number" min="0" wire:model="thesis_min_credits_propose" class="input text-right tabular-nums" inputmode="numeric"></x-field>
+                <x-field label="SKS minimal maju sidang" name="thesis_min_credits_defense" required><input id="thesis_min_credits_defense" type="number" min="0" wire:model="thesis_min_credits_defense" class="input text-right tabular-nums" inputmode="numeric"></x-field>
+                <x-field label="Log bimbingan minimal" name="thesis_min_guidance" hint="Yang sudah diverifikasi pembimbing." required><input id="thesis_min_guidance" type="number" min="0" wire:model="thesis_min_guidance" class="input text-right tabular-nums" inputmode="numeric"></x-field>
+                <x-field label="Batas SKS bernilai D (%)" name="graduation_max_d_percent" hint="Dari total SKS lulus." required><input id="graduation_max_d_percent" type="text" wire:model="graduation_max_d_percent" class="input text-right tabular-nums" inputmode="decimal"></x-field>
+                <x-field label="IPK Sangat Memuaskan" name="predicate_very_satisfactory_gpa" hint="Di bawahnya Memuaskan." required><input id="predicate_very_satisfactory_gpa" type="text" wire:model="predicate_very_satisfactory_gpa" class="input text-right tabular-nums" inputmode="decimal"></x-field>
+                <x-field label="IPK Dengan Pujian" name="predicate_cum_laude_gpa" hint="Tanpa nilai D dan masa studi dalam batas." required><input id="predicate_cum_laude_gpa" type="text" wire:model="predicate_cum_laude_gpa" class="input text-right tabular-nums" inputmode="decimal"></x-field>
+                <x-field label="Masa studi maksimal Dengan Pujian (tahun)" name="predicate_cum_laude_max_years" required><input id="predicate_cum_laude_max_years" type="text" wire:model="predicate_cum_laude_max_years" class="input text-right tabular-nums" inputmode="decimal"></x-field>
+                <label class="flex min-h-11 items-center gap-2 text-sm sm:col-span-2 lg:col-span-3"><input type="checkbox" wire:model="thesis_required_for_graduation" class="size-5 accent-primary"> Tugas akhir wajib lulus sidang untuk dinyatakan lulus yudisium</label>
+            </div>
+        </x-card>
+
         <x-card title="Keuangan (Aksaraloka Pay)">
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="flex min-h-11 items-center gap-2 text-sm sm:col-span-2">

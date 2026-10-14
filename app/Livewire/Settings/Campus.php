@@ -37,6 +37,22 @@ class Campus extends Component
 
     public bool $krs_requires_payment = true;
 
+    public string $thesis_min_credits_propose = '';
+
+    public string $thesis_min_credits_defense = '';
+
+    public string $thesis_min_guidance = '';
+
+    public bool $thesis_required_for_graduation = true;
+
+    public string $graduation_max_d_percent = '';
+
+    public string $predicate_very_satisfactory_gpa = '';
+
+    public string $predicate_cum_laude_gpa = '';
+
+    public string $predicate_cum_laude_max_years = '';
+
     public string $va_prefix = '';
 
     public string $payment_bank_name = '';
@@ -52,6 +68,11 @@ class Campus extends Component
         $this->name = $tenant->name;
         $this->helpdesk_whatsapp = (string) $tenant->setting('helpdesk_whatsapp');
         $this->krs_requires_payment = (bool) $tenant->setting('krs_requires_payment');
+        $this->thesis_required_for_graduation = (bool) $tenant->setting('thesis_required_for_graduation');
+
+        foreach (['thesis_min_credits_propose', 'thesis_min_credits_defense', 'thesis_min_guidance', 'graduation_max_d_percent', 'predicate_very_satisfactory_gpa', 'predicate_cum_laude_gpa', 'predicate_cum_laude_max_years'] as $key) {
+            $this->{$key} = (string) $tenant->setting($key);
+        }
 
         foreach (['va_prefix', 'payment_bank_name', 'payment_account_number', 'payment_account_name'] as $key) {
             $this->{$key} = (string) $tenant->setting($key);
@@ -79,6 +100,14 @@ class Campus extends Component
             'graduation_min_credits' => ['required', 'integer', 'between:1,400'],
             'graduation_min_gpa' => ['required', 'numeric', 'between:0,4'],
             'krs_requires_payment' => ['boolean'],
+            'thesis_min_credits_propose' => ['required', 'integer', 'between:0,300'],
+            'thesis_min_credits_defense' => ['required', 'integer', 'between:0,300'],
+            'thesis_min_guidance' => ['required', 'integer', 'between:0,40'],
+            'thesis_required_for_graduation' => ['boolean'],
+            'graduation_max_d_percent' => ['required', 'numeric', 'between:0,100'],
+            'predicate_very_satisfactory_gpa' => ['required', 'numeric', 'between:0,4'],
+            'predicate_cum_laude_gpa' => ['required', 'numeric', 'between:0,4', 'gte:predicate_very_satisfactory_gpa'],
+            'predicate_cum_laude_max_years' => ['required', 'numeric', 'between:1,15'],
             'va_prefix' => ['nullable', 'digits_between:2,8'],
             'payment_bank_name' => ['nullable', 'string', 'max:60'],
             'payment_account_number' => ['nullable', 'string', 'max:40'],
@@ -107,6 +136,14 @@ class Campus extends Component
             'graduation_min_credits' => (int) $data['graduation_min_credits'],
             'graduation_min_gpa' => (float) $data['graduation_min_gpa'],
             'krs_requires_payment' => (bool) $data['krs_requires_payment'],
+            'thesis_min_credits_propose' => (int) $data['thesis_min_credits_propose'],
+            'thesis_min_credits_defense' => (int) $data['thesis_min_credits_defense'],
+            'thesis_min_guidance' => (int) $data['thesis_min_guidance'],
+            'thesis_required_for_graduation' => (bool) $data['thesis_required_for_graduation'],
+            'graduation_max_d_percent' => (float) $data['graduation_max_d_percent'],
+            'predicate_very_satisfactory_gpa' => (float) $data['predicate_very_satisfactory_gpa'],
+            'predicate_cum_laude_gpa' => (float) $data['predicate_cum_laude_gpa'],
+            'predicate_cum_laude_max_years' => (float) $data['predicate_cum_laude_max_years'],
             'va_prefix' => $data['va_prefix'] ?: '8808',
             'payment_bank_name' => $data['payment_bank_name'] ?: null,
             'payment_account_number' => $data['payment_account_number'] ?: null,
