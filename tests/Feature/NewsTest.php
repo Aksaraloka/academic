@@ -187,3 +187,15 @@ it('no longer shows the greeting header on the home page but keeps the admin sho
 
     $this->actingAs($this->admin)->get('/beranda')->assertOk()->assertDontSee('Halo,')->assertSee('Kelola berita');
 });
+
+it('does not list the summary page in the sidebar or the mobile menu for any role', function () {
+    foreach (['admin@', 'kaprodi@', 'akademik@', 'dosen@', 'petugas@', 'mahasiswa@', 'ortu@'] as $prefix) {
+        $user = User::where('email', $prefix.'aksaraloka.test')->firstOrFail();
+
+        $this->actingAs($user)->get('/beranda')->assertOk()->assertDontSee(route('summary'), false)->assertDontSee('>Ringkasan<', false);
+    }
+});
+
+it('keeps the summary page reachable by its address', function () {
+    $this->actingAs($this->student)->get('/ringkasan')->assertOk()->assertSee('Ringkasan hari ini');
+});

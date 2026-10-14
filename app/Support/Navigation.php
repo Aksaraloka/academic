@@ -17,7 +17,6 @@ class Navigation
         $items = match ($user->role) {
             Role::Admin => [
                 self::item('Beranda', 'dashboard', 'home'),
-                self::item('Ringkasan', 'summary', 'clipboard-document-list'),
                 self::item('Mahasiswa', 'students.index', 'users', 'students.*'),
                 self::item('Presensi', 'attendance.index', 'clipboard-document-check', 'attendance.*'),
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
@@ -30,7 +29,6 @@ class Navigation
             ],
             Role::Principal => [
                 self::item('Beranda', 'dashboard', 'home'),
-                self::item('Ringkasan', 'summary', 'clipboard-document-list'),
                 self::item('Presensi', 'attendance.index', 'clipboard-document-check', 'attendance.*'),
                 self::item('Rekap', 'reports.index', 'chart-bar', 'reports.*'),
                 self::item('Check-in', 'checkin', 'map-pin'),
@@ -40,7 +38,6 @@ class Navigation
             ],
             Role::Curriculum => [
                 self::item('Beranda', 'dashboard', 'home'),
-                self::item('Ringkasan', 'summary', 'clipboard-document-list'),
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
                 self::item('Kelas', 'groups.index', 'user-group', 'groups.*'),
                 self::item('Rekap', 'reports.index', 'chart-bar', 'reports.*'),
@@ -49,7 +46,6 @@ class Navigation
             ],
             Role::Teacher => [
                 self::item('Beranda', 'dashboard', 'home'),
-                self::item('Ringkasan', 'summary', 'clipboard-document-list'),
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
                 self::item('Presensi', 'attendance.index', 'clipboard-document-check', 'attendance.*'),
                 self::item('Check-in', 'checkin', 'map-pin'),
@@ -58,7 +54,6 @@ class Navigation
             ],
             Role::Duty => [
                 self::item('Beranda', 'dashboard', 'home'),
-                self::item('Ringkasan', 'summary', 'clipboard-document-list'),
                 self::item('Presensi', 'attendance.index', 'clipboard-document-check', 'attendance.*'),
                 self::item('Check-in', 'checkin', 'map-pin'),
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
@@ -67,12 +62,10 @@ class Navigation
                 self::item('Beranda', 'dashboard', 'home'),
                 self::item('Presensi', 'attendance.mine', 'clipboard-document-check', 'attendance.mine'),
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
-                self::item('Ringkasan', 'summary', 'clipboard-document-list'),
                 self::item('Wisuda', 'wisuda.overview', 'academic-cap', 'wisuda.*'),
             ],
             Role::Guardian => [
                 self::item('Beranda', 'dashboard', 'home'),
-                self::item('Ringkasan', 'summary', 'clipboard-document-list'),
                 self::item('Jadwal', 'schedule.index', 'calendar-days', 'schedule.*'),
                 self::item('Kehadiran', 'reports.index', 'chart-bar', 'reports.*'),
             ],

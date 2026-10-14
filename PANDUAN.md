@@ -81,10 +81,10 @@ Data contoh berisi Universitas Aksara Nusantara dengan 2 fakultas, 3 program stu
 | **Wakil dekan akademik** | Beranda, Jadwal (atur), Kelas, Rekap, Check-in, Wisuda                                          |
 | **Dosen**                | Beranda, Jadwal, Presensi, Check-in, Rekap, Izin, Survey, Masukan                               |
 | **Petugas presensi**     | Beranda, Presensi, Check-in, Jadwal                                                             |
-| **Mahasiswa**            | Beranda, Presensi, Jadwal, Ringkasan, Wisuda, Survey, Masukan                                   |
+| **Mahasiswa**            | Beranda, Presensi, Jadwal, Wisuda, Survey, Masukan                                   |
 | **Orang tua**            | Beranda, Jadwal, Kehadiran, Survey, Masukan                                                     |
 
-Semua peran juga punya menu **Ringkasan**, **Survey**, **Masukan**, tombol **Hubungi Helpdesk** di bawah menu Masukan, dan **Profil** (di menu pengguna, pojok kanan atas).
+Semua peran juga punya menu **Survey**, **Masukan**, tombol **Hubungi Helpdesk** di bawah menu Masukan, dan **Profil** (di menu pengguna, pojok kanan atas).
 
 Di HP, empat menu pertama tampil di bar bawah dan sisanya ada di **Lainnya**. Di desktop, sidebar bisa diciutkan dan grup Survey bisa dilipat.
 
@@ -104,7 +104,7 @@ Buka `/masuk`, isi email dan kata sandi. Percobaan salah dibatasi 5 kali per men
 
 ### Ringkasan
 
-`/ringkasan` merangkum hari ini sesuai peran: jadwal hari ini, status presensi, kehadiran keseluruhan, dan (untuk admin dan pimpinan) kelas yang belum diisi serta dosen yang belum check-in.
+`/ringkasan` (tidak ada di sidebar; buka lewat alamatnya) merangkum hari ini sesuai peran: jadwal hari ini, status presensi, kehadiran keseluruhan, dan (untuk admin dan pimpinan) kelas yang belum diisi serta dosen yang belum check-in.
 
 ### Profil
 

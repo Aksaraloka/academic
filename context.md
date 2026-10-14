@@ -14,12 +14,12 @@ Stack: Laravel 13, Livewire 4 (komponen kelas), Alpine, Tailwind v4, GSAP lazy, 
 - **Status kehadiran kampus: Hadir, Izin, Sakit, Alpa** (tanpa Terlambat). Izin dan sakit dihitung **tidak hadir** pada persentase.
 - **Syarat ujian 75%** per mata kuliah. Status mahasiswa memakai proyeksi 16 pertemuan per semester (boleh tidak hadir 4 kali): Aman / Waspada (sisa toleransi ≤ 1) / Tidak memenuhi.
 - **Hari kuliah Senin–Sabtu.** Kolom Sabtu selalu tampil di Jadwal.
-- **Alamat:** kolom `address/city/province/postal_code` pada `students` berarti **alamat sesuai KTP**; alamat tinggal sekarang ada di kolom `domicile_*` (+ `is_domicile_same`, `residence_type`). Mahasiswa hanya boleh mengubah domisili. *Perantau* = kota domisili ≠ kota KTP.
+- **Alamat:** kolom `address/city/province/postal_code` pada `students` berarti **alamat sesuai KTP**; alamat tinggal sekarang ada di kolom `domicile_*` (+ `is_domicile_same`, `residence_type`). Mahasiswa hanya boleh mengubah domisili. _Perantau_ = kota domisili ≠ kota KTP.
 - **"Kelas"** = kelompok mahasiswa per prodi dan angkatan (model `StudyGroup`, nama tabel masih `study_groups`; kolom `homeroom_teacher_id` = **dosen wali**). Bukan kelas paralel per mata kuliah; itu menunggu fitur KRS.
 - **Penangani masukan/komplain dan pembaca hasil survey = admin dan Kaprodi/Pimpinan.** Wakil dekan akademik tidak termasuk.
 - **Survey anonim tidak menyimpan `user_id`**; pengisian ganda dicegah lewat hash HMAC. Pertanyaan dikunci setelah ada responden.
 - **Wisuda:** berita acara satu dokumen **per periode**, dibekukan (snapshot peserta) saat diterbitkan. SKS dan IPK diisi mahasiswa lalu diverifikasi admin (belum ada modul nilai).
-- **Beranda (`/beranda`) = berita kampus** (banner + grid kartu), bukan dashboard. Dashboard harian ada di `/ringkasan`.
+- **Beranda (`/beranda`) = berita kampus** (banner + grid kartu), bukan dashboard. Dashboard harian ada di `/ringkasan`, **tanpa menu di sidebar** (sengaja dihapus dari navigasi atas permintaan pemilik produk; halamannya tetap ada).
 - **Halaman lebar penuh:** Beranda dan Jadwal memakai `#[Layout('layouts.app', ['fullWidth' => true])]`; halaman lain dibatasi `max-w-6xl`.
 
 ## Model data dan multi-tenant
