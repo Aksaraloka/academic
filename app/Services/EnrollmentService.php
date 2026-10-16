@@ -42,6 +42,7 @@ class EnrollmentService
         private readonly CurriculumService $curricula,
         private readonly FinanceService $finance,
         private readonly AuditLogger $audit,
+        private readonly IntegrationEvents $integration,
     ) {}
 
     /**
@@ -275,7 +276,26 @@ class EnrollmentService
             ]);
 
             $this->audit->log($approve ? 'enrollment.approved' : 'enrollment.rejected', $enrollment, [], ['note' => $note]);
+
+            if ($approve) {
+                $this->publishRosterChanges($enrollment);
+            }
         });
+    }
+
+    /**
+     * KRS yang disetujui mengubah peserta kuliah pilihannya dan seksi lain mata kuliah yang sama (pindah seksi).
+     * Event diterbitkan di dalam transaksi persetujuan; pengirimannya baru diantrekan setelah commit.
+     */
+    private function publishRosterChanges(Enrollment $enrollment): void
+    {
+        $subjectIds = $enrollment->assignments()->pluck('teaching_assignments.subject_id');
+
+        TeachingAssignment::query()->withoutGlobalScopes()
+            ->where('academic_term_id', $enrollment->academic_term_id)
+            ->whereIn('subject_id', $subjectIds)
+            ->pluck('id')
+            ->each(fn (int $classId) => $this->integration->publish('roster.updated', ['class_id' => $classId], $enrollment->tenant_id));
     }
 
     /**

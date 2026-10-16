@@ -2,7 +2,16 @@
 
 namespace App\Providers;
 
+use App\Models\AcademicTerm;
 use App\Models\OauthClient;
+use App\Models\Student;
+use App\Models\StudyGroup;
+use App\Models\StudyGroupMember;
+use App\Models\Subject;
+use App\Models\Teacher;
+use App\Models\TeachingAssignment;
+use App\Models\User;
+use App\Observers\IntegrationEventObserver;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -28,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configurePassport();
         $this->configureIntegrationRateLimit();
+        $this->observeIntegrationModels();
 
         ResetPassword::toMailUsing(function (object $notifiable, string $token): MailMessage {
             $url = route('password.reset', ['token' => $token, 'email' => $notifiable->getEmailForPasswordReset()]);
@@ -39,6 +49,16 @@ class AppServiceProvider extends ServiceProvider
                 ->action('Atur ulang kata sandi', $url)
                 ->line('Tautan berlaku '.config('auth.passwords.users.expire').' menit. Abaikan email ini bila kamu tidak memintanya.');
         });
+    }
+
+    /**
+     * Model yang perubahannya diteruskan ke LMS lewat webhook (outbox). Tidak berbuat apa-apa bila integrasi mati.
+     */
+    private function observeIntegrationModels(): void
+    {
+        foreach ([TeachingAssignment::class, AcademicTerm::class, StudyGroupMember::class, StudyGroup::class, Subject::class, Student::class, Teacher::class, User::class] as $model) {
+            $model::observe(IntegrationEventObserver::class);
+        }
     }
 
     /**

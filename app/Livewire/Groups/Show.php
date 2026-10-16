@@ -42,7 +42,8 @@ class Show extends Component
     {
         abort_unless(auth()->user()->isAdmin(), 403);
 
-        $this->group->members()->where('student_id', $studentId)->whereNull('left_at')->update(['left_at' => today()]);
+        // Per model (bukan query massal) agar pengamat model dapat memberi tahu LMS bahwa peserta kelas berubah.
+        $this->group->members()->where('student_id', $studentId)->whereNull('left_at')->get()->each->update(['left_at' => today()]);
         $this->dispatch('toast', message: 'Mahasiswa dikeluarkan dari kelas. Riwayat tetap tersimpan.', type: 'success');
     }
 
@@ -52,7 +53,8 @@ class Show extends Component
             ->where('student_id', $studentId)
             ->whereNull('left_at')
             ->whereHas('studyGroup', fn ($query) => $query->where('academic_term_id', $this->group->academic_term_id))
-            ->update(['left_at' => today()]);
+            ->get()
+            ->each->update(['left_at' => today()]);
     }
 
     public function render()

@@ -24,6 +24,27 @@ class LmsIntegration
         return config('integration.lms.tenant_id');
     }
 
+    public function webhookSecret(): string
+    {
+        return (string) config('integration.lms.webhook_secret');
+    }
+
+    /**
+     * Alamat penerima webhook di LMS.
+     */
+    public function webhookUrl(): string
+    {
+        return $this->url().'/webhooks/academic';
+    }
+
+    /**
+     * Webhook hanya dikirim bila integrasi terkonfigurasi dan rahasia penandatangan tersedia.
+     */
+    public function canPublishEvents(): bool
+    {
+        return $this->isConfigured() && $this->webhookSecret() !== '';
+    }
+
     /**
      * Tautan ke kelas mata kuliah di LMS.
      */

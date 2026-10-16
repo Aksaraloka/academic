@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Services\IntegrationEvents;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -42,8 +43,13 @@ class AcademicTerm extends Model
      */
     public function activate(): void
     {
+        $deactivated = static::query()->where('tenant_id', $this->tenant_id)->where('is_active', true)->whereKeyNot($this->id)->pluck('id');
+
         static::query()->where('tenant_id', $this->tenant_id)->update(['is_active' => false]);
         $this->update(['is_active' => true]);
+
+        // Pembaruan massal di atas tidak memicu event model; beri tahu LMS bahwa semester lama tidak lagi aktif.
+        $deactivated->each(fn (int $termId) => app(IntegrationEvents::class)->publish('term.updated', ['term_id' => $termId], $this->tenant_id));
     }
 
     public static function current(): ?self
