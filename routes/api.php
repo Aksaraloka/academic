@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Integration\AdmissionStudentController;
 use App\Http\Controllers\Integration\ClassGradeController;
 use App\Http\Controllers\Integration\ClassRosterController;
 use App\Http\Controllers\Integration\MeController;
@@ -34,6 +35,11 @@ Route::prefix('integration/v1')->name('integration.')->middleware('throttle:inte
         Route::get('/classes/{class}/roster', [ClassRosterController::class, 'roster'])->whereNumber('class')->name('classes.roster');
         Route::get('/classes/{class}/attendance', [ClassRosterController::class, 'attendance'])->whereNumber('class')->name('classes.attendance');
     });
+
+    // Serah terima mahasiswa baru dari Admission: klien server dengan scope `admission.write`.
+    Route::post('/admissions/students', [AdmissionStudentController::class, 'store'])
+        ->middleware('integration.client:admission.write')
+        ->name('admissions.students.store');
 
     // Komponen nilai dari LMS: token klien server dengan scope `grades.write`; penulisan lewat GradingService.
     Route::post('/classes/{class}/grades', [ClassGradeController::class, 'store'])

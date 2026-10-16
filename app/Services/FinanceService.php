@@ -65,10 +65,8 @@ class FinanceService
 
         $existing = Invoice::query()->where('academic_term_id', $term->id)->where('status', '!=', InvoiceStatus::Cancelled)->pluck('student_id')->flip();
         $counts = ['created' => 0, 'skipped' => 0, 'no_rate' => 0];
-        $sequence = (int) Invoice::query()->withoutGlobalScopes()->max('id');
-        $prefix = auth()->user()?->tenant?->setting('va_prefix') ?? '8808';
 
-        DB::transaction(function () use ($students, $existing, $term, $actor, $dueOn, &$counts, &$sequence, $prefix): void {
+        DB::transaction(function () use ($students, $existing, $term, $actor, $dueOn, &$counts): void {
             foreach ($students as $student) {
                 if ($existing->has($student->id)) {
                     $counts['skipped']++;
@@ -76,32 +74,13 @@ class FinanceService
                     continue;
                 }
 
-                $items = collect([['UKT', $this->rateFor($student, 'ukt')], ['BPP', $this->rateFor($student, 'bpp')]])
-                    ->filter(fn (array $row): bool => $row[1] !== null && $row[1] > 0);
-
-                if ($items->isEmpty()) {
+                if ($this->issueInvoice($student, $term, $actor, $dueOn) === null) {
                     $counts['no_rate']++;
 
                     continue;
                 }
 
-                $sequence++;
-                $invoice = Invoice::create([
-                    'tenant_id' => $student->tenant_id, 'student_id' => $student->id, 'academic_term_id' => $term->id,
-                    'number' => $this->number($term, $sequence), 'va_number' => $this->virtualAccount($prefix, $student),
-                    'title' => "Tagihan semester {$term->name} {$term->semester}", 'total' => (int) $items->sum(1),
-                    'status' => InvoiceStatus::Unpaid, 'due_on' => $dueOn, 'issued_at' => now(), 'created_by' => $actor->id,
-                ]);
-                $invoice->items()->createMany($items->map(fn (array $row): array => ['description' => $row[0], 'amount' => $row[1]])->all());
                 $counts['created']++;
-                $student->user?->notify(new AcademicNotice(
-                    'Tagihan baru terbit',
-                    "{$invoice->title} sebesar Rp ".number_format($invoice->total, 0, ',', '.').', jatuh tempo '.$dueOn->translatedFormat('j M Y').'.',
-                    'pay.show',
-                    ['invoice' => $invoice->id],
-                    icon: 'banknotes',
-                    tone: 'warning',
-                ));
             }
         });
 
@@ -110,6 +89,46 @@ class FinanceService
         }
 
         return $counts;
+    }
+
+    /**
+     * Terbitkan tagihan satu mahasiswa untuk satu semester: UKT (golongan atau tarif umum) dan BPP dari `fee_rates`,
+     * nomor tagihan, dan virtual account tetap per mahasiswa. Dipakai `generate()` (massal) dan serah terima dari
+     * Admission (satu mahasiswa). Null bila prodi belum punya tarif sehingga tidak ada yang ditagihkan.
+     * Pemanggil yang memastikan mahasiswa belum punya tagihan semester itu.
+     */
+    public function issueInvoice(Student $student, AcademicTerm $term, ?User $actor, CarbonInterface $dueOn, bool $notify = true): ?Invoice
+    {
+        $items = collect([['UKT', $this->rateFor($student, 'ukt')], ['BPP', $this->rateFor($student, 'bpp')]])
+            ->filter(fn (array $row): bool => $row[1] !== null && $row[1] > 0);
+
+        if ($items->isEmpty()) {
+            return null;
+        }
+
+        $sequence = (int) Invoice::query()->withoutGlobalScopes()->max('id') + 1;
+        $prefix = $student->tenant?->setting('va_prefix') ?? '8808';
+
+        $invoice = Invoice::create([
+            'tenant_id' => $student->tenant_id, 'student_id' => $student->id, 'academic_term_id' => $term->id,
+            'number' => $this->number($term, $sequence), 'va_number' => $this->virtualAccount($prefix, $student),
+            'title' => "Tagihan semester {$term->name} {$term->semester}", 'total' => (int) $items->sum(1),
+            'status' => InvoiceStatus::Unpaid, 'due_on' => $dueOn, 'issued_at' => now(), 'created_by' => $actor?->id,
+        ]);
+        $invoice->items()->createMany($items->map(fn (array $row): array => ['description' => $row[0], 'amount' => $row[1]])->all());
+
+        if ($notify) {
+            $student->user?->notify(new AcademicNotice(
+                'Tagihan baru terbit',
+                "{$invoice->title} sebesar Rp ".number_format($invoice->total, 0, ',', '.').', jatuh tempo '.$dueOn->translatedFormat('j M Y').'.',
+                'pay.show',
+                ['invoice' => $invoice->id],
+                icon: 'banknotes',
+                tone: 'warning',
+            ));
+        }
+
+        return $invoice;
     }
 
     /**

@@ -3,6 +3,8 @@
 namespace App\Livewire\Settings;
 
 use App\Services\AuditLogger;
+use App\Services\NimGenerator;
+use Closure;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -63,6 +65,8 @@ class Campus extends Component
 
     public string $va_prefix = '';
 
+    public string $nim_pattern = '';
+
     public string $payment_bank_name = '';
 
     public string $payment_account_number = '';
@@ -82,7 +86,7 @@ class Campus extends Component
             $this->{$key} = (string) $tenant->setting($key);
         }
 
-        foreach (['letter_signatory_name', 'letter_signatory_title', 'internship_min_credits', 'conversion_max_credits', 'va_prefix', 'payment_bank_name', 'payment_account_number', 'payment_account_name'] as $key) {
+        foreach (['letter_signatory_name', 'letter_signatory_title', 'internship_min_credits', 'conversion_max_credits', 'va_prefix', 'nim_pattern', 'payment_bank_name', 'payment_account_number', 'payment_account_name'] as $key) {
             $this->{$key} = (string) $tenant->setting($key);
         }
 
@@ -121,6 +125,7 @@ class Campus extends Component
             'internship_min_credits' => ['required', 'integer', 'between:0,300'],
             'conversion_max_credits' => ['required', 'integer', 'between:1,60'],
             'va_prefix' => ['nullable', 'digits_between:2,8'],
+            'nim_pattern' => ['required', 'string', 'max:40', fn (string $attribute, mixed $value, Closure $fail) => ($error = NimGenerator::patternError((string) $value)) === null ?: $fail($error)],
             'payment_bank_name' => ['nullable', 'string', 'max:60'],
             'payment_account_number' => ['nullable', 'string', 'max:40'],
             'payment_account_name' => ['nullable', 'string', 'max:100'],
@@ -128,7 +133,7 @@ class Campus extends Component
             'name' => 'nama kampus', 'helpdesk_whatsapp' => 'nomor WhatsApp helpdesk', 'attendance_mode' => 'mode presensi',
             'min_attendance_percent' => 'minimal kehadiran', 'absent_threshold' => 'batas alpa', 'meetings_per_course' => 'jumlah pertemuan',
             'checkin_opens' => 'jam check-in dibuka', 'checkin_closes' => 'jam check-in ditutup', 'geofence_lat' => 'lintang',
-            'geofence_lng' => 'bujur', 'geofence_radius' => 'radius', 'graduation_min_credits' => 'SKS minimal wisuda', 'graduation_min_gpa' => 'IPK minimal wisuda', 'va_prefix' => 'awalan virtual account',
+            'geofence_lng' => 'bujur', 'geofence_radius' => 'radius', 'graduation_min_credits' => 'SKS minimal wisuda', 'graduation_min_gpa' => 'IPK minimal wisuda', 'va_prefix' => 'awalan virtual account', 'nim_pattern' => 'pola NIM',
             'letter_signatory_name' => 'nama penandatangan surat', 'letter_signatory_title' => 'jabatan penandatangan surat',
             'internship_min_credits' => 'SKS minimal magang', 'conversion_max_credits' => 'batas SKS konversi',
         ]);
@@ -163,6 +168,7 @@ class Campus extends Component
             'internship_min_credits' => (int) $data['internship_min_credits'],
             'conversion_max_credits' => (int) $data['conversion_max_credits'],
             'va_prefix' => $data['va_prefix'] ?: '8808',
+            'nim_pattern' => trim($data['nim_pattern']),
             'payment_bank_name' => $data['payment_bank_name'] ?: null,
             'payment_account_number' => $data['payment_account_number'] ?: null,
             'payment_account_name' => $data['payment_account_name'] ?: null,

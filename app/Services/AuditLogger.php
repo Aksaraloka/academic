@@ -14,11 +14,12 @@ class AuditLogger
      * @param  array<string, mixed>  $old
      * @param  array<string, mixed>  $new
      * @param  User|null  $actor  pelaku bila tidak ada sesi login (mis. permintaan API dari LMS atas nama dosen)
+     * @param  int|null  $tenantId  kampus pemilik catatan bila tidak ada pelaku maupun sesi (mis. serah terima dari Admission)
      */
-    public function log(string $action, Model $subject, array $old = [], array $new = [], ?User $actor = null): AuditLog
+    public function log(string $action, Model $subject, array $old = [], array $new = [], ?User $actor = null, ?int $tenantId = null): AuditLog
     {
         return AuditLog::create([
-            'tenant_id' => $actor?->tenant_id ?? auth()->user()?->tenant_id,
+            'tenant_id' => $tenantId ?? $actor?->tenant_id ?? auth()->user()?->tenant_id,
             'user_id' => $actor?->id ?? auth()->id(),
             'action' => $action,
             'auditable_type' => $subject->getMorphClass(),

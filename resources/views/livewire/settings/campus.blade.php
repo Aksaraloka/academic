@@ -90,6 +90,7 @@
                     Tagihan harus lunas sebelum mahasiswa bisa mengisi KRS
                 </label>
                 <x-field label="Awalan virtual account" name="va_prefix" hint="Nomor VA = awalan + NIM."><input id="va_prefix" type="text" wire:model="va_prefix" class="input tabular-nums" inputmode="numeric" placeholder="8808"></x-field>
+                <x-field label="Pola NIM mahasiswa baru" name="nim_pattern" hint="Token: {YY} dan {YYYY} (angkatan), {PRODI} (kode prodi), {SEQ:4} (urutan per prodi per angkatan). Dipakai saat serah terima dari Admission." required><input id="nim_pattern" type="text" wire:model="nim_pattern" class="input tabular-nums" placeholder="{YY}{PRODI}{SEQ:4}"></x-field>
                 <x-field label="Bank tujuan transfer" name="payment_bank_name"><input id="payment_bank_name" type="text" wire:model="payment_bank_name" class="input" placeholder="Bank Mandiri"></x-field>
                 <x-field label="Nomor rekening" name="payment_account_number"><input id="payment_account_number" type="text" wire:model="payment_account_number" class="input tabular-nums" inputmode="numeric"></x-field>
                 <x-field label="Atas nama" name="payment_account_name"><input id="payment_account_name" type="text" wire:model="payment_account_name" class="input"></x-field>

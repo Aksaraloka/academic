@@ -47,6 +47,7 @@ class Tenant extends Model
         'internship_min_credits' => 80,
         'conversion_max_credits' => 20,
         'va_prefix' => '8808',
+        'nim_pattern' => '{YY}{PRODI}{SEQ:4}',
         'payment_bank_name' => null,
         'payment_account_number' => null,
         'payment_account_name' => null,

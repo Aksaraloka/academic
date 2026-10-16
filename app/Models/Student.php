@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['tenant_id', 'user_id', 'program_id', 'name', 'nim', 'batch_year', 'birth_date', 'birth_place', 'gender', 'religion', 'nik', 'nationality', 'address', 'city', 'province', 'postal_code', 'phone', 'photo_path', 'status', 'entry_date', 'graduated_on', 'graduation_predicate', 'previous_school', 'admission_path', 'ukt_group', 'is_domicile_same', 'residence_type', 'domicile_address', 'domicile_city', 'domicile_province', 'domicile_postal_code', 'legacy_credits', 'legacy_quality_points'])]
+#[Fillable(['tenant_id', 'user_id', 'program_id', 'name', 'nim', 'batch_year', 'birth_date', 'birth_place', 'gender', 'religion', 'nik', 'nationality', 'address', 'city', 'province', 'postal_code', 'phone', 'photo_path', 'status', 'entry_date', 'graduated_on', 'graduation_predicate', 'previous_school', 'admission_path', 'ukt_group', 'is_domicile_same', 'residence_type', 'domicile_address', 'domicile_city', 'domicile_province', 'domicile_postal_code', 'legacy_credits', 'legacy_quality_points', 'admission_ref'])]
 class Student extends Model
 {
     use BelongsToTenant, HasFactory;
@@ -24,7 +24,7 @@ class Student extends Model
     /**
      * @var array<int, string>
      */
-    public const ADMISSION_PATHS = ['SNBP', 'SNBT', 'Mandiri', 'Beasiswa', 'Pindahan'];
+    public const ADMISSION_PATHS = ['SNBP', 'SNBT', 'Mandiri', 'Beasiswa', 'Pindahan', 'Prestasi', 'KIP-K', 'Kerja Sama'];
 
     /**
      * @var array<int, string>
