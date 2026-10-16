@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AuditLog;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 class AuditLogger
@@ -12,12 +13,13 @@ class AuditLogger
      *
      * @param  array<string, mixed>  $old
      * @param  array<string, mixed>  $new
+     * @param  User|null  $actor  pelaku bila tidak ada sesi login (mis. permintaan API dari LMS atas nama dosen)
      */
-    public function log(string $action, Model $subject, array $old = [], array $new = []): AuditLog
+    public function log(string $action, Model $subject, array $old = [], array $new = [], ?User $actor = null): AuditLog
     {
         return AuditLog::create([
-            'tenant_id' => auth()->user()?->tenant_id,
-            'user_id' => auth()->id(),
+            'tenant_id' => $actor?->tenant_id ?? auth()->user()?->tenant_id,
+            'user_id' => $actor?->id ?? auth()->id(),
             'action' => $action,
             'auditable_type' => $subject->getMorphClass(),
             'auditable_id' => $subject->getKey(),

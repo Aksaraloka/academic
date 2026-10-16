@@ -58,6 +58,15 @@ class GradingService
             return 'Hanya dosen pengampu yang bisa mengisi nilai kelas ini.';
         }
 
+        return $this->lockBlockReason($assignment);
+    }
+
+    /**
+     * Alasan input ditolak karena keadaan kelasnya (terkunci, semester dikunci, lewat batas waktu), terlepas dari siapa
+     * pengisinya; null bila nilai masih terbuka.
+     */
+    public function lockBlockReason(TeachingAssignment $assignment): ?string
+    {
         if ($assignment->areGradesLocked()) {
             return 'Nilai sudah dikunci. Perubahan harus lewat pengajuan revisi dan persetujuan Kaprodi.';
         }
@@ -71,6 +80,72 @@ class GradingService
         }
 
         return null;
+    }
+
+    /**
+     * Apakah pengguna boleh mengirim nilai kelas ini dari LMS: dosen pengampu atau admin pada tenant yang sama.
+     */
+    public function canSubmitFromIntegration(TeachingAssignment $assignment, User $submitter): bool
+    {
+        if ($submitter->tenant_id !== $assignment->tenant_id) {
+            return false;
+        }
+
+        return $submitter->hasRole(Role::Admin)
+            || ($submitter->hasRole(Role::Teacher) && $submitter->teacher?->id === $assignment->teacher_id);
+    }
+
+    /**
+     * Simpan satu komponen (tugas, UTS, atau UAS) dari LMS untuk banyak mahasiswa. Memakai ulang perhitungan total, huruf,
+     * dan angka mutu `storeRegular`; komponen lain dan kehadiran mahasiswa tidak tersentuh (kehadiran dihitung dari
+     * presensi). Mahasiswa yang bukan peserta kelas dilewati, bukan galat. Dicatat atas nama `$submitter` dengan `source: lms`.
+     *
+     * Pemanggil sudah memastikan `canSubmitFromIntegration` dan `lockBlockReason` bernilai null.
+     *
+     * @param  array<int, float|int>  $scores  user_id (akun Academic) => nilai 0–100
+     * @return array{updated: int, skipped: array<int, array{user_id: int, reason: string}>}
+     */
+    public function saveComponentFromIntegration(TeachingAssignment $assignment, User $submitter, string $component, array $scores): array
+    {
+        abort_unless(array_key_exists($component, self::FIELDS), 422);
+
+        $roster = $this->roster($assignment)->whereNotNull('user_id')->keyBy('user_id');
+        $scale = GradeScale::for($assignment->tenant ?? $submitter->tenant);
+        $weights = $scale->weightsFor($assignment);
+        $existing = $assignment->grades()->where('kind', GradeKind::Regular)->whereIn('student_id', $roster->pluck('id'))->get()->keyBy('student_id');
+        $attendance = $this->attendanceScores($assignment, $roster->pluck('id'));
+
+        $updated = 0;
+        $skipped = [];
+
+        DB::transaction(function () use ($assignment, $component, $scores, $roster, $existing, $attendance, $scale, $weights, &$updated, &$skipped): void {
+            foreach ($scores as $userId => $score) {
+                $student = $roster->get($userId);
+
+                if ($student === null) {
+                    $skipped[] = ['user_id' => (int) $userId, 'reason' => 'Bukan peserta kelas ini.'];
+
+                    continue;
+                }
+
+                $current = $existing->get($student->id)?->scores() ?? [];
+                $row = [
+                    'assignment' => $current['assignment'] ?? null,
+                    'midterm' => $current['midterm'] ?? null,
+                    'final' => $current['final'] ?? null,
+                    $component => round((float) $score, 2),
+                ];
+
+                $this->storeRegular($assignment, $student->id, $row, $attendance[$student->id], $scale, $weights);
+                $updated++;
+            }
+        });
+
+        $this->audit->log('grades.integration_saved', $assignment, [], [
+            'source' => 'lms', 'component' => $component, 'updated' => $updated, 'skipped' => count($skipped),
+        ], $submitter);
+
+        return ['updated' => $updated, 'skipped' => $skipped];
     }
 
     /**

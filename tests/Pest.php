@@ -260,3 +260,40 @@ function recordAttendance(TeachingAssignment $class, Student $student, array $st
         AttendanceRecord::create(['attendance_session_id' => $session->id, 'student_id' => $student->id, 'status' => $status, 'method' => 'manual']);
     }
 }
+
+/**
+ * Token klien server asli lewat endpoint token.
+ */
+function serverToken(string $scope = 'sync.read'): string
+{
+    $client = test()->serverClient;
+
+    return test()->postJson('/oauth/token', [
+        'grant_type' => 'client_credentials',
+        'client_id' => $client->getKey(),
+        'client_secret' => $client->plainSecret,
+        'scope' => $scope,
+    ])->assertOk()->json('access_token');
+}
+
+/**
+ * Token milik pengguna (alur SSO) yang meminta scope tertentu.
+ */
+function userToken(User $user, string $scope): string
+{
+    $verifier = str_repeat('b', 64);
+    $challenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
+    $client = test()->ssoClient;
+
+    $response = test()->actingAs($user)->get('/oauth/authorize?'.http_build_query([
+        'client_id' => $client->getKey(), 'redirect_uri' => 'http://aksaraloka.test/auth/academic/callback', 'response_type' => 'code',
+        'scope' => $scope, 'state' => 's', 'code_challenge' => $challenge, 'code_challenge_method' => 'S256',
+    ]));
+    parse_str(parse_url($response->headers->get('Location'), PHP_URL_QUERY), $query);
+    auth()->forgetGuards();
+
+    return test()->postJson('/oauth/token', [
+        'grant_type' => 'authorization_code', 'client_id' => $client->getKey(), 'client_secret' => $client->plainSecret,
+        'redirect_uri' => 'http://aksaraloka.test/auth/academic/callback', 'code' => $query['code'], 'code_verifier' => $verifier,
+    ])->assertOk()->json('access_token');
+}
