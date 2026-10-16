@@ -3,6 +3,9 @@
 namespace App\Observers;
 
 use App\Models\AcademicTerm;
+use App\Models\Faculty;
+use App\Models\FeeRate;
+use App\Models\Program;
 use App\Models\Student;
 use App\Models\StudyGroup;
 use App\Models\StudyGroupMember;
@@ -31,7 +34,7 @@ class IntegrationEventObserver
 
     public function created(Model $model): void
     {
-        if (! $this->events->enabled()) {
+        if (! $this->events->anyEnabled()) {
             return;
         }
 
@@ -39,13 +42,15 @@ class IntegrationEventObserver
             $model instanceof TeachingAssignment => $this->classChanged($model),
             $model instanceof AcademicTerm => $this->term($model),
             $model instanceof StudyGroupMember => $this->groupRoster($model),
+            $model instanceof Program => $this->program($model->id, $model->tenant_id),
+            $model instanceof FeeRate => $this->feeRates($model->program_id, $model->tenant_id),
             default => null,
         };
     }
 
     public function updated(Model $model): void
     {
-        if (! $this->events->enabled()) {
+        if (! $this->events->anyEnabled()) {
             return;
         }
 
@@ -56,6 +61,9 @@ class IntegrationEventObserver
             $model instanceof Subject => $model->wasChanged(['name', 'code', 'credits']) ? $this->classesWhere('subject_id', $model->id, $model->tenant_id) : null,
             $model instanceof StudyGroup => $this->groupUpdated($model),
             $model instanceof Student => $this->studentUpdated($model),
+            $model instanceof Program => $model->wasChanged(['name', 'code', 'degree', 'faculty_id']) ? $this->program($model->id, $model->tenant_id) : null,
+            $model instanceof Faculty => $model->wasChanged('name') ? $this->facultyRenamed($model) : null,
+            $model instanceof FeeRate => $this->feeRateUpdated($model),
             $model instanceof Teacher => $model->wasChanged(['name', 'nip', 'nidn', 'user_id']) ? $this->user($model->user_id, $model->tenant_id) : null,
             $model instanceof User => $model->wasChanged(['name', 'email', 'role']) ? $this->user($model->id, $model->tenant_id) : null,
             default => null,
@@ -64,15 +72,46 @@ class IntegrationEventObserver
 
     public function deleted(Model $model): void
     {
-        if (! $this->events->enabled()) {
+        if (! $this->events->anyEnabled()) {
             return;
         }
 
         match (true) {
             $model instanceof TeachingAssignment => $this->events->publish('class.deleted', ['class_id' => $model->id], $model->tenant_id),
             $model instanceof StudyGroupMember => $this->groupRoster($model),
+            $model instanceof Program => $this->program($model->id, $model->tenant_id),
+            $model instanceof FeeRate => $this->feeRates($model->program_id, $model->tenant_id),
             default => null,
         };
+    }
+
+    private function program(int $programId, int $tenantId): void
+    {
+        $this->events->publish('program.updated', ['program_id' => $programId], $tenantId);
+    }
+
+    private function feeRates(int $programId, int $tenantId): void
+    {
+        $this->events->publish('fee_rates.updated', ['program_id' => $programId], $tenantId);
+    }
+
+    private function feeRateUpdated(FeeRate $rate): void
+    {
+        if (! $rate->wasChanged(['program_id', 'kind', 'ukt_group', 'amount'])) {
+            return;
+        }
+
+        $this->feeRates($rate->program_id, $rate->tenant_id);
+
+        if ($rate->wasChanged('program_id')) {
+            $this->feeRates((int) $rate->getOriginal('program_id'), $rate->tenant_id);
+        }
+    }
+
+    private function facultyRenamed(Faculty $faculty): void
+    {
+        Program::query()->withoutGlobalScopes()->where('faculty_id', $faculty->id)->pluck('id')
+            ->each(fn (int $programId) => $this->program($programId, $faculty->tenant_id));
     }
 
     private function assignmentUpdated(TeachingAssignment $assignment): void

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property string $id
  * @property int $tenant_id
+ * @property string $app
  * @property string $type
  * @property array<string, mixed> $payload
  * @property int $attempts
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $last_error
  * @property CarbonInterface $created_at
  */
-#[Fillable(['tenant_id', 'type', 'payload', 'attempts', 'delivered_at', 'last_error'])]
+#[Fillable(['tenant_id', 'app', 'type', 'payload', 'attempts', 'delivered_at', 'last_error'])]
 class IntegrationEvent extends Model
 {
     /** @use HasFactory<IntegrationEventFactory> */

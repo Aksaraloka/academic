@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AuthorizeIntegrationClient;
 use App\Http\Middleware\EnsureLmsAccess;
 use App\Http\Middleware\EnsureUserHasRole;
 use Illuminate\Foundation\Application;
@@ -18,6 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'lms.access' => EnsureLmsAccess::class,
+            'integration.access' => EnsureLmsAccess::class,
+            'integration.client' => AuthorizeIntegrationClient::class,
         ]);
         $middleware->preventRequestForgery(except: ['pay/webhook']);
         $middleware->redirectGuestsTo(fn () => route('login'));

@@ -3,7 +3,10 @@
 namespace App\Providers;
 
 use App\Models\AcademicTerm;
+use App\Models\Faculty;
+use App\Models\FeeRate;
 use App\Models\OauthClient;
+use App\Models\Program;
 use App\Models\Student;
 use App\Models\StudyGroup;
 use App\Models\StudyGroupMember;
@@ -12,6 +15,7 @@ use App\Models\Teacher;
 use App\Models\TeachingAssignment;
 use App\Models\User;
 use App\Observers\IntegrationEventObserver;
+use App\Services\IntegrationApps;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -52,11 +56,11 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Model yang perubahannya diteruskan ke LMS lewat webhook (outbox). Tidak berbuat apa-apa bila integrasi mati.
+     * Model yang perubahannya diteruskan ke aplikasi lain (LMS, Admission) lewat webhook (outbox). Tidak berbuat apa-apa bila integrasi mati.
      */
     private function observeIntegrationModels(): void
     {
-        foreach ([TeachingAssignment::class, AcademicTerm::class, StudyGroupMember::class, StudyGroup::class, Subject::class, Student::class, Teacher::class, User::class] as $model) {
+        foreach ([TeachingAssignment::class, AcademicTerm::class, StudyGroupMember::class, StudyGroup::class, Subject::class, Student::class, Teacher::class, User::class, Program::class, Faculty::class, FeeRate::class] as $model) {
             $model::observe(IntegrationEventObserver::class);
         }
     }
@@ -73,6 +77,8 @@ class AppServiceProvider extends ServiceProvider
             'profile' => 'Membaca profil pengguna yang masuk',
             'sync.read' => 'Membaca semester, pengguna, kelas, dan peserta',
             'grades.write' => 'Mengirim komponen nilai tugas',
+            'admission.read' => 'Membaca prodi, tarif, dan semester untuk Admission',
+            'admission.write' => 'Menyerahkan mahasiswa baru dari Admission',
         ]);
     }
 
@@ -86,7 +92,7 @@ class AppServiceProvider extends ServiceProvider
             $payload = json_decode((string) base64_decode(strtr($segments[1] ?? '', '-_', '+/')), true);
             $clientId = $payload['aud'][0] ?? $request->ip();
 
-            return Limit::perMinute((int) config('integration.lms.rate_limit_per_minute'))->by('integration:'.$clientId);
+            return Limit::perMinute(app(IntegrationApps::class)->rateLimitPerMinute())->by('integration:'.$clientId);
         });
     }
 }

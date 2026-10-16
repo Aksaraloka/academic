@@ -5,44 +5,14 @@ namespace App\Services;
 use App\Models\User;
 
 /**
- * Konfigurasi dan aturan akses integrasi dengan LMS Aksaraloka.
+ * Pembungkus tipis untuk aplikasi LMS di atas `IntegrationApp`: konfigurasi dan aturan akses ada di kelas induk;
+ * di sini hanya yang khas LMS (tautan kelas dan nama peran padanan).
  */
-class LmsIntegration
+class LmsIntegration extends IntegrationApp
 {
-    public function url(): string
+    public function __construct()
     {
-        return (string) config('integration.lms.url');
-    }
-
-    public function isConfigured(): bool
-    {
-        return $this->url() !== '' && $this->tenantId() !== null;
-    }
-
-    public function tenantId(): ?int
-    {
-        return config('integration.lms.tenant_id');
-    }
-
-    public function webhookSecret(): string
-    {
-        return (string) config('integration.lms.webhook_secret');
-    }
-
-    /**
-     * Alamat penerima webhook di LMS.
-     */
-    public function webhookUrl(): string
-    {
-        return $this->url().'/webhooks/academic';
-    }
-
-    /**
-     * Webhook hanya dikirim bila integrasi terkonfigurasi dan rahasia penandatangan tersedia.
-     */
-    public function canPublishEvents(): bool
-    {
-        return $this->isConfigured() && $this->webhookSecret() !== '';
+        parent::__construct(IntegrationApps::LMS);
     }
 
     /**
@@ -54,40 +24,10 @@ class LmsIntegration
     }
 
     /**
-     * Apakah pengguna ini boleh memakai LMS: satu tenant dengan integrasi dan perannya punya padanan di LMS.
-     */
-    public function canAccess(User $user): bool
-    {
-        return $this->tenantId() !== null
-            && $user->tenant_id === $this->tenantId()
-            && $this->lmsRole($user) !== null;
-    }
-
-    /**
      * Peran padanan di LMS, atau null bila peran ini tidak punya akses LMS.
      */
     public function lmsRole(User $user): ?string
     {
-        return config('integration.role_map.'.$user->role->value);
-    }
-
-    /**
-     * Alasan akses ditolak (untuk pesan galat), atau null bila diizinkan.
-     */
-    public function denialReason(User $user): ?string
-    {
-        if ($this->tenantId() === null) {
-            return 'Integrasi Kelas Online belum disiapkan.';
-        }
-
-        if ($user->tenant_id !== $this->tenantId()) {
-            return 'Akun ini tidak terdaftar pada kampus yang terhubung ke Kelas Online.';
-        }
-
-        if ($this->lmsRole($user) === null) {
-            return 'Peran akun ini tidak punya akses ke Kelas Online.';
-        }
-
-        return null;
+        return $this->roleFor($user);
     }
 }

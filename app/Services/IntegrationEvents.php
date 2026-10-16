@@ -8,49 +8,59 @@ use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 /**
- * Webhook keluar ke LMS dengan pola outbox: `publish()` menyimpan event di database (ikut transaksi pemanggil, jadi
- * batal bila transaksi dibatalkan) dan mengantrekan pengiriman setelah commit; `deliver()` menandatangani dan mengirimnya.
- * Isi event sengaja minimal (hanya id); LMS mengambil detailnya lewat API.
+ * Webhook keluar ke aplikasi lain (LMS, Admission) dengan pola outbox: `publish()` menyimpan event di database (ikut
+ * transaksi pemanggil, jadi batal bila transaksi dibatalkan) dan mengantrekan pengiriman setelah commit; `deliver()`
+ * menandatangani dan mengirimnya ke aplikasi pemilik event. Isi event sengaja minimal (hanya id); penerima mengambil
+ * detailnya lewat API.
  */
 class IntegrationEvents
 {
-    public function __construct(private readonly LmsIntegration $lms) {}
+    public function __construct(private readonly IntegrationApps $apps) {}
 
-    public function enabled(): bool
+    /**
+     * Apakah webhook ke aplikasi ini dapat diterbitkan (terkonfigurasi dan rahasia tersedia).
+     */
+    public function enabled(string $app = IntegrationApps::LMS): bool
     {
-        return $this->lms->canPublishEvents();
+        return $this->apps->get($app)->canPublishEvents();
     }
 
     /**
-     * Terbitkan event. Tidak berbuat apa-apa bila integrasi tidak terkonfigurasi atau bila data milik kampus lain
-     * ($tenantId bukan tenant integrasi). Event identik yang belum pernah dicoba dikirim digabung agar perubahan
-     * massal (mis. banyak mahasiswa dipindah kelas) tidak membanjiri LMS.
+     * Apakah ada aplikasi mana pun yang dapat menerima webhook (penjaga murah bagi pengamat model).
+     */
+    public function anyEnabled(): bool
+    {
+        foreach ($this->apps->all() as $app) {
+            if ($app->canPublishEvents()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Terbitkan event ke aplikasi yang berkepentingan dengan tipe ini (atau hanya ke `$app`). Tidak berbuat apa-apa
+     * untuk aplikasi yang tidak terkonfigurasi atau bila data milik kampus lain ($tenantId bukan tenant aplikasi itu).
+     * Event identik yang belum pernah dicoba dikirim digabung agar perubahan massal tidak membanjiri penerima.
      *
      * @param  array<string, int|string>  $data
+     * @return IntegrationEvent|null event pertama yang diterbitkan (atau yang digabung); null bila tidak ada penerima
      */
-    public function publish(string $type, array $data, ?int $tenantId = null): ?IntegrationEvent
+    public function publish(string $type, array $data, ?int $tenantId = null, ?string $app = null): ?IntegrationEvent
     {
-        if (! $this->enabled() || ($tenantId !== null && $tenantId !== $this->lms->tenantId())) {
-            return null;
+        $first = null;
+
+        foreach ($app !== null ? [$app] : $this->apps->receiving($type) as $key) {
+            $event = $this->publishTo($this->apps->get($key), $type, $data, $tenantId);
+            $first ??= $event;
         }
 
-        $pending = IntegrationEvent::query()
-            ->where('tenant_id', $this->lms->tenantId())->where('type', $type)->whereNull('delivered_at')->where('attempts', 0)
-            ->get()->first(fn (IntegrationEvent $event): bool => $event->payload === $data);
-
-        if ($pending !== null) {
-            return $pending;
-        }
-
-        $event = IntegrationEvent::create(['tenant_id' => $this->lms->tenantId(), 'type' => $type, 'payload' => $data, 'attempts' => 0]);
-
-        DeliverIntegrationEvent::dispatch($event->id)->afterCommit();
-
-        return $event;
+        return $first;
     }
 
     /**
-     * Kirim satu event ke LMS. Mencatat percobaan; melempar exception bila gagal agar antrean mengulang dengan backoff.
+     * Kirim satu event ke aplikasinya. Mencatat percobaan; melempar exception bila gagal agar antrean mengulang dengan backoff.
      *
      * @throws RuntimeException
      */
@@ -59,6 +69,10 @@ class IntegrationEvents
         if ($event->isDelivered()) {
             return;
         }
+
+        $key = $event->app ?? IntegrationApps::LMS;
+        $app = $this->apps->get($key);
+        $name = $key === IntegrationApps::LMS ? 'LMS' : $app->label();
 
         $event->increment('attempts');
 
@@ -76,14 +90,14 @@ class IntegrationEvents
                 'X-Aksaraloka-Event' => $event->type,
                 'X-Aksaraloka-Event-Id' => $event->id,
                 'X-Aksaraloka-Timestamp' => $timestamp,
-                'X-Aksaraloka-Signature' => self::signature($timestamp, $body, $this->lms->webhookSecret()),
-            ])->withBody($body, 'application/json')->post($this->lms->webhookUrl());
+                'X-Aksaraloka-Signature' => self::signature($timestamp, $body, $app->webhookSecret()),
+            ])->withBody($body, 'application/json')->post($app->webhookUrl());
         } catch (\Throwable $e) {
-            $this->fail($event, 'Tidak dapat menghubungi LMS: '.$e->getMessage());
+            $this->fail($event, "Tidak dapat menghubungi {$name}: ".$e->getMessage());
         }
 
         if (! $response->successful()) {
-            $this->fail($event, 'LMS menjawab HTTP '.$response->status());
+            $this->fail($event, "{$name} menjawab HTTP ".$response->status());
         }
 
         $event->forceFill(['delivered_at' => now(), 'last_error' => null])->save();
@@ -95,6 +109,30 @@ class IntegrationEvents
     public static function signature(string $timestamp, string $body, string $secret): string
     {
         return 'sha256='.hash_hmac('sha256', $timestamp.'.'.$body, $secret);
+    }
+
+    /**
+     * @param  array<string, int|string>  $data
+     */
+    private function publishTo(IntegrationApp $app, string $type, array $data, ?int $tenantId): ?IntegrationEvent
+    {
+        if (! $app->canPublishEvents() || ($tenantId !== null && $tenantId !== $app->tenantId())) {
+            return null;
+        }
+
+        $pending = IntegrationEvent::query()
+            ->where('tenant_id', $app->tenantId())->where('app', $app->key)->where('type', $type)->whereNull('delivered_at')->where('attempts', 0)
+            ->get()->first(fn (IntegrationEvent $event): bool => $event->payload === $data);
+
+        if ($pending !== null) {
+            return $pending;
+        }
+
+        $event = IntegrationEvent::create(['tenant_id' => $app->tenantId(), 'app' => $app->key, 'type' => $type, 'payload' => $data, 'attempts' => 0]);
+
+        DeliverIntegrationEvent::dispatch($event->id)->afterCommit();
+
+        return $event;
     }
 
     /**

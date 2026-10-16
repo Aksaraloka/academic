@@ -39,7 +39,7 @@ class DeliverIntegrationEvent implements ShouldQueue
     {
         $event = IntegrationEvent::query()->find($this->eventId);
 
-        if ($event === null || $event->isDelivered() || ! $events->enabled()) {
+        if ($event === null || $event->isDelivered() || ! $events->enabled($event->app ?? 'lms')) {
             return;
         }
 

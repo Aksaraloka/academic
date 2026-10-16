@@ -18,6 +18,7 @@ class IntegrationEventFactory extends Factory
     {
         return [
             'tenant_id' => Tenant::factory(),
+            'app' => 'lms',
             'type' => 'class.updated',
             'payload' => ['class_id' => fake()->numberBetween(1, 500)],
             'attempts' => 0,

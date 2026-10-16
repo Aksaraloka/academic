@@ -3,38 +3,41 @@
 namespace App\Services\Integration;
 
 use App\Models\AcademicTerm;
+use App\Models\FeeRate;
+use App\Models\Program;
 use App\Models\Student;
 use App\Models\TeachingAssignment;
 use App\Models\Tenant;
 use App\Services\AttendanceReport;
 use App\Services\ClassRoster;
-use App\Services\LmsIntegration;
+use App\Services\IntegrationApps;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
- * Pembaca data induk untuk LMS. Request token klien server tidak punya pengguna login sehingga `TenantScope` tidak
- * aktif; semua query di sini dibatasi eksplisit ke tenant integrasi (`integration.lms.tenant_id`), dan data tenant
- * lain diperlakukan seperti tidak ada (404).
+ * Pembaca data induk untuk aplikasi lain (LMS, Admission). Request token klien server tidak punya pengguna login
+ * sehingga `TenantScope` tidak aktif; semua query di sini dibatasi eksplisit ke tenant aplikasi pemanggil
+ * (`integration.apps.{app}.tenant_id`), dan data tenant lain diperlakukan seperti tidak ada (404).
  */
 class SyncReader
 {
     public function __construct(
-        private readonly LmsIntegration $lms,
+        private readonly IntegrationApps $apps,
         private readonly ClassRoster $roster,
         private readonly AttendanceReport $attendance,
     ) {}
 
     /**
-     * @throws HttpException 403 bila integrasi belum disiapkan
+     * @throws HttpException 403 bila integrasi aplikasi pemanggil belum disiapkan
      */
     public function tenantId(): int
     {
-        $tenantId = $this->lms->tenantId();
+        $app = $this->apps->current();
+        $tenantId = $app->tenantId();
 
-        abort_if($tenantId === null, 403, 'Integrasi Kelas Online belum disiapkan.');
+        abort_if($tenantId === null, 403, "Integrasi {$app->label()} belum disiapkan.");
 
         return $tenantId;
     }
@@ -50,6 +53,30 @@ class SyncReader
     public function findTerm(int $id): AcademicTerm
     {
         return $this->terms()->findOrFail($id);
+    }
+
+    /**
+     * @return Builder<Program>
+     */
+    public function programs(): Builder
+    {
+        return Program::query()->withoutGlobalScopes()->where('tenant_id', $this->tenantId())->with('faculty')->orderBy('name')->orderBy('id');
+    }
+
+    public function findProgram(int $id): Program
+    {
+        return $this->programs()->findOrFail($id);
+    }
+
+    /**
+     * Tarif UKT (per golongan) dan BPP satu prodi.
+     *
+     * @return Builder<FeeRate>
+     */
+    public function feeRates(Program $program): Builder
+    {
+        return FeeRate::query()->withoutGlobalScopes()->where('tenant_id', $this->tenantId())->where('program_id', $program->id)
+            ->orderBy('kind')->orderBy('ukt_group')->orderBy('id');
     }
 
     /**
@@ -103,9 +130,7 @@ class SyncReader
      */
     public function perPage(Request $request): int
     {
-        $max = (int) config('integration.lms.max_per_page');
-
-        return max(1, min((int) $request->query('per_page', 50), $max));
+        return max(1, min((int) $request->query('per_page', 50), $this->apps->maxPerPage()));
     }
 
     /**
