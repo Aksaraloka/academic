@@ -20,6 +20,16 @@ class Index extends Component
 
     public string $degree = 'S1';
 
+    public string $programAccreditation = '';
+
+    /** @var array<int, string> akreditasi yang sedang diedit per id prodi */
+    public array $accreditations = [];
+
+    public function mount(): void
+    {
+        $this->accreditations = Program::query()->pluck('accreditation', 'id')->map(fn (?string $value): string => (string) $value)->all();
+    }
+
     public function addFaculty(): void
     {
         $data = $this->validate(['facultyName' => ['required', 'string', 'max:150']], [], ['facultyName' => 'nama fakultas']);
@@ -37,17 +47,32 @@ class Index extends Component
             'programName' => ['required', 'string', 'max:150'],
             'programCode' => ['nullable', 'string', 'max:20'],
             'degree' => ['required', 'in:D3,D4,S1,S2,S3'],
-        ], [], ['facultyId' => 'fakultas', 'programName' => 'nama prodi', 'programCode' => 'kode prodi', 'degree' => 'jenjang']);
+            'programAccreditation' => ['nullable', 'string', 'max:30'],
+        ], [], ['facultyId' => 'fakultas', 'programName' => 'nama prodi', 'programCode' => 'kode prodi', 'degree' => 'jenjang', 'programAccreditation' => 'akreditasi']);
 
-        Program::create([
+        $program = Program::create([
             'faculty_id' => $data['facultyId'],
             'name' => $data['programName'],
             'code' => $data['programCode'] ?: null,
             'degree' => $data['degree'],
+            'accreditation' => trim((string) $data['programAccreditation']) ?: null,
         ]);
 
-        $this->reset(['programName', 'programCode']);
+        $this->accreditations[$program->id] = (string) $program->accreditation;
+        $this->reset(['programName', 'programCode', 'programAccreditation']);
         $this->dispatch('toast', message: 'Program studi ditambahkan.', type: 'success');
+    }
+
+    public function saveAccreditation(int $programId): void
+    {
+        abort_unless(auth()->user()->isAdmin(), 403);
+
+        $this->validate(["accreditations.{$programId}" => ['nullable', 'string', 'max:30']], [], ["accreditations.{$programId}" => 'akreditasi']);
+
+        // Per model agar pengamat model menerbitkan program.updated ke Admission.
+        Program::query()->findOrFail($programId)->update(['accreditation' => trim((string) ($this->accreditations[$programId] ?? '')) ?: null]);
+
+        $this->dispatch('toast', message: 'Akreditasi disimpan.', type: 'success');
     }
 
     public function render()

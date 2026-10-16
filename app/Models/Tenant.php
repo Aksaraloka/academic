@@ -48,6 +48,7 @@ class Tenant extends Model
         'conversion_max_credits' => 20,
         'va_prefix' => '8808',
         'nim_pattern' => '{YY}{PRODI}{SEQ:4}',
+        'fee_model' => 'ukt',
         'payment_bank_name' => null,
         'payment_account_number' => null,
         'payment_account_name' => null,
@@ -62,6 +63,14 @@ class Tenant extends Model
             'level' => TenantLevel::class,
             'settings' => 'array',
         ];
+    }
+
+    /**
+     * Model biaya kampus: `ukt` (bertingkat per golongan, bawaan) atau `flat` (satu tarif BPP per prodi per semester).
+     */
+    public function feeModel(): string
+    {
+        return $this->setting('fee_model') === 'flat' ? 'flat' : 'ukt';
     }
 
     public function setting(string $key): mixed

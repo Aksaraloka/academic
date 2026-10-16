@@ -40,6 +40,10 @@ class FinanceService
 
     public function rateFor(Student $student, string $kind): ?int
     {
+        if ($student->tenant?->feeModel() === 'flat' && $kind !== 'bpp') {
+            return null;
+        }
+
         $rates = FeeRate::query()->where('program_id', $student->program_id)->where('kind', $kind)->get();
 
         $match = $kind === 'ukt'

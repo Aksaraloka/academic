@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['tenant_id', 'faculty_id', 'name', 'code', 'degree'])]
+#[Fillable(['tenant_id', 'faculty_id', 'name', 'code', 'degree', 'accreditation'])]
 class Program extends Model
 {
     use BelongsToTenant;

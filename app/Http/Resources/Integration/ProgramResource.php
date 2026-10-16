@@ -21,6 +21,8 @@ class ProgramResource extends JsonResource
             'code' => $this->code,
             'name' => $this->name,
             'degree' => $this->degree,
+            'accreditation' => $this->accreditation,
+            'fee_model' => $this->tenant->feeModel(),
             'faculty' => ['id' => $this->faculty->id, 'name' => $this->faculty->name],
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

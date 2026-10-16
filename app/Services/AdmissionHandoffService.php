@@ -17,6 +17,7 @@ use App\Models\Program;
 use App\Models\Student;
 use App\Models\StudyGroup;
 use App\Models\StudyGroupMember;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -57,6 +58,7 @@ class AdmissionHandoffService
         $term = AcademicTerm::query()->withoutGlobalScopes()->where('tenant_id', $tenantId)->findOrFail($data['term_id']);
 
         $this->guardUniqueness($tenantId, $data);
+        $this->guardFeeModel($tenantId, $data);
 
         try {
             $student = DB::transaction(fn (): Student => $this->create($tenantId, $program, $term, $data));
@@ -95,6 +97,22 @@ class AdmissionHandoffService
         FetchAdmissionPhoto::dispatch($student->id, $photo['url'], strtolower($photo['sha256']), $photo['mime']);
 
         return 'queued';
+    }
+
+    /**
+     * Model UKT butuh golongan agar tarifnya pasti; model flat mengabaikannya.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws AdmissionHandoffException
+     */
+    private function guardFeeModel(int $tenantId, array $data): void
+    {
+        $tenant = Tenant::query()->findOrFail($tenantId);
+
+        if ($tenant->feeModel() === 'ukt' && ($data['ukt_group'] ?? null) === null) {
+            throw new AdmissionHandoffException('ukt_group_required', 'Kampus memakai model UKT bertingkat, sehingga ukt_group wajib diisi.');
+        }
     }
 
     /**
@@ -154,7 +172,9 @@ class AdmissionHandoffService
         $invoice = $this->finance->issueInvoice($student, $term, null, today(), notify: false);
 
         if ($invoice === null) {
-            throw new AdmissionHandoffException('fee_rate_missing', "Prodi {$program->name} belum punya tarif UKT atau BPP, sehingga tagihan tidak dapat dibuat.");
+            $missing = $student->tenant?->feeModel() === 'flat' ? 'tarif BPP' : 'tarif UKT atau BPP';
+
+            throw new AdmissionHandoffException('fee_rate_missing', "Prodi {$program->name} belum punya {$missing}, sehingga tagihan tidak dapat dibuat.");
         }
 
         $payment = $data['initial_payment'];

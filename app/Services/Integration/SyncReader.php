@@ -60,7 +60,7 @@ class SyncReader
      */
     public function programs(): Builder
     {
-        return Program::query()->withoutGlobalScopes()->where('tenant_id', $this->tenantId())->with('faculty')->orderBy('name')->orderBy('id');
+        return Program::query()->withoutGlobalScopes()->where('tenant_id', $this->tenantId())->with(['faculty', 'tenant'])->orderBy('name')->orderBy('id');
     }
 
     public function findProgram(int $id): Program

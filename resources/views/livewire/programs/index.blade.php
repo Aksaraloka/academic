@@ -28,6 +28,9 @@
                     <x-field label="Kode" name="programCode">
                         <input id="programCode" type="text" wire:model="programCode" class="input" placeholder="TI">
                     </x-field>
+                    <x-field label="Akreditasi" name="programAccreditation" hint="Mis. Unggul atau B. Tampil di halaman publik Admission.">
+                        <input id="programAccreditation" type="text" wire:model="programAccreditation" class="input" maxlength="30" placeholder="Unggul">
+                    </x-field>
                     <x-field label="Jenjang" name="degree" required>
                         <select id="degree" wire:model="degree" class="input">
                             @foreach (['D3', 'D4', 'S1', 'S2', 'S3'] as $level)<option value="{{ $level }}">{{ $level }}</option>@endforeach
@@ -46,6 +49,12 @@
                     <x-icon name="building-library" class="text-primary" />
                     <span class="min-w-0 flex-1 truncate text-sm font-medium">{{ $program->label() }}</span>
                     @if ($program->code)<x-badge>{{ $program->code }}</x-badge>@endif
+                    <form wire:submit="saveAccreditation({{ $program->id }})" class="flex items-center gap-2">
+                        <label for="accreditation-{{ $program->id }}" class="sr-only">Akreditasi {{ $program->label() }}</label>
+                        <input id="accreditation-{{ $program->id }}" type="text" wire:model="accreditations.{{ $program->id }}" class="input !w-32" maxlength="30" placeholder="Akreditasi"
+                               @error('accreditations.'.$program->id) aria-invalid="true" @enderror>
+                        <x-button type="submit" variant="secondary" wire:loading.attr="disabled" wire:target="saveAccreditation({{ $program->id }})">Simpan</x-button>
+                    </form>
                 </div>
             @empty
                 <p class="px-4 py-4 text-sm text-text-muted">Belum ada program studi di fakultas ini.</p>

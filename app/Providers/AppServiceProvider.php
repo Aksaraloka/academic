@@ -13,6 +13,7 @@ use App\Models\StudyGroupMember;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\TeachingAssignment;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Observers\IntegrationEventObserver;
 use App\Services\IntegrationApps;
@@ -60,7 +61,7 @@ class AppServiceProvider extends ServiceProvider
      */
     private function observeIntegrationModels(): void
     {
-        foreach ([TeachingAssignment::class, AcademicTerm::class, StudyGroupMember::class, StudyGroup::class, Subject::class, Student::class, Teacher::class, User::class, Program::class, Faculty::class, FeeRate::class] as $model) {
+        foreach ([TeachingAssignment::class, AcademicTerm::class, StudyGroupMember::class, StudyGroup::class, Subject::class, Student::class, Teacher::class, User::class, Program::class, Faculty::class, FeeRate::class, Tenant::class] as $model) {
             $model::observe(IntegrationEventObserver::class);
         }
     }

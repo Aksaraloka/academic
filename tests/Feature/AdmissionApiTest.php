@@ -1,6 +1,8 @@
 <?php
 
+use App\Enums\Role;
 use App\Jobs\DeliverIntegrationEvent;
+use App\Livewire\Programs\Index as ProgramsIndex;
 use App\Models\Faculty;
 use App\Models\FeeRate;
 use App\Models\IntegrationEvent;
@@ -11,6 +13,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Passport\ClientRepository;
 use Laravel\Passport\Passport;
+use Livewire\Livewire;
 
 beforeEach(function () {
     $this->keyDirectory = sys_get_temp_dir().'/academic-admission-keys-'.getmypid();
@@ -242,5 +245,86 @@ describe('webhooks to Admission', function () {
         $event = IntegrationEvent::firstOrFail();
         expect($event->app)->toBe('admission')->and($event->tenant_id)->toBe($this->tenant->id);
         Queue::assertPushed(DeliverIntegrationEvent::class, fn ($job) => $job->eventId === $event->id);
+    });
+});
+
+describe('accreditation and fee model', function () {
+    it('lists the accreditation (null when empty) and the campus fee model on every program', function () {
+        $this->program->update(['accreditation' => 'Unggul']);
+
+        $data = $this->withToken($this->token)->getJson('/api/integration/v1/programs')->assertOk()->json('data');
+
+        expect($data[0])->toMatchArray(['name' => 'Informatika', 'accreditation' => 'Unggul', 'fee_model' => 'ukt'])
+            ->and($data[1])->toMatchArray(['name' => 'Sistem Informasi', 'accreditation' => null, 'fee_model' => 'ukt']);
+
+        $this->tenant->update(['settings' => ['fee_model' => 'flat']]);
+
+        expect(collect($this->withToken($this->token)->getJson('/api/integration/v1/programs')->assertOk()->json('data'))->pluck('fee_model')->unique()->all())->toBe(['flat']);
+    });
+
+    it('leaves the fee-rates endpoint unchanged', function () {
+        FeeRate::create(['tenant_id' => $this->tenant->id, 'program_id' => $this->program->id, 'kind' => 'bpp', 'amount' => 700000]);
+        $this->tenant->update(['settings' => ['fee_model' => 'flat']]);
+
+        $this->withToken($this->token)->getJson("/api/integration/v1/programs/{$this->program->id}/fee-rates")->assertOk()
+            ->assertJsonPath('data', [['kind' => 'bpp', 'ukt_group' => null, 'amount' => 700000]]);
+    });
+
+    it('publishes program.updated when the accreditation changes, only to Admission', function () {
+        enableAdmissionWebhooks($this, lms: true);
+
+        $this->program->update(['accreditation' => 'B']);
+        expect(outbox())->toBe([['admission', 'program.updated', ['program_id' => $this->program->id]]]);
+
+        IntegrationEvent::query()->delete();
+        $this->program->update(['accreditation' => 'B']);
+        expect(outbox())->toBe([]);
+    });
+
+    it('saves the accreditation on the programs page and publishes the event', function () {
+        $admin = makeStaffUser($this->tenant, Role::Admin);
+        enableAdmissionWebhooks($this);
+
+        Livewire::actingAs($admin)->test(ProgramsIndex::class)->assertSet("accreditations.{$this->program->id}", '')
+            ->set("accreditations.{$this->program->id}", ' Unggul ')->call('saveAccreditation', $this->program->id)->assertHasNoErrors();
+
+        expect($this->program->refresh()->accreditation)->toBe('Unggul')
+            ->and(outbox())->toBe([['admission', 'program.updated', ['program_id' => $this->program->id]]]);
+
+        Livewire::actingAs($admin)->test(ProgramsIndex::class)->set("accreditations.{$this->program->id}", '')->call('saveAccreditation', $this->program->id);
+        expect($this->program->refresh()->accreditation)->toBeNull();
+
+        Livewire::actingAs($admin)->test(ProgramsIndex::class)->set("accreditations.{$this->program->id}", str_repeat('x', 31))->call('saveAccreditation', $this->program->id)->assertHasErrors();
+    });
+
+    it('only admin may edit the accreditation', function () {
+        Livewire::actingAs(makeStaffUser($this->tenant, Role::Curriculum))->test(ProgramsIndex::class)
+            ->call('saveAccreditation', $this->program->id)->assertForbidden();
+    });
+
+    it('publishes fee_rates.updated for every program when the fee model changes, and only then', function () {
+        enableAdmissionWebhooks($this, lms: true);
+
+        $this->tenant->update(['settings' => ['fee_model' => 'flat']]);
+
+        expect(collect(outbox())->pluck(1)->unique()->all())->toBe(['fee_rates.updated'])
+            ->and(collect(outbox())->pluck(0)->unique()->all())->toBe(['admission'])
+            ->and(collect(outbox())->map(fn ($e) => $e[2]['program_id'])->sort()->values()->all())->toBe(collect([$this->program->id, $this->other->id])->sort()->values()->all());
+
+        IntegrationEvent::query()->delete();
+        $this->tenant->update(['settings' => ['fee_model' => 'flat', 'va_prefix' => '9999']]);
+        $this->tenant->update(['name' => 'Kampus Baru']);
+        expect(outbox())->toBe([]);
+
+        $this->tenant->update(['settings' => ['va_prefix' => '9999']]);
+        expect(collect(outbox())->pluck(1)->unique()->all())->toBe(['fee_rates.updated']);
+    });
+
+    it('does not publish when the stored model is missing and the new one is the UKT default', function () {
+        enableAdmissionWebhooks($this);
+
+        $this->tenant->update(['settings' => ['fee_model' => 'ukt']]);
+
+        expect(outbox())->toBe([]);
     });
 });

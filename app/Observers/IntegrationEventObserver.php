@@ -12,6 +12,7 @@ use App\Models\StudyGroupMember;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\TeachingAssignment;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Services\IntegrationEvents;
 use Illuminate\Database\Eloquent\Model;
@@ -61,7 +62,8 @@ class IntegrationEventObserver
             $model instanceof Subject => $model->wasChanged(['name', 'code', 'credits']) ? $this->classesWhere('subject_id', $model->id, $model->tenant_id) : null,
             $model instanceof StudyGroup => $this->groupUpdated($model),
             $model instanceof Student => $this->studentUpdated($model),
-            $model instanceof Program => $model->wasChanged(['name', 'code', 'degree', 'faculty_id']) ? $this->program($model->id, $model->tenant_id) : null,
+            $model instanceof Program => $model->wasChanged(['name', 'code', 'degree', 'faculty_id', 'accreditation']) ? $this->program($model->id, $model->tenant_id) : null,
+            $model instanceof Tenant => $this->tenantUpdated($model),
             $model instanceof Faculty => $model->wasChanged('name') ? $this->facultyRenamed($model) : null,
             $model instanceof FeeRate => $this->feeRateUpdated($model),
             $model instanceof Teacher => $model->wasChanged(['name', 'nip', 'nidn', 'user_id']) ? $this->user($model->user_id, $model->tenant_id) : null,
@@ -88,6 +90,25 @@ class IntegrationEventObserver
     private function program(int $programId, int $tenantId): void
     {
         $this->events->publish('program.updated', ['program_id' => $programId], $tenantId);
+    }
+
+    /**
+     * Model biaya kampus berubah (UKT bertingkat <-> flat): tarif semua prodi dibaca ulang oleh Admission.
+     */
+    private function tenantUpdated(Tenant $tenant): void
+    {
+        if (! $tenant->wasChanged('settings')) {
+            return;
+        }
+
+        $previous = ((array) $tenant->getOriginal('settings'))['fee_model'] ?? null;
+
+        if (($previous === 'flat' ? 'flat' : 'ukt') === $tenant->feeModel()) {
+            return;
+        }
+
+        Program::query()->withoutGlobalScopes()->where('tenant_id', $tenant->id)->pluck('id')
+            ->each(fn (int $programId) => $this->feeRates($programId, $tenant->id));
     }
 
     private function feeRates(int $programId, int $tenantId): void

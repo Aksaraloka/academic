@@ -189,10 +189,10 @@ describe('successful handoff', function () {
             ->and($log->new_values)->toMatchArray(['admission_ref' => 'PMB-2027-000123', 'nim' => '27INF0001', 'paid' => 5000000, 'payment_reference' => 'ADM-PAY-000987']);
     });
 
-    it('falls back to the general UKT rate without a group and accepts missing optional data', function () {
+    it('falls back to the general UKT rate for an unlisted group and accepts missing optional data', function () {
         Queue::fake();
 
-        handoff($this, ['ukt_group' => null, 'student' => ['phone' => null, 'nik' => null], 'initial_payment' => ['amount' => 4500000]])->assertCreated()
+        handoff($this, ['ukt_group' => 1, 'student' => ['phone' => null, 'nik' => null], 'initial_payment' => ['amount' => 4500000]])->assertCreated()
             ->assertJsonPath('invoice.total', 4500000);
 
         expect(Student::firstOrFail()->nik)->toBeNull();
@@ -968,5 +968,102 @@ describe('admission photo', function () {
         $job->handle(app(AuditLogger::class));
 
         Http::assertNothingSent();
+    });
+});
+
+describe('fee model', function () {
+    it('answers 422 ukt_group_required in UKT mode when the group is missing and creates nothing', function () {
+        Queue::fake();
+
+        handoff($this, ['ukt_group' => null])->assertUnprocessable()->assertJsonPath('code', 'ukt_group_required');
+
+        expect(User::count())->toBe(0)->and(Student::count())->toBe(0)->and(Invoice::count())->toBe(0)->and(StudyGroup::count())->toBe(0);
+    });
+
+    it('treats a campus without the setting as UKT mode', function () {
+        Queue::fake();
+        $this->tenant->update(['settings' => []]);
+
+        handoff($this, ['ukt_group' => null])->assertUnprocessable()->assertJsonPath('code', 'ukt_group_required');
+    });
+
+    it('bills only the BPP in flat mode, accepts a null group, and ignores a given one', function (?int $group) {
+        Queue::fake();
+        $this->tenant->update(['settings' => ['fee_model' => 'flat']]);
+
+        handoff($this, ['ukt_group' => $group, 'initial_payment' => ['amount' => 500000]])->assertCreated()
+            ->assertJsonPath('invoice.total', 500000)->assertJsonPath('invoice.status', 'paid');
+
+        $invoice = Invoice::firstOrFail();
+
+        expect($invoice->items()->pluck('amount', 'description')->all())->toBe(['BPP' => 500000])
+            ->and($invoice->academic_term_id)->toBe($this->term->id);
+    })->with([null, 3]);
+
+    it('leaves a flat-mode invoice partial when the first payment is less', function () {
+        Queue::fake();
+        $this->tenant->update(['settings' => ['fee_model' => 'flat']]);
+
+        handoff($this, ['ukt_group' => null, 'initial_payment' => ['amount' => 200000]])->assertCreated()
+            ->assertJsonPath('invoice.status', 'partial')->assertJsonPath('invoice.total', 500000);
+    });
+
+    it('rejects a flat-mode handoff for a program without BPP, even if it has UKT rates', function () {
+        Queue::fake();
+        $this->tenant->update(['settings' => ['fee_model' => 'flat']]);
+        $ukt = makeProgram($this->tenant, 'Hukum');
+        FeeRate::create(['tenant_id' => $this->tenant->id, 'program_id' => $ukt->id, 'kind' => 'ukt', 'ukt_group' => null, 'amount' => 3000000]);
+
+        handoff($this, ['program_id' => $ukt->id, 'ukt_group' => null])->assertUnprocessable()->assertJsonPath('code', 'fee_rate_missing')
+            ->assertJsonPath('message', fn (string $message) => str_contains($message, 'tarif BPP'));
+
+        expect(Student::count())->toBe(0);
+    });
+
+    it('keeps UKT-mode invoices (group rate plus BPP) unchanged', function () {
+        Queue::fake();
+        $this->tenant->update(['settings' => ['fee_model' => 'ukt']]);
+
+        handoff($this)->assertCreated()->assertJsonPath('invoice.total', 5000000);
+
+        expect(Invoice::firstOrFail()->items()->pluck('amount', 'description')->all())->toBe(['UKT' => 4500000, 'BPP' => 500000]);
+    });
+
+    it('does not apply the fee-model check to a repeated handoff', function () {
+        Queue::fake();
+        handoff($this)->assertCreated();
+        $this->tenant->update(['settings' => ['fee_model' => 'ukt']]);
+
+        handoff($this, ['ukt_group' => null])->assertOk();
+    });
+
+    it('lets admin switch the fee model on the campus settings page and rejects unknown values', function () {
+        $admin = makeStaffUser($this->tenant, Role::Admin);
+
+        Livewire::actingAs($admin)->test(Campus::class)->assertSet('fee_model', 'ukt')
+            ->set('fee_model', 'flat')->call('save')->assertHasNoErrors();
+
+        expect($this->tenant->refresh()->feeModel())->toBe('flat');
+
+        Livewire::actingAs($admin)->test(Campus::class)->assertSet('fee_model', 'flat')->set('fee_model', 'bebas')->call('save')->assertHasErrors('fee_model');
+
+        expect($this->tenant->refresh()->feeModel())->toBe('flat');
+        $this->actingAs($admin)->get('/settings/campus')->assertOk()->assertSee('Model biaya');
+    });
+
+    it('rateFor and bulk generation follow the fee model', function () {
+        $student = makeStudentUser($this->tenant, [], ['program_id' => $this->program->id, 'ukt_group' => 3, 'batch_year' => 2027])->student;
+        $finance = app(FinanceService::class);
+
+        expect($finance->rateFor($student, 'ukt'))->toBe(4500000)->and($finance->rateFor($student, 'bpp'))->toBe(500000);
+
+        $this->tenant->update(['settings' => ['fee_model' => 'flat']]);
+        $student->refresh();
+
+        expect($finance->rateFor($student, 'ukt'))->toBeNull()->and($finance->rateFor($student, 'bpp'))->toBe(500000);
+
+        $finance->generate($this->term, makeStaffUser($this->tenant, Role::Finance), today()->addWeek());
+
+        expect(Invoice::where('student_id', $student->id)->firstOrFail()->items()->pluck('amount', 'description')->all())->toBe(['BPP' => 500000]);
     });
 });
