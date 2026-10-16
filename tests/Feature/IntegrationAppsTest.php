@@ -70,13 +70,6 @@ function ssoTokenFor(User $user, object $client, string $redirect): string
     ])->assertOk()->json('access_token');
 }
 
-function clientToken(object $client, string $scope): string
-{
-    return test()->postJson('/oauth/token', [
-        'grant_type' => 'client_credentials', 'client_id' => $client->getKey(), 'client_secret' => $client->plainSecret, 'scope' => $scope,
-    ])->assertOk()->json('access_token');
-}
-
 describe('SSO per application', function () {
     it('lets Admission staff roles sign in and refuses everyone else', function (Role $role, int $status) {
         $user = User::factory()->role($role)->create(['tenant_id' => $this->admissionTenant->id]);

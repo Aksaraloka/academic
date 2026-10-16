@@ -3,6 +3,7 @@
 use App\Http\Controllers\Integration\ClassGradeController;
 use App\Http\Controllers\Integration\ClassRosterController;
 use App\Http\Controllers\Integration\MeController;
+use App\Http\Controllers\Integration\ProgramController;
 use App\Http\Controllers\Integration\TermController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passport\Http\Middleware\CheckToken;
@@ -21,6 +22,12 @@ Route::prefix('integration/v1')->name('integration.')->middleware('throttle:inte
     // Token pengguna (SSO) ditolak, dan semua data dibatasi ke tenant integrasi.
     // `/terms` juga dapat dibaca klien Admission (scope `admission.read`); data selalu dari tenant aplikasi pemanggil.
     Route::get('/terms', [TermController::class, 'index'])->middleware('integration.client:sync.read,admission.read')->name('terms.index');
+
+    // Prodi dan tarif untuk Admission: klien server dengan scope `admission.read`.
+    Route::middleware('integration.client:admission.read')->group(function () {
+        Route::get('/programs', [ProgramController::class, 'index'])->name('programs.index');
+        Route::get('/programs/{program}/fee-rates', [ProgramController::class, 'feeRates'])->whereNumber('program')->name('programs.fee-rates');
+    });
 
     Route::middleware('integration.client:sync.read')->group(function () {
         Route::get('/terms/{term}/classes', [TermController::class, 'classes'])->whereNumber('term')->name('terms.classes');

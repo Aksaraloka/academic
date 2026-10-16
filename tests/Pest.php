@@ -297,3 +297,13 @@ function userToken(User $user, string $scope): string
         'redirect_uri' => 'http://aksaraloka.test/auth/academic/callback', 'code' => $query['code'], 'code_verifier' => $verifier,
     ])->assertOk()->json('access_token');
 }
+
+/**
+ * Token klien server (client credentials) untuk klien mana pun.
+ */
+function clientToken(object $client, string $scope): string
+{
+    return test()->postJson('/oauth/token', [
+        'grant_type' => 'client_credentials', 'client_id' => $client->getKey(), 'client_secret' => $client->plainSecret, 'scope' => $scope,
+    ])->assertOk()->json('access_token');
+}
