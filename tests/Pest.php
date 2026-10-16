@@ -6,10 +6,13 @@ use App\Enums\GradeKind;
 use App\Enums\Role;
 use App\Models\AcademicEvent;
 use App\Models\AcademicTerm;
+use App\Models\AttendanceRecord;
+use App\Models\AttendanceSession;
 use App\Models\Enrollment;
 use App\Models\Faculty;
 use App\Models\Grade;
 use App\Models\Program;
+use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\StudyGroup;
 use App\Models\StudyGroupMember;
@@ -17,6 +20,7 @@ use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\TeachingAssignment;
 use App\Models\Tenant;
+use App\Models\TimeSlot;
 use App\Models\User;
 use App\Support\GradeScale;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -234,4 +238,25 @@ function approvedEnrollment(Student $student, AcademicTerm $term, array $assignm
     $enrollment->assignments()->sync(collect($assignments)->pluck('id')->all());
 
     return $enrollment;
+}
+
+/**
+ * Isi presensi kuliah ini: satu sesi per status pada tanggal berbeda.
+ *
+ * @param  array<int, string>  $statuses
+ */
+function recordAttendance(TeachingAssignment $class, Student $student, array $statuses): void
+{
+    $slot = TimeSlot::query()->withoutGlobalScopes()->firstOrCreate(
+        ['tenant_id' => $class->tenant_id, 'day' => 1, 'period_number' => 1],
+        ['starts_at' => '08:00', 'ends_at' => '10:00'],
+    );
+    $schedule = Schedule::query()->withoutGlobalScopes()->firstOrCreate(['tenant_id' => $class->tenant_id, 'teaching_assignment_id' => $class->id, 'time_slot_id' => $slot->id]);
+
+    foreach ($statuses as $index => $status) {
+        $date = today()->subDays($index + 1)->toDateString();
+        $session = AttendanceSession::query()->withoutGlobalScopes()->where('schedule_id', $schedule->id)->whereDate('date', $date)->first()
+            ?? AttendanceSession::create(['schedule_id' => $schedule->id, 'date' => $date, 'tenant_id' => $class->tenant_id, 'study_group_id' => $class->study_group_id, 'mode' => 'manual']);
+        AttendanceRecord::create(['attendance_session_id' => $session->id, 'student_id' => $student->id, 'status' => $status, 'method' => 'manual']);
+    }
 }

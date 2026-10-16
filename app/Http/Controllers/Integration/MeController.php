@@ -13,6 +13,6 @@ class MeController extends Controller
      */
     public function __invoke(Request $request): UserResource
     {
-        return new UserResource($request->user()->load(['student', 'teacher']));
+        return new UserResource($request->user()->load(['student.program', 'teacher']));
     }
 }

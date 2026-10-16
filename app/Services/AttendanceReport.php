@@ -146,38 +146,13 @@ class AttendanceReport
 
         return $assignments->map(function (TeachingAssignment $assignment) use ($records, $minPercent, $plannedMeetings): array {
             $rows = $records->get($assignment->id, collect())->sortBy(fn (AttendanceRecord $record) => $record->session->date)->values();
-            $counts = collect(AttendanceStatus::cases())
-                ->mapWithKeys(fn (AttendanceStatus $status): array => [$status->value => $rows->where('status', $status)->count()])
-                ->all();
-
-            $total = $rows->count();
-            $attended = $counts[AttendanceStatus::Present->value] + $counts[AttendanceStatus::Late->value];
-            $missed = $total - $attended;
-            $planned = max($plannedMeetings, $total);
-            $allowed = (int) floor($planned * (100 - $minPercent) / 100);
-            $remaining = max($allowed - $missed, 0);
-
-            $level = match (true) {
-                $total === 0 => 'baru',
-                $missed > $allowed => 'risiko',
-                $remaining <= 1 => 'waspada',
-                default => 'aman',
-            };
 
             return [
                 'assignment' => $assignment,
                 'subject' => $assignment->subject,
                 'teacher' => $assignment->teacher,
                 'slots' => $assignment->schedules->map->timeSlot->sortBy(fn (TimeSlot $slot) => $slot->day.$slot->starts_at)->values(),
-                'counts' => $counts,
-                'total' => $total,
-                'attended' => $attended,
-                'missed' => $missed,
-                'percent' => $total > 0 ? (int) round($attended / $total * 100) : null,
-                'planned' => $planned,
-                'allowed' => $allowed,
-                'remaining' => $remaining,
-                'level' => $level,
+                ...$this->evaluate($rows, $minPercent, $plannedMeetings),
                 'history' => $rows->map(fn (AttendanceRecord $record): array => [
                     'date' => $record->session->date,
                     'status' => $record->status,
@@ -185,6 +160,73 @@ class AttendanceReport
                 ]),
             ];
         })->sortBy(fn (array $row): string => $row['subject']->name)->values();
+    }
+
+    /**
+     * Rekap kehadiran satu kuliah untuk banyak mahasiswa sekaligus (dipakai API integrasi). Memakai aturan yang sama
+     * dengan analitik mahasiswa di atas: hanya sesi berjadwal kuliah ini pada rentang semester, dengan proyeksi
+     * pertemuan dan tingkat aman/waspada/risiko yang sama.
+     *
+     * @param  iterable<int, int>  $studentIds
+     * @return array<int, array{counts: array<string, int>, total: int, attended: int, missed: int, percent: ?int, planned: int, allowed: int, remaining: int, level: string}> dikunci id mahasiswa
+     */
+    public function assignmentRecap(TeachingAssignment $assignment, iterable $studentIds, int $minPercent, int $plannedMeetings): array
+    {
+        $studentIds = collect($studentIds)->values();
+        $term = $assignment->academicTerm;
+
+        $records = AttendanceRecord::query()
+            ->with('session:id,date,schedule_id')
+            ->whereIn('student_id', $studentIds)
+            ->whereHas('session', fn ($query) => $query
+                ->whereIn('schedule_id', $assignment->schedules()->select('schedules.id'))
+                ->whereBetween('date', [$term->starts_at->toDateString(), $term->ends_at->toDateString()]))
+            ->get()
+            ->groupBy('student_id');
+
+        return $studentIds
+            ->mapWithKeys(fn (int $studentId): array => [$studentId => $this->evaluate($records->get($studentId, collect()), $minPercent, $plannedMeetings)])
+            ->all();
+    }
+
+    /**
+     * Hitung status kehadiran dari baris presensi seorang mahasiswa pada satu kuliah. Satu-satunya tempat aturan
+     * proyeksi pertemuan dan tingkat aman/waspada/risiko.
+     *
+     * @param  Collection<int, AttendanceRecord>  $rows
+     * @return array{counts: array<string, int>, total: int, attended: int, missed: int, percent: ?int, planned: int, allowed: int, remaining: int, level: string}
+     */
+    private function evaluate(Collection $rows, int $minPercent, int $plannedMeetings): array
+    {
+        $counts = collect(AttendanceStatus::cases())
+            ->mapWithKeys(fn (AttendanceStatus $status): array => [$status->value => $rows->where('status', $status)->count()])
+            ->all();
+
+        $total = $rows->count();
+        $attended = $counts[AttendanceStatus::Present->value] + $counts[AttendanceStatus::Late->value];
+        $missed = $total - $attended;
+        $planned = max($plannedMeetings, $total);
+        $allowed = (int) floor($planned * (100 - $minPercent) / 100);
+        $remaining = max($allowed - $missed, 0);
+
+        $level = match (true) {
+            $total === 0 => 'baru',
+            $missed > $allowed => 'risiko',
+            $remaining <= 1 => 'waspada',
+            default => 'aman',
+        };
+
+        return [
+            'counts' => $counts,
+            'total' => $total,
+            'attended' => $attended,
+            'missed' => $missed,
+            'percent' => $total > 0 ? (int) round($attended / $total * 100) : null,
+            'planned' => $planned,
+            'allowed' => $allowed,
+            'remaining' => $remaining,
+            'level' => $level,
+        ];
     }
 
     /**

@@ -3,15 +3,10 @@
 use App\Enums\GradeKind;
 use App\Enums\GradeRevisionStatus;
 use App\Enums\Role;
-use App\Models\AttendanceRecord;
-use App\Models\AttendanceSession;
 use App\Models\AuditLog;
 use App\Models\Grade;
-use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\Subject;
-use App\Models\TeachingAssignment;
-use App\Models\TimeSlot;
 use App\Services\AcademicRecord;
 use App\Services\GradingService;
 use Illuminate\Validation\ValidationException;
@@ -26,28 +21,6 @@ beforeEach(function () {
     $this->service = app(GradingService::class);
     $this->actingAs($this->teacher);
 });
-
-/**
- * Isi presensi kuliah ini: satu sesi per status pada tanggal berbeda.
- *
- * @param  array<int, string>  $statuses
- */
-function recordAttendance(TeachingAssignment $class, Student $student, array $statuses): void
-{
-    $slot = TimeSlot::query()->withoutGlobalScopes()->firstOrCreate(
-        ['tenant_id' => $class->tenant_id, 'day' => 1, 'period_number' => 1],
-        ['starts_at' => '08:00', 'ends_at' => '10:00'],
-    );
-    $schedule = Schedule::query()->withoutGlobalScopes()->firstOrCreate(['tenant_id' => $class->tenant_id, 'teaching_assignment_id' => $class->id, 'time_slot_id' => $slot->id]);
-
-    foreach ($statuses as $index => $status) {
-        $session = AttendanceSession::query()->withoutGlobalScopes()->firstOrCreate(
-            ['schedule_id' => $schedule->id, 'date' => today()->subDays($index + 1)->toDateString()],
-            ['tenant_id' => $class->tenant_id, 'study_group_id' => $class->study_group_id, 'mode' => 'manual'],
-        );
-        AttendanceRecord::create(['attendance_session_id' => $session->id, 'student_id' => $student->id, 'status' => $status, 'method' => 'manual']);
-    }
-}
 
 /**
  * @return array<int, array{assignment: int, midterm: int, final: int}>

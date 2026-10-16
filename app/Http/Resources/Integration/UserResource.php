@@ -25,6 +25,10 @@ class UserResource extends JsonResource
             'role' => $this->role->value,
             'is_homeroom' => $this->isHomeroomTeacher(),
             'status' => $this->student?->status?->value ?? StudentStatus::Active->value,
+            'program' => $this->when($this->student?->program !== null, fn (): array => [
+                'code' => $this->student->program->code,
+                'name' => $this->student->program->name,
+            ]),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
