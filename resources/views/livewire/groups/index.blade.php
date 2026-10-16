@@ -20,6 +20,12 @@
                             @foreach ($programs as $program)<option value="{{ $program->id }}">{{ $program->label() }}</option>@endforeach
                         </select>
                     </x-field>
+                    <x-field label="Tingkat" name="grade_level_id" hint="Mahasiswa baru dari Admission masuk ke kelas tingkat pertama.">
+                        <select id="grade_level_id" wire:model="grade_level_id" class="input">
+                            <option value="">Belum ditentukan</option>
+                            @foreach ($gradeLevels as $level)<option value="{{ $level->id }}">{{ $level->name }}</option>@endforeach
+                        </select>
+                    </x-field>
                     <x-field label="Dosen wali" name="homeroom_teacher_id">
                         <select id="homeroom_teacher_id" wire:model="homeroom_teacher_id" class="input">
                             <option value="">Belum ditentukan</option>
@@ -37,8 +43,23 @@
         </form>
     @endif
 
+    @if (auth()->user()->canManageStudyGroups())
+        <div class="flex flex-wrap gap-2" role="group" aria-label="Saring kelas">
+            <x-button :variant="$filter === '' ? 'primary' : 'secondary'" wire:click="$set('filter', '')">Semua kelas</x-button>
+            <x-button :variant="$filter === 'tanpa-wali' ? 'primary' : 'secondary'" wire:click="$set('filter', 'tanpa-wali')" icon="exclamation-triangle">
+                Tanpa dosen wali ({{ $withoutHomeroomCount }})
+            </x-button>
+        </div>
+    @endif
+
     @if ($groups->isEmpty())
-        <x-card><x-empty-state icon="user-group" title="Belum ada kelas" description="Buat kelas pertama, lalu tempatkan mahasiswa ke dalamnya." /></x-card>
+        <x-card>
+            @if ($filter === 'tanpa-wali')
+                <x-empty-state icon="check-circle" title="Semua kelas sudah punya dosen wali" />
+            @else
+                <x-empty-state icon="user-group" title="Belum ada kelas" description="Buat kelas pertama, lalu tempatkan mahasiswa ke dalamnya." />
+            @endif
+        </x-card>
     @else
         <div class="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-4">
             @foreach ($groups as $group)
@@ -48,9 +69,17 @@
                     <div class="p-4">
                         <p class="truncate text-xs text-text-muted">{{ $group->program?->label() ?? 'Program studi belum ditentukan' }}</p>
                         <p class="mt-3 truncate text-xs text-text-muted">Dosen wali</p>
-                        <p class="truncate text-sm font-semibold">{{ $group->homeroomTeacher?->name ?? 'Belum ditentukan' }}</p>
+                        @if ($group->homeroomTeacher)
+                            <p class="truncate text-sm font-semibold">{{ $group->homeroomTeacher->name }}</p>
+                        @else
+                            <x-badge variant="warning" icon="exclamation-triangle">Belum ditentukan</x-badge>
+                        @endif
                         <p class="mt-3 text-xs text-text-muted">Mahasiswa</p>
-                        <p class="text-base font-bold tabular-nums">{{ $group->students_count }}</p>
+                        <p class="text-base font-bold tabular-nums">{{ $group->students_count }}
+                            @if ($group->new_students_count > 0)
+                                <span class="text-xs font-semibold text-info">· {{ $group->new_students_count }} baru</span>
+                            @endif
+                        </p>
                     </div>
                 </a>
             @endforeach

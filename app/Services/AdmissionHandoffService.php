@@ -13,6 +13,8 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Program;
 use App\Models\Student;
+use App\Models\StudyGroup;
+use App\Models\StudyGroupMember;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -28,12 +30,13 @@ class AdmissionHandoffService
     public function __construct(
         private readonly FinanceService $finance,
         private readonly NimGenerator $nim,
+        private readonly StudyGroupPlacement $placement,
         private readonly AuditLogger $audit,
     ) {}
 
     /**
      * @param  array<string, mixed>  $data  isi `POST /admissions/students` yang sudah tervalidasi
-     * @return array{created: bool, data: array{user_id: int, student_id: int, nim: string, invoice: array{number: string, status: string, total: int, paid: int}|null}}
+     * @return array{created: bool, data: array{user_id: int, student_id: int, nim: string, study_group: array{id: int, name: string}|null, invoice: array{number: string, status: string, total: int, paid: int}|null}}
      *
      * @throws AdmissionHandoffException
      */
@@ -121,6 +124,8 @@ class AdmissionHandoffService
             'province' => $profile['province'] ?? null, 'postal_code' => $profile['postal_code'] ?? null, 'previous_school' => $profile['previous_school'] ?? null,
         ]);
 
+        $group = $this->placement->place($student, $program, $term, $batchYear);
+
         $invoice = $this->finance->issueInvoice($student, $term, null, today(), notify: false);
 
         if ($invoice === null) {
@@ -142,7 +147,7 @@ class AdmissionHandoffService
 
         $this->audit->log('admission.handoff', $student, [], [
             'admission_ref' => $data['admission_ref'], 'nim' => $student->nim, 'program' => $program->name, 'term' => $term->id,
-            'invoice' => $invoice->number, 'paid' => (int) $payment['amount'], 'payment_reference' => $payment['reference'],
+            'study_group' => $group->name, 'invoice' => $invoice->number, 'paid' => (int) $payment['amount'], 'payment_reference' => $payment['reference'],
         ], null, $tenantId);
 
         return $student;
@@ -154,16 +159,20 @@ class AdmissionHandoffService
     }
 
     /**
-     * @return array{user_id: int, student_id: int, nim: string, invoice: array{number: string, status: string, total: int, paid: int}|null}
+     * @return array{user_id: int, student_id: int, nim: string, study_group: array{id: int, name: string}|null, invoice: array{number: string, status: string, total: int, paid: int}|null}
      */
     private function response(Student $student): array
     {
         $invoice = Invoice::query()->withoutGlobalScopes()->with('payments')->where('student_id', $student->id)->orderBy('id')->first();
+        $memberships = StudyGroupMember::query()->where('student_id', $student->id)->orderByDesc('id');
+        $groupId = (clone $memberships)->whereNull('left_at')->value('study_group_id') ?? $memberships->value('study_group_id');
+        $group = $groupId === null ? null : StudyGroup::query()->withoutGlobalScopes()->find($groupId);
 
         return [
             'user_id' => $student->user_id,
             'student_id' => $student->id,
             'nim' => $student->nim,
+            'study_group' => $group === null ? null : ['id' => $group->id, 'name' => $group->name],
             'invoice' => $invoice === null ? null : [
                 'number' => $invoice->number, 'status' => $invoice->status->value, 'total' => $invoice->total, 'paid' => $invoice->paidAmount(),
             ],

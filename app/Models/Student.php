@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\StudentStatus;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -45,6 +46,17 @@ class Student extends Model
             'graduated_on' => 'date',
             'status' => StudentStatus::class,
         ];
+    }
+
+    /**
+     * Mahasiswa baru dari Admission pada semester ini: punya `admission_ref` dan angkatannya tidak lebih lama dari
+     * satu tahun sebelum semester dimulai.
+     *
+     * @param  Builder<Student>  $query
+     */
+    public function scopeNewIn(Builder $query, AcademicTerm $term): void
+    {
+        $query->whereNotNull('admission_ref')->where('batch_year', '>=', $term->starts_at->year - 1);
     }
 
     public function user(): BelongsTo

@@ -6,15 +6,22 @@ use App\Enums\PaymentStatus;
 use App\Enums\Role;
 use App\Enums\StudentStatus;
 use App\Jobs\SendPasswordSetupLink;
+use App\Livewire\Groups\Index as GroupsIndex;
+use App\Livewire\Groups\Show as GroupsShow;
 use App\Livewire\Settings\Campus;
 use App\Models\AuditLog;
 use App\Models\FeeRate;
+use App\Models\GradeLevel;
+use App\Models\IntegrationEvent;
 use App\Models\Invoice;
 use App\Models\OauthClient;
 use App\Models\Payment;
 use App\Models\Student;
+use App\Models\StudyGroup;
+use App\Models\StudyGroupMember;
 use App\Models\User;
 use App\Notifications\AcademicNotice;
+use App\Services\ClassRoster;
 use App\Services\FinanceService;
 use App\Services\NimGenerator;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -96,9 +103,11 @@ describe('successful handoff', function () {
         $user = User::findOrFail($student->user_id);
         $invoice = Invoice::where('student_id', $student->id)->firstOrFail();
         $payment = Payment::where('invoice_id', $invoice->id)->firstOrFail();
+        $group = StudyGroup::firstOrFail();
 
         expect($response->json())->toBe([
             'user_id' => $user->id, 'student_id' => $student->id, 'nim' => '27INF0001',
+            'study_group' => ['id' => $group->id, 'name' => 'INF 2027 A'],
             'invoice' => ['number' => $invoice->number, 'status' => 'paid', 'total' => 5000000, 'paid' => 5000000],
         ])
             ->and($user->role)->toBe(Role::Student)->and($user->tenant_id)->toBe($this->tenant->id)->and($user->email)->toBe('rina.putri@contoh.test')
@@ -475,5 +484,210 @@ describe('campus settings and invoice reuse', function () {
         $bare = makeStudentUser($this->tenant, [], ['program_id' => makeProgram($this->tenant, 'Hukum')->id])->student;
 
         expect($service->issueInvoice($bare, $this->term, null, today(), notify: false))->toBeNull();
+    });
+});
+
+describe('class placement', function () {
+    /**
+     * Kelas tingkat pertama prodi pada semester masuk, dengan anggota aktif sebanyak `$members`.
+     */
+    function firstLevelGroup(object $test, string $name, int $members = 0): StudyGroup
+    {
+        $level = GradeLevel::query()->where('tenant_id', $test->tenant->id)->orderBy('position')->first()
+            ?? GradeLevel::create(['tenant_id' => $test->tenant->id, 'name' => 'Tingkat 1', 'position' => 1]);
+        $group = StudyGroup::create([
+            'tenant_id' => $test->tenant->id, 'academic_term_id' => $test->term->id, 'program_id' => $test->program->id,
+            'grade_level_id' => $level->id, 'name' => $name,
+        ]);
+
+        for ($n = 1; $n <= $members; $n++) {
+            joinGroup($group, Student::factory()->create(['tenant_id' => $test->tenant->id, 'program_id' => $test->program->id, 'nim' => "{$name}-{$n}"]));
+        }
+
+        return $group;
+    }
+
+    it('creates a first-level group without a homeroom teacher when none exists', function () {
+        Queue::fake();
+
+        $response = handoff($this)->assertCreated();
+
+        $group = StudyGroup::firstOrFail();
+        $student = Student::firstOrFail();
+
+        expect($group->name)->toBe('INF 2027 A')->and($group->homeroom_teacher_id)->toBeNull()
+            ->and($group->program_id)->toBe($this->program->id)->and($group->academic_term_id)->toBe($this->term->id)
+            ->and($group->gradeLevel->name)->toBe('Tingkat 1')->and($group->gradeLevel->position)->toBe(1)
+            ->and($response->json('study_group'))->toBe(['id' => $group->id, 'name' => 'INF 2027 A'])
+            ->and(StudyGroupMember::where('student_id', $student->id)->whereNull('left_at')->pluck('study_group_id')->all())->toBe([$group->id]);
+    });
+
+    it('joins the existing first-level group of the program and term', function () {
+        Queue::fake();
+        $group = firstLevelGroup($this, 'INF-2027-A', 2);
+
+        handoff($this)->assertCreated()->assertJsonPath('study_group', ['id' => $group->id, 'name' => 'INF-2027-A']);
+
+        expect(StudyGroup::count())->toBe(1)->and($group->activeStudents()->count())->toBe(3);
+    });
+
+    it('picks the group with the fewest active members', function () {
+        Queue::fake();
+        firstLevelGroup($this, 'INF-A', 3);
+        $quiet = firstLevelGroup($this, 'INF-B', 1);
+        firstLevelGroup($this, 'INF-C', 2);
+        StudyGroupMember::where('study_group_id', $quiet->id)->update(['left_at' => today()]);
+        $leftBehind = firstLevelGroup($this, 'INF-D', 1);
+
+        handoff($this)->assertCreated()->assertJsonPath('study_group.id', $quiet->id);
+
+        expect($leftBehind->activeStudents()->count())->toBe(1);
+    });
+
+    it('ignores groups of another program, term, or level', function () {
+        Queue::fake();
+        $level = GradeLevel::create(['tenant_id' => $this->tenant->id, 'name' => 'Tingkat 1', 'position' => 1]);
+        $second = GradeLevel::create(['tenant_id' => $this->tenant->id, 'name' => 'Tingkat 2', 'position' => 2]);
+        StudyGroup::create(['tenant_id' => $this->tenant->id, 'academic_term_id' => $this->term->id, 'program_id' => makeProgram($this->tenant, 'Hukum')->id, 'grade_level_id' => $level->id, 'name' => 'HUK']);
+        StudyGroup::create(['tenant_id' => $this->tenant->id, 'academic_term_id' => makeTerm($this->tenant, ['is_active' => false])->id, 'program_id' => $this->program->id, 'grade_level_id' => $level->id, 'name' => 'LAMA']);
+        StudyGroup::create(['tenant_id' => $this->tenant->id, 'academic_term_id' => $this->term->id, 'program_id' => $this->program->id, 'grade_level_id' => $second->id, 'name' => 'INF-TK2']);
+        StudyGroup::create(['tenant_id' => $this->tenant->id, 'academic_term_id' => $this->term->id, 'program_id' => $this->program->id, 'grade_level_id' => null, 'name' => 'INF-TANPA']);
+
+        handoff($this)->assertCreated()->assertJsonPath('study_group.name', 'INF 2027 A');
+
+        expect(StudyGroup::count())->toBe(5);
+    });
+
+    it('raises the letter when the generated name is already taken', function () {
+        Queue::fake();
+        GradeLevel::create(['tenant_id' => $this->tenant->id, 'name' => 'Tingkat 1', 'position' => 1]);
+        $other = GradeLevel::create(['tenant_id' => $this->tenant->id, 'name' => 'Tingkat 2', 'position' => 2]);
+        $this->tenant->update(['settings' => ['nim_pattern' => '{YY}{PRODI}{SEQ:4}']]);
+        foreach (['INF 2027 A', 'INF 2027 B'] as $name) {
+            StudyGroup::create(['tenant_id' => $this->tenant->id, 'academic_term_id' => $this->term->id, 'program_id' => $this->program->id, 'grade_level_id' => $other->id, 'name' => $name]);
+        }
+
+        handoff($this)->assertCreated()->assertJsonPath('study_group.name', 'INF 2027 C');
+    });
+
+    it('reuses the group it created for the next student of the same intake', function () {
+        Queue::fake();
+
+        handoff($this)->assertCreated();
+        handoff($this, ['admission_ref' => 'REF-2', 'student' => ['email' => 'dua@contoh.test', 'nik' => '3201010101090002'], 'initial_payment' => ['reference' => 'PAY-2']])
+            ->assertCreated()->assertJsonPath('study_group.name', 'INF 2027 A');
+
+        expect(StudyGroup::count())->toBe(1)->and(StudyGroupMember::count())->toBe(2);
+    });
+
+    it('is idempotent: a repeated call neither moves the student nor adds a membership', function () {
+        Queue::fake();
+        $first = handoff($this)->assertCreated()->json();
+        $other = firstLevelGroup($this, 'INF-SEPI', 0);
+        $student = Student::firstOrFail();
+
+        $second = handoff($this)->assertOk()->json();
+
+        expect($second)->toBe($first)->and(StudyGroup::count())->toBe(2)
+            ->and(StudyGroupMember::where('student_id', $student->id)->count())->toBe(1)->and($other->members()->count())->toBe(0);
+    });
+
+    it('reports the current group when repeated after the student was moved', function () {
+        Queue::fake();
+        handoff($this)->assertCreated();
+        $student = Student::firstOrFail();
+        $target = firstLevelGroup($this, 'INF-PINDAH', 0);
+        StudyGroupMember::where('student_id', $student->id)->update(['left_at' => today()]);
+        StudyGroupMember::create(['study_group_id' => $target->id, 'student_id' => $student->id, 'joined_at' => today()]);
+
+        handoff($this)->assertOk()->assertJsonPath('study_group.id', $target->id);
+    });
+
+    it('rolls the placement back when the handoff fails', function () {
+        Queue::fake();
+
+        handoff($this, ['initial_payment' => ['amount' => 5000001]])->assertUnprocessable();
+
+        expect(StudyGroup::count())->toBe(0)->and(StudyGroupMember::count())->toBe(0);
+    });
+
+    it('puts the new student on the roster of the classes of the group', function () {
+        Queue::fake();
+        $group = firstLevelGroup($this, 'INF-A', 1);
+        $class = makeClass($this->tenant, ['term' => $this->term, 'program' => $this->program, 'group' => $group]);
+
+        handoff($this)->assertCreated();
+
+        expect(app(ClassRoster::class)->studentIds($class)->all())->toContain(Student::firstWhere('admission_ref', 'PMB-2027-000123')->id);
+    });
+
+    it('publishes roster.updated for the classes of the group', function () {
+        Queue::fake();
+        $group = firstLevelGroup($this, 'INF-A', 1);
+        $class = makeClass($this->tenant, ['term' => $this->term, 'program' => $this->program, 'group' => $group]);
+        config(['integration.lms.url' => 'http://lms.test', 'integration.lms.tenant_id' => $this->tenant->id, 'integration.lms.webhook_secret' => 'rahasia']);
+
+        handoff($this)->assertCreated();
+
+        expect(IntegrationEvent::where('type', 'roster.updated')->get()->pluck('payload')->all())->toContain(['class_id' => $class->id]);
+    });
+});
+
+describe('class administration for BAAK', function () {
+    it('lists groups without a homeroom teacher and flags new students per group', function () {
+        Queue::fake();
+        handoff($this)->assertCreated();
+        StudyGroup::create(['tenant_id' => $this->tenant->id, 'academic_term_id' => $this->term->id, 'program_id' => $this->program->id, 'name' => 'INF-WALI', 'homeroom_teacher_id' => makeTeacherUser($this->tenant)->teacher->id]);
+
+        foreach ([Role::Admin, Role::Curriculum] as $role) {
+            Livewire::actingAs(makeStaffUser($this->tenant, $role))->test(GroupsIndex::class)
+                ->assertSee('INF-WALI')->assertSee('INF 2027 A')->assertSee('1 baru')->assertSee('Tanpa dosen wali (1)')
+                ->set('filter', 'tanpa-wali')->assertSee('INF 2027 A')->assertDontSee('INF-WALI');
+        }
+    });
+
+    it('lets admin and curriculum set the homeroom teacher and level, but not others', function () {
+        Queue::fake();
+        handoff($this)->assertCreated();
+        $group = StudyGroup::firstOrFail();
+        $teacher = makeTeacherUser($this->tenant)->teacher;
+        $level = GradeLevel::firstOrFail();
+
+        Livewire::actingAs(makeStaffUser($this->tenant, Role::Curriculum))->test(GroupsShow::class, ['group' => $group])
+            ->set('homeroom_teacher_id', (string) $teacher->id)->set('grade_level_id', (string) $level->id)->call('saveSettings')->assertHasNoErrors();
+
+        expect($group->refresh()->homeroom_teacher_id)->toBe($teacher->id);
+
+        Livewire::actingAs(makeStaffUser($this->tenant, Role::Principal))->test(GroupsShow::class, ['group' => $group])
+            ->set('homeroom_teacher_id', '')->call('saveSettings')->assertForbidden();
+
+        expect($group->refresh()->homeroom_teacher_id)->toBe($teacher->id);
+    });
+
+    it('moves a new student to another group of the term and publishes roster.updated for both', function () {
+        Queue::fake();
+        handoff($this)->assertCreated();
+        $from = StudyGroup::firstOrFail();
+        $to = firstLevelGroup($this, 'INF-LAIN', 1);
+        $student = Student::firstWhere('admission_ref', 'PMB-2027-000123');
+        $fromClass = makeClass($this->tenant, ['term' => $this->term, 'program' => $this->program, 'group' => $from]);
+        $toClass = makeClass($this->tenant, ['term' => $this->term, 'program' => $this->program, 'group' => $to]);
+        config(['integration.lms.url' => 'http://lms.test', 'integration.lms.tenant_id' => $this->tenant->id, 'integration.lms.webhook_secret' => 'rahasia']);
+
+        Livewire::actingAs(makeStaffUser($this->tenant, Role::Curriculum))->test(GroupsShow::class, ['group' => $from])
+            ->assertSee('Baru')->call('move', $student->id, (string) $to->id);
+
+        expect(StudyGroupMember::where('student_id', $student->id)->whereNull('left_at')->pluck('study_group_id')->all())->toBe([$to->id])
+            ->and(IntegrationEvent::where('type', 'roster.updated')->get()->pluck('payload.class_id')->all())->toContain($fromClass->id, $toClass->id);
+    });
+
+    it('refuses to move a student for roles that cannot manage groups', function () {
+        Queue::fake();
+        handoff($this)->assertCreated();
+        $from = StudyGroup::firstOrFail();
+        $to = firstLevelGroup($this, 'INF-LAIN', 0);
+
+        Livewire::actingAs(makeTeacherUser($this->tenant))->test(GroupsShow::class, ['group' => $from])
+            ->call('move', Student::firstWhere('admission_ref', 'PMB-2027-000123')->id, (string) $to->id)->assertForbidden();
     });
 });

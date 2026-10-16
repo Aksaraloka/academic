@@ -77,6 +77,14 @@ class User extends Authenticatable
     }
 
     /**
+     * BAAK: admin dan wakil dekan akademik mengelola kelas angkatan (dosen wali, penempatan, pemindahan mahasiswa).
+     */
+    public function canManageStudyGroups(): bool
+    {
+        return $this->hasRole(Role::Admin, Role::Curriculum);
+    }
+
+    /**
      * Dosen wali: dosen yang menjadi wali minimal satu kelas pada tahun ajaran aktif.
      */
     public function isHomeroomTeacher(): bool
