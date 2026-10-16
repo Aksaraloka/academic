@@ -128,6 +128,7 @@
                         </p>
                     @endif
                     <livewire:notifications.bell />
+                    <x-app-switcher />
                     <span class="hidden h-6 w-px bg-border sm:block" aria-hidden="true"></span>
                     <div x-data="{ open: false }" @click.outside="open = false" class="relative">
                         <button type="button" @click="open = !open"
@@ -153,6 +154,7 @@
                                 <x-icon name="user-circle" class="size-4" /> Profil
                             </a>
                             <div class="my-1 border-t border-border" role="separator"></div>
+                            <x-app-switcher variant="list" />
                             <x-theme-switcher />
                             <div class="my-1 border-t border-border" role="separator"></div>
                             <form method="POST" action="{{ route('logout') }}">

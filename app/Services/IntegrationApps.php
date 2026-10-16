@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\OauthClient;
+use App\Models\User;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 
@@ -14,6 +15,9 @@ class IntegrationApps
     public const LMS = 'lms';
 
     public const ADMISSION = 'admission';
+
+    /** Kunci Academic di daftar pengalih aplikasi; Academic selalu ada dan bukan target integrasi. */
+    public const ACADEMIC = 'academic';
 
     /** Atribut request tempat aplikasi pemanggil disimpan oleh middleware integrasi. */
     public const REQUEST_ATTRIBUTE = 'integration.app';
@@ -47,6 +51,26 @@ class IntegrationApps
     public function all(): array
     {
         return collect($this->keys())->mapWithKeys(fn (string $key): array => [$key => $this->get($key)])->all();
+    }
+
+    /**
+     * Aplikasi Aksaraloka yang boleh dibuka pengguna ini, untuk pengalih aplikasi. Academic selalu pertama (alamat dari
+     * `app.url`); aplikasi lain hanya bila terkonfigurasi (alamat dan kampus) dan tenant serta peran pengguna diizinkan
+     * `sso_roles`-nya. Alamat tanpa garis miring akhir; tautan masuk berupa `{url}/auth/academic`.
+     *
+     * @return array<int, array{key: string, label: string, url: string}>
+     */
+    public function linksFor(User $user): array
+    {
+        $links = [['key' => self::ACADEMIC, 'label' => 'Academic', 'url' => rtrim((string) config('app.url'), '/')]];
+
+        foreach ($this->all() as $key => $app) {
+            if ($app->isConfigured() && $app->canAccess($user)) {
+                $links[] = ['key' => $key, 'label' => $app->label(), 'url' => $app->url()];
+            }
+        }
+
+        return $links;
     }
 
     /**

@@ -29,7 +29,7 @@ return [
 
     'apps' => [
         'lms' => $lms + [
-            'label' => 'Kelas Online',
+            'label' => 'Learn',
             'sso_roles' => null, // null = `role_map` di bawah
             'scopes' => ['profile', 'sync.read', 'grades.write'],
         ],

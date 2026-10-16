@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Integration\AdmissionStudentController;
+use App\Http\Controllers\Integration\AppsController;
 use App\Http\Controllers\Integration\ClassGradeController;
 use App\Http\Controllers\Integration\ClassRosterController;
 use App\Http\Controllers\Integration\MeController;
@@ -18,6 +19,11 @@ Route::prefix('integration/v1')->name('integration.')->middleware('throttle:inte
     Route::get('/me', MeController::class)
         ->middleware(['auth:api', CheckToken::using('profile'), 'lms.access'])
         ->name('me');
+
+    // Pengalih aplikasi: token pengguna (SSO) dengan scope `profile`; token klien server ditolak oleh guard `api`.
+    Route::get('/apps', AppsController::class)
+        ->middleware(['auth:api', CheckToken::using('profile'), 'integration.access'])
+        ->name('apps');
 
     // Data induk untuk LMS: hanya token klien server (client credentials) dengan scope `sync.read`.
     // Token pengguna (SSO) ditolak, dan semua data dibatasi ke tenant integrasi.
