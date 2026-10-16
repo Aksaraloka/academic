@@ -13,13 +13,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Passport\HasApiTokens;
 
 #[Fillable(['tenant_id', 'name', 'email', 'phone', 'role', 'theme', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -85,6 +86,18 @@ class User extends Authenticatable
                 ->where('homeroom_teacher_id', $this->teacher->id)
                 ->whereHas('academicTerm', fn ($query) => $query->where('is_active', true))
                 ->exists();
+    }
+
+    /**
+     * NIM untuk mahasiswa, NIDN (atau NIP) untuk dosen; null bila akun tidak punya nomor induk.
+     */
+    public function identityNumber(): ?string
+    {
+        return match (true) {
+            $this->role === Role::Student => $this->student?->nim,
+            $this->teacher !== null => $this->teacher->nidn ?: $this->teacher->nip,
+            default => null,
+        };
     }
 
     public function initials(): string

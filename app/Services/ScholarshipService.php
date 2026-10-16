@@ -9,6 +9,7 @@ use App\Models\Scholarship;
 use App\Models\ScholarshipApplication;
 use App\Models\Student;
 use App\Models\User;
+use App\Notifications\AcademicNotice;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -114,6 +115,13 @@ class ScholarshipService
         });
 
         $this->audit->log('scholarship.accepted', $application);
+        $application->student?->user?->notify(new AcademicNotice(
+            'Pendaftaran beasiswa diterima',
+            "Selamat, Anda diterima pada beasiswa {$application->scholarship->name}.",
+            'scholarships.mine',
+            icon: 'check-circle',
+            tone: 'success',
+        ));
     }
 
     public function reject(ScholarshipApplication $application, User $actor, string $note): void
@@ -127,6 +135,13 @@ class ScholarshipService
 
         $application->update(['status' => ApplicationStatus::Rejected, 'review_note' => trim($note), 'reviewed_by' => $actor->id, 'reviewed_at' => now()]);
         $this->audit->log('scholarship.rejected', $application, [], ['note' => $note]);
+        $application->student?->user?->notify(new AcademicNotice(
+            'Pendaftaran beasiswa ditolak',
+            "{$application->scholarship->name}: ".trim($note),
+            'scholarships.mine',
+            icon: 'x-circle',
+            tone: 'danger',
+        ));
     }
 
     private function ensureSubmitted(ScholarshipApplication $application): void

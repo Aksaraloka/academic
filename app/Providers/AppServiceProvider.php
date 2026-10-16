@@ -2,9 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\OauthClient;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Passport\Passport;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -13,7 +18,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        Passport::ignoreRoutes();
     }
 
     /**
@@ -21,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configurePassport();
+        $this->configureIntegrationRateLimit();
+
         ResetPassword::toMailUsing(function (object $notifiable, string $token): MailMessage {
             $url = route('password.reset', ['token' => $token, 'email' => $notifiable->getEmailForPasswordReset()]);
 
@@ -30,6 +38,35 @@ class AppServiceProvider extends ServiceProvider
                 ->line('Kami menerima permintaan untuk mengatur ulang kata sandi akunmu.')
                 ->action('Atur ulang kata sandi', $url)
                 ->line('Tautan berlaku '.config('auth.passwords.users.expire').' menit. Abaikan email ini bila kamu tidak memintanya.');
+        });
+    }
+
+    /**
+     * Rute bawaan Passport dimatikan di `register()`; rute OAuth didaftarkan sendiri di routes/web.php
+     * agar pengecekan tenant dan peran berjalan sebelum otorisasi.
+     */
+    private function configurePassport(): void
+    {
+        Passport::useClientModel(OauthClient::class);
+        Passport::authorizationView(fn () => abort(403, 'Klien ini tidak dapat meminta persetujuan manual.'));
+        Passport::tokensCan([
+            'profile' => 'Membaca profil pengguna yang masuk',
+            'sync.read' => 'Membaca semester, pengguna, kelas, dan peserta',
+            'grades.write' => 'Mengirim komponen nilai tugas',
+        ]);
+    }
+
+    /**
+     * Batas permintaan API integrasi dihitung per klien OAuth (klaim `aud` pada token yang sudah tervalidasi).
+     */
+    private function configureIntegrationRateLimit(): void
+    {
+        RateLimiter::for('integration', function (Request $request): Limit {
+            $segments = explode('.', (string) $request->bearerToken());
+            $payload = json_decode((string) base64_decode(strtr($segments[1] ?? '', '-_', '+/')), true);
+            $clientId = $payload['aud'][0] ?? $request->ip();
+
+            return Limit::perMinute((int) config('integration.lms.rate_limit_per_minute'))->by('integration:'.$clientId);
         });
     }
 }

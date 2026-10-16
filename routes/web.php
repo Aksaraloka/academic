@@ -41,6 +41,7 @@ use App\Livewire\Journals;
 use App\Livewire\Leaves;
 use App\Livewire\Letters;
 use App\Livewire\News;
+use App\Livewire\Notifications;
 use App\Livewire\Pay;
 use App\Livewire\Profile;
 use App\Livewire\Programs;
@@ -57,6 +58,8 @@ use App\Livewire\Yudisium;
 use App\Services\StudentImporter;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Laravel\Passport\Http\Controllers\AccessTokenController;
+use Laravel\Passport\Http\Controllers\AuthorizationController;
 
 Route::redirect('/', '/home');
 
@@ -72,6 +75,10 @@ Route::post('/pay/webhook', PaymentWebhookController::class)->name('pay.webhook'
 // Tujuan QR pada surat: publik, hanya menegaskan keaslian surat.
 Route::get('/verify/{code}', LetterVerificationController::class)->where('code', '[A-Za-z0-9]{8,24}')->middleware('throttle:60,1')->name('letters.verify');
 
+// SSO untuk LMS (OAuth2 authorization code). Tenant dan peran dicek sebelum kode otorisasi diterbitkan.
+Route::get('/oauth/authorize', [AuthorizationController::class, 'authorize'])->middleware(['web', 'lms.access'])->name('passport.authorizations.authorize');
+Route::post('/oauth/token', [AccessTokenController::class, 'issueToken'])->middleware('throttle:60,1')->name('passport.token');
+
 Route::post('/logout', function () {
     Auth::logout();
     request()->session()->invalidate();
@@ -82,6 +89,7 @@ Route::post('/logout', function () {
 
 Route::middleware('auth')->group(function () {
     Route::livewire('/home', News\Index::class)->name('dashboard');
+    Route::livewire('/notifications', Notifications\Index::class)->name('notifications.index');
     Route::livewire('/academic-calendar', Academic\Calendar::class)->name('academic.calendar');
     Route::livewire('/enrollment', Enrollment\Plan::class)->name('enrollment.plan')->middleware('role:student');
     Route::livewire('/enrollment/approvals', Enrollment\Approvals::class)->name('enrollment.approvals')->middleware('role:admin,principal,curriculum,teacher');

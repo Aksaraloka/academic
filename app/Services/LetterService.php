@@ -11,6 +11,7 @@ use App\Models\LetterRequest;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Notifications\AcademicNotice;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -81,6 +82,13 @@ class LetterService
 
         $letter->update(['status' => LetterStatus::Rejected, 'decision_note' => trim($note), 'decided_by' => $actor->id, 'decided_at' => now()]);
         $this->audit->log('letter.rejected', $letter, [], ['note' => $note]);
+        $letter->student?->user?->notify(new AcademicNotice(
+            'Permohonan surat ditolak',
+            "{$letter->type->label()}: ".trim($note),
+            'letters.mine',
+            icon: 'x-circle',
+            tone: 'danger',
+        ));
     }
 
     public function cancel(LetterRequest $letter, User $actor): void
@@ -138,6 +146,13 @@ class LetterService
         });
 
         $this->audit->log('letter.issued', $letter, [], ['number' => $letter->number, 'automatic' => $actor === null]);
+        $letter->student?->user?->notify(new AcademicNotice(
+            'Surat telah terbit',
+            "{$letter->type->label()} nomor {$letter->number} siap diunduh.",
+            'letters.mine',
+            icon: 'check-circle',
+            tone: 'success',
+        ));
     }
 
     /**

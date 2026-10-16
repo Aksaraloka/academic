@@ -13,6 +13,7 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\User;
+use App\Notifications\AcademicNotice;
 use Carbon\CarbonInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -93,6 +94,14 @@ class FinanceService
                 ]);
                 $invoice->items()->createMany($items->map(fn (array $row): array => ['description' => $row[0], 'amount' => $row[1]])->all());
                 $counts['created']++;
+                $student->user?->notify(new AcademicNotice(
+                    'Tagihan baru terbit',
+                    "{$invoice->title} sebesar Rp ".number_format($invoice->total, 0, ',', '.').', jatuh tempo '.$dueOn->translatedFormat('j M Y').'.',
+                    'pay.show',
+                    ['invoice' => $invoice->id],
+                    icon: 'banknotes',
+                    tone: 'warning',
+                ));
             }
         });
 
@@ -178,6 +187,14 @@ class FinanceService
         });
 
         $this->audit->log($approve ? 'payment.confirmed' : 'payment.rejected', $payment, [], ['note' => $note]);
+        $payment->student?->user?->notify(new AcademicNotice(
+            $approve ? 'Pembayaran dikonfirmasi' : 'Pembayaran ditolak',
+            $approve ? "Pembayaran {$payment->invoice->number} telah diterima." : "Pembayaran {$payment->invoice->number} ditolak: ".trim((string) $note),
+            'pay.show',
+            ['invoice' => $payment->invoice_id],
+            icon: $approve ? 'check-circle' : 'x-circle',
+            tone: $approve ? 'success' : 'danger',
+        ));
     }
 
     public function cancel(Invoice $invoice, User $actor, string $reason): void
