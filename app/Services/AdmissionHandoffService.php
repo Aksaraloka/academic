@@ -7,8 +7,10 @@ use App\Enums\PaymentStatus;
 use App\Enums\Role;
 use App\Enums\StudentStatus;
 use App\Exceptions\AdmissionHandoffException;
+use App\Jobs\FetchAdmissionPhoto;
 use App\Jobs\SendPasswordSetupLink;
 use App\Models\AcademicTerm;
+use App\Models\Guardian;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Program;
@@ -27,6 +29,9 @@ use Illuminate\Support\Str;
  */
 class AdmissionHandoffService
 {
+    /** @var array<string, string> relasi di kontrak Admission => nilai `guardians.relation` yang dipakai Academic */
+    public const GUARDIAN_RELATIONS = ['father' => 'Ayah', 'mother' => 'Ibu', 'guardian' => 'Wali'];
+
     public function __construct(
         private readonly FinanceService $finance,
         private readonly NimGenerator $nim,
@@ -36,7 +41,7 @@ class AdmissionHandoffService
 
     /**
      * @param  array<string, mixed>  $data  isi `POST /admissions/students` yang sudah tervalidasi
-     * @return array{created: bool, data: array{user_id: int, student_id: int, nim: string, study_group: array{id: int, name: string}|null, invoice: array{number: string, status: string, total: int, paid: int}|null}}
+     * @return array{created: bool, data: array{user_id: int, student_id: int, nim: string, study_group: array{id: int, name: string}|null, photo_status: string, invoice: array{number: string, status: string, total: int, paid: int}|null}}
      *
      * @throws AdmissionHandoffException
      */
@@ -45,7 +50,7 @@ class AdmissionHandoffService
         $existing = $this->findByRef($tenantId, $data['admission_ref']);
 
         if ($existing !== null) {
-            return ['created' => false, 'data' => $this->response($existing)];
+            return ['created' => false, 'data' => $this->response($existing, $this->queuePhoto($existing, $data))];
         }
 
         $program = Program::query()->withoutGlobalScopes()->where('tenant_id', $tenantId)->findOrFail($data['program_id']);
@@ -60,7 +65,7 @@ class AdmissionHandoffService
             $existing = $this->findByRef($tenantId, $data['admission_ref']);
 
             if ($existing !== null) {
-                return ['created' => false, 'data' => $this->response($existing)];
+                return ['created' => false, 'data' => $this->response($existing, $this->queuePhoto($existing, $data))];
             }
 
             $this->guardUniqueness($tenantId, $data);
@@ -70,7 +75,26 @@ class AdmissionHandoffService
 
         SendPasswordSetupLink::dispatch($student->user_id);
 
-        return ['created' => true, 'data' => $this->response($student)];
+        return ['created' => true, 'data' => $this->response($student, $this->queuePhoto($student, $data))];
+    }
+
+    /**
+     * Antrekan unduhan pas foto bila payload membawanya dan mahasiswa belum punya foto. Panggilan ulang dengan URL
+     * baru dengan sengaja boleh mengulang unduhan yang sebelumnya gagal (mis. URL kedaluwarsa).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function queuePhoto(Student $student, array $data): string
+    {
+        $photo = $data['photo'] ?? null;
+
+        if (! is_array($photo) || $student->photo_path !== null) {
+            return 'none';
+        }
+
+        FetchAdmissionPhoto::dispatch($student->id, $photo['url'], strtolower($photo['sha256']), $photo['mime']);
+
+        return 'queued';
     }
 
     /**
@@ -125,6 +149,7 @@ class AdmissionHandoffService
         ]);
 
         $group = $this->placement->place($student, $program, $term, $batchYear);
+        $this->linkGuardians($student, $data['guardians'] ?? []);
 
         $invoice = $this->finance->issueInvoice($student, $term, null, today(), notify: false);
 
@@ -153,15 +178,51 @@ class AdmissionHandoffService
         return $student;
     }
 
+    /**
+     * Orang tua/wali tanpa akun login. Wali yang sama (kampus, hubungan, nama, dan telepon) dipakai bersama saudara
+     * kandung; tanpa telepon tidak ada pencocokan dan dibuat baru. Data wali yang sudah ada tidak ditimpa.
+     *
+     * @param  array<int, array<string, mixed>>  $guardians
+     */
+    private function linkGuardians(Student $student, array $guardians): void
+    {
+        foreach ($guardians as $row) {
+            $attributes = [
+                'name' => trim($row['name']), 'relation' => self::GUARDIAN_RELATIONS[$row['relation']],
+                'phone' => $this->nullable($row['phone'] ?? null), 'occupation' => $this->nullable($row['occupation'] ?? null),
+                'education' => $this->nullable($row['education'] ?? null), 'address' => $this->nullable($row['address'] ?? null),
+            ];
+
+            $guardian = $attributes['phone'] === null ? null : Guardian::query()->withoutGlobalScopes()
+                ->where('tenant_id', $student->tenant_id)->where('relation', $attributes['relation'])->where('phone', $attributes['phone'])
+                ->whereRaw('lower(name) = ?', [Str::lower($attributes['name'])])->first();
+
+            if ($guardian === null) {
+                $guardian = Guardian::create(['tenant_id' => $student->tenant_id] + $attributes);
+            } else {
+                $guardian->fill(array_filter($attributes, fn (?string $value, string $key): bool => $value !== null && $guardian->getAttribute($key) === null, ARRAY_FILTER_USE_BOTH))->save();
+            }
+
+            $student->guardians()->syncWithoutDetaching([$guardian->id]);
+        }
+    }
+
+    private function nullable(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
+    }
+
     private function findByRef(int $tenantId, string $ref): ?Student
     {
         return Student::query()->withoutGlobalScopes()->where('tenant_id', $tenantId)->where('admission_ref', $ref)->first();
     }
 
     /**
-     * @return array{user_id: int, student_id: int, nim: string, study_group: array{id: int, name: string}|null, invoice: array{number: string, status: string, total: int, paid: int}|null}
+     * @return array{user_id: int, student_id: int, nim: string, study_group: array{id: int, name: string}|null, photo_status: string, invoice: array{number: string, status: string, total: int, paid: int}|null}
      */
-    private function response(Student $student): array
+    private function response(Student $student, string $photoStatus): array
     {
         $invoice = Invoice::query()->withoutGlobalScopes()->with('payments')->where('student_id', $student->id)->orderBy('id')->first();
         $memberships = StudyGroupMember::query()->where('student_id', $student->id)->orderByDesc('id');
@@ -173,6 +234,7 @@ class AdmissionHandoffService
             'student_id' => $student->id,
             'nim' => $student->nim,
             'study_group' => $group === null ? null : ['id' => $group->id, 'name' => $group->name],
+            'photo_status' => $photoStatus,
             'invoice' => $invoice === null ? null : [
                 'number' => $invoice->number, 'status' => $invoice->status->value, 'total' => $invoice->total, 'paid' => $invoice->paidAmount(),
             ],

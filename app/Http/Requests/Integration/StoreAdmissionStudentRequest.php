@@ -3,7 +3,11 @@
 namespace App\Http\Requests\Integration;
 
 use App\Enums\PaymentMethod;
+use App\Jobs\FetchAdmissionPhoto;
 use App\Models\Student;
+use App\Services\AdmissionHandoffService;
+use App\Services\IntegrationApps;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,6 +19,20 @@ class StoreAdmissionStudentRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * URL foto hanya boleh menunjuk ke Admission yang terhubung (mencegah server mengambil alamat sembarang).
+     */
+    private function belongsToAdmission(string $attribute, mixed $value, Closure $fail): void
+    {
+        $admission = parse_url(app(IntegrationApps::class)->get(IntegrationApps::ADMISSION)->url());
+        $target = is_string($value) ? parse_url($value) : false;
+
+        if (! is_array($admission) || ! is_array($target) || ! isset($admission['host'], $target['host'])
+            || strcasecmp($admission['host'], $target['host']) !== 0 || ($admission['port'] ?? null) !== ($target['port'] ?? null)) {
+            $fail('URL foto harus berada di alamat Admission yang terhubung.');
+        }
     }
 
     /**
@@ -49,6 +67,17 @@ class StoreAdmissionStudentRequest extends FormRequest
             'initial_payment.paid_on' => ['required', 'date'],
             'initial_payment.method' => ['required', Rule::in(array_column(PaymentMethod::cases(), 'value'))],
             'initial_payment.reference' => ['required', 'string', 'max:100'],
+            'guardians' => ['nullable', 'array', 'max:3'],
+            'guardians.*.relation' => ['required', Rule::in(array_keys(AdmissionHandoffService::GUARDIAN_RELATIONS)), 'distinct'],
+            'guardians.*.name' => ['required', 'string', 'max:255'],
+            'guardians.*.phone' => ['nullable', 'string', 'max:30'],
+            'guardians.*.occupation' => ['nullable', 'string', 'max:100'],
+            'guardians.*.education' => ['nullable', 'string', 'max:100'],
+            'guardians.*.address' => ['nullable', 'string', 'max:500'],
+            'photo' => ['nullable', 'array'],
+            'photo.url' => ['required_with:photo', 'string', 'url:http,https', 'max:2000', $this->belongsToAdmission(...)],
+            'photo.sha256' => ['required_with:photo', 'string', 'regex:/^[A-Fa-f0-9]{64}$/'],
+            'photo.mime' => ['required_with:photo', Rule::in(array_keys(FetchAdmissionPhoto::EXTENSIONS))],
         ];
     }
 }
