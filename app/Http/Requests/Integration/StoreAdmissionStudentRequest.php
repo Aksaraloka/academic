@@ -40,6 +40,8 @@ class StoreAdmissionStudentRequest extends FormRequest
      */
     public function rules(): array
     {
+        $paysSelf = $this->input('funding', AdmissionHandoffService::FUNDING_SELF) !== AdmissionHandoffService::FUNDING_KIPK;
+
         return [
             'admission_ref' => ['required', 'string', 'max:60'],
             'program_id' => ['required', 'integer', 'min:1'],
@@ -62,11 +64,16 @@ class StoreAdmissionStudentRequest extends FormRequest
             'student.province' => ['nullable', 'string', 'max:100'],
             'student.postal_code' => ['nullable', 'string', 'max:10'],
             'student.previous_school' => ['nullable', 'string', 'max:255'],
-            'initial_payment' => ['required', 'array'],
-            'initial_payment.amount' => ['required', 'integer', 'min:1'],
-            'initial_payment.paid_on' => ['required', 'date'],
-            'initial_payment.method' => ['required', Rule::in(array_column(PaymentMethod::cases(), 'value'))],
-            'initial_payment.reference' => ['required', 'string', 'max:100'],
+            'funding' => ['nullable', Rule::in(AdmissionHandoffService::FUNDINGS), function (string $attribute, mixed $value, Closure $fail): void {
+                if ($value === AdmissionHandoffService::FUNDING_KIPK && $this->input('admission_path') !== 'KIP-K') {
+                    $fail('Pendanaan kip_k hanya sah untuk jalur masuk KIP-K.');
+                }
+            }],
+            'initial_payment' => [Rule::requiredIf($paysSelf), 'nullable', 'array'],
+            'initial_payment.amount' => [Rule::requiredIf($paysSelf), 'integer', 'min:1'],
+            'initial_payment.paid_on' => [Rule::requiredIf($paysSelf), 'date'],
+            'initial_payment.method' => [Rule::requiredIf($paysSelf), Rule::in(array_values(array_diff(array_column(PaymentMethod::cases(), 'value'), [PaymentMethod::Scholarship->value])))],
+            'initial_payment.reference' => [Rule::requiredIf($paysSelf), 'string', 'max:100'],
             'guardians' => ['nullable', 'array', 'max:3'],
             'guardians.*.relation' => ['required', Rule::in(array_keys(AdmissionHandoffService::GUARDIAN_RELATIONS)), 'distinct'],
             'guardians.*.name' => ['required', 'string', 'max:255'],

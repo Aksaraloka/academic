@@ -39,6 +39,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Laravel\Passport\ClientRepository;
 use Laravel\Passport\Passport;
 use Livewire\Livewire;
@@ -1065,5 +1066,121 @@ describe('fee model', function () {
         $finance->generate($this->term, makeStaffUser($this->tenant, Role::Finance), today()->addWeek());
 
         expect(Invoice::where('student_id', $student->id)->firstOrFail()->items()->pluck('amount', 'description')->all())->toBe(['BPP' => 500000]);
+    });
+});
+
+describe('KIP-K funding', function () {
+    /**
+     * @return array<string, mixed>
+     */
+    function kipkOverrides(array $extra = []): array
+    {
+        return $extra + ['admission_path' => 'KIP-K', 'funding' => 'kip_k', 'ukt_group' => null];
+    }
+
+    function kipkPayload(object $test, array $overrides = []): array
+    {
+        $payload = array_replace_recursive(handoffPayload($test), kipkOverrides($overrides));
+        unset($payload['initial_payment']);
+
+        return $payload;
+    }
+
+    it('creates a paid invoice through a scholarship payment without any initial_payment', function () {
+        Queue::fake();
+        $this->tenant->update(['settings' => ['fee_model' => 'flat']]);
+
+        $response = test()->withToken($this->token)->postJson($this->url, kipkPayload($this))->assertCreated();
+
+        $student = Student::firstOrFail();
+        $invoice = Invoice::firstOrFail();
+        $payment = Payment::firstOrFail();
+
+        expect($response->json('invoice'))->toBe(['number' => $invoice->number, 'status' => 'paid', 'total' => 500000, 'paid' => 500000])
+            ->and($student->admission_path)->toBe('KIP-K')->and($invoice->items()->pluck('amount', 'description')->all())->toBe(['BPP' => 500000])
+            ->and($payment->method)->toBe(PaymentMethod::Scholarship)->and($payment->status)->toBe(PaymentStatus::Confirmed)
+            ->and($payment->amount)->toBe(500000)->and($payment->reference)->toBe('KIPK-PMB-2027-000123')
+            ->and($payment->note)->toBe('Ditanggung KIP Kuliah (jalur KIP-K, PMB-2027-000123)')
+            ->and($payment->paid_on->toDateString())->toBe(today()->toDateString())
+            ->and(app(FinanceService::class)->krsClearance($student, $this->term)['outstanding'])->toBe(0)
+            ->and(AuditLog::where('action', 'admission.handoff')->firstOrFail()->new_values)->toMatchArray(['funding' => 'kip_k', 'paid' => 500000]);
+    });
+
+    it('ignores any initial_payment sent with kip_k', function () {
+        Queue::fake();
+        $this->tenant->update(['settings' => ['fee_model' => 'flat']]);
+        $payload = array_replace_recursive(kipkPayload($this), ['initial_payment' => ['amount' => 1, 'method' => 'va']]);
+
+        test()->withToken($this->token)->postJson($this->url, $payload)->assertCreated()->assertJsonPath('invoice.paid', 500000);
+
+        expect(Payment::count())->toBe(1);
+    });
+
+    it('rejects kip_k for another admission path', function (string $path) {
+        Queue::fake();
+
+        test()->withToken($this->token)->postJson($this->url, kipkPayload($this, ['admission_path' => $path]))->assertUnprocessable()->assertJsonValidationErrors('funding');
+
+        expect(Student::count())->toBe(0);
+    })->with(['Mandiri', 'SNBP']);
+
+    it('requires initial_payment when funding is self or omitted', function (array $extra) {
+        Queue::fake();
+        $payload = array_replace_recursive(handoffPayload($this), $extra);
+        unset($payload['initial_payment']);
+
+        test()->withToken($this->token)->postJson($this->url, $payload)->assertUnprocessable()->assertJsonValidationErrors('initial_payment');
+
+        expect(Student::count())->toBe(0);
+    })->with([[['funding' => 'self']], [[]], [['admission_path' => 'KIP-K', 'funding' => 'self']]]);
+
+    it('rejects an unknown funding value and the scholarship method as a self payment', function () {
+        Queue::fake();
+
+        handoff($this, ['funding' => 'beasiswa'])->assertUnprocessable()->assertJsonValidationErrors('funding');
+        handoff($this, ['initial_payment' => ['method' => 'scholarship']])->assertUnprocessable()->assertJsonValidationErrors('initial_payment.method');
+    });
+
+    it('still lets a KIP-K candidate pay by themselves with funding self', function () {
+        Queue::fake();
+
+        handoff($this, ['admission_path' => 'KIP-K', 'funding' => 'self'])->assertCreated()->assertJsonPath('invoice.status', 'paid');
+
+        expect(Payment::firstOrFail()->method)->toBe(PaymentMethod::VirtualAccount);
+    });
+
+    it('is idempotent: a repeated KIP-K handoff adds no second payment', function () {
+        Queue::fake();
+        $this->tenant->update(['settings' => ['fee_model' => 'flat']]);
+
+        $first = test()->withToken($this->token)->postJson($this->url, kipkPayload($this))->assertCreated()->json();
+        $second = test()->withToken($this->token)->postJson($this->url, kipkPayload($this))->assertOk()->json();
+
+        expect($second)->toBe($first)->and(Payment::count())->toBe(1)->and(Invoice::count())->toBe(1);
+    });
+
+    it('rolls everything back for KIP-K when the program has no fee rate', function () {
+        Queue::fake();
+        $this->tenant->update(['settings' => ['fee_model' => 'flat']]);
+        $bare = makeProgram($this->tenant, 'Hukum');
+
+        test()->withToken($this->token)->postJson($this->url, kipkPayload($this, ['program_id' => $bare->id]))->assertUnprocessable()->assertJsonPath('code', 'fee_rate_missing');
+
+        expect(Student::count())->toBe(0)->and(Payment::count())->toBe(0);
+    });
+
+    it('does not offer the scholarship method to students but does to finance staff', function () {
+        expect(PaymentMethod::forStudents())->not->toContain(PaymentMethod::Scholarship)->and(PaymentMethod::Scholarship->label())->toBe('Beasiswa / bantuan pemerintah');
+
+        $student = makeStudentUser($this->tenant, [], ['program_id' => $this->program->id])->student;
+        $invoice = Invoice::factory()->create(['tenant_id' => $this->tenant->id, 'student_id' => $student->id, 'academic_term_id' => $this->term->id, 'total' => 1000000]);
+        $finance = app(FinanceService::class);
+
+        expect(fn () => $finance->submitPayment($invoice, $student->user, 100000, PaymentMethod::Scholarship, today(), null, null, null))
+            ->toThrow(ValidationException::class, 'Metode pembayaran');
+
+        $payment = $finance->recordPayment($invoice, makeStaffUser($this->tenant, Role::Finance), 100000, PaymentMethod::Scholarship, today(), 'MANUAL-1', null);
+
+        expect($payment->method)->toBe(PaymentMethod::Scholarship)->and($payment->status)->toBe(PaymentStatus::Confirmed);
     });
 });

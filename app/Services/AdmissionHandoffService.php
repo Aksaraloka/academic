@@ -31,6 +31,13 @@ use Illuminate\Support\Str;
 class AdmissionHandoffService
 {
     /** @var array<string, string> relasi di kontrak Admission => nilai `guardians.relation` yang dipakai Academic */
+    public const FUNDING_SELF = 'self';
+
+    public const FUNDING_KIPK = 'kip_k';
+
+    /** @var array<int, string> sumber dana biaya semester pertama */
+    public const FUNDINGS = [self::FUNDING_SELF, self::FUNDING_KIPK];
+
     public const GUARDIAN_RELATIONS = ['father' => 'Ayah', 'mother' => 'Ibu', 'guardian' => 'Wali'];
 
     public function __construct(
@@ -134,11 +141,27 @@ class AdmissionHandoffService
             throw new AdmissionHandoffException('nik_taken', 'NIK sudah terdaftar sebagai mahasiswa.', 409);
         }
 
-        $reference = $data['initial_payment']['reference'];
+        $reference = $this->paymentReference($data);
 
         if (Payment::query()->withoutGlobalScopes()->where('tenant_id', $tenantId)->where('reference', $reference)->exists()) {
             throw new AdmissionHandoffException('payment_reference_used', 'Referensi pembayaran sudah tercatat untuk tagihan lain.');
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function isKipK(array $data): bool
+    {
+        return ($data['funding'] ?? self::FUNDING_SELF) === self::FUNDING_KIPK;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function paymentReference(array $data): string
+    {
+        return $this->isKipK($data) ? "KIPK-{$data['admission_ref']}" : $data['initial_payment']['reference'];
     }
 
     /**
@@ -177,7 +200,10 @@ class AdmissionHandoffService
             throw new AdmissionHandoffException('fee_rate_missing', "Prodi {$program->name} belum punya {$missing}, sehingga tagihan tidak dapat dibuat.");
         }
 
-        $payment = $data['initial_payment'];
+        $kipK = $this->isKipK($data);
+        $payment = $kipK
+            ? ['amount' => $invoice->total, 'method' => PaymentMethod::Scholarship->value, 'reference' => $this->paymentReference($data), 'paid_on' => today()->toDateString()]
+            : $data['initial_payment'];
 
         if ((int) $payment['amount'] > $invoice->total) {
             throw new AdmissionHandoffException('payment_exceeds_invoice', "Pembayaran awal melebihi tagihan semester pertama (Rp {$invoice->total}).");
@@ -186,13 +212,14 @@ class AdmissionHandoffService
         Payment::create([
             'tenant_id' => $tenantId, 'invoice_id' => $invoice->id, 'student_id' => $student->id, 'amount' => (int) $payment['amount'],
             'method' => PaymentMethod::from($payment['method']), 'reference' => $payment['reference'], 'paid_on' => $payment['paid_on'],
-            'status' => PaymentStatus::Confirmed, 'note' => "UKT pertama dibayar di Admission ({$data['admission_ref']})", 'verified_at' => now(),
+            'status' => PaymentStatus::Confirmed, 'verified_at' => now(),
+            'note' => $kipK ? "Ditanggung KIP Kuliah (jalur KIP-K, {$data['admission_ref']})" : "UKT pertama dibayar di Admission ({$data['admission_ref']})",
         ]);
         $this->finance->refresh($invoice);
 
         $this->audit->log('admission.handoff', $student, [], [
             'admission_ref' => $data['admission_ref'], 'nim' => $student->nim, 'program' => $program->name, 'term' => $term->id,
-            'study_group' => $group->name, 'invoice' => $invoice->number, 'paid' => (int) $payment['amount'], 'payment_reference' => $payment['reference'],
+            'funding' => $kipK ? self::FUNDING_KIPK : self::FUNDING_SELF, 'study_group' => $group->name, 'invoice' => $invoice->number, 'paid' => (int) $payment['amount'], 'payment_reference' => $payment['reference'],
         ], null, $tenantId);
 
         return $student;

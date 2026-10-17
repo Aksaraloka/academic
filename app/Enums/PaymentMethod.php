@@ -8,6 +8,7 @@ enum PaymentMethod: string
     case VirtualAccount = 'va';
     case EWallet = 'ewallet';
     case Cash = 'cash';
+    case Scholarship = 'scholarship';
 
     public function label(): string
     {
@@ -16,6 +17,7 @@ enum PaymentMethod: string
             self::VirtualAccount => 'Virtual account',
             self::EWallet => 'Dompet digital',
             self::Cash => 'Tunai di kasir',
+            self::Scholarship => 'Beasiswa / bantuan pemerintah',
         };
     }
 
