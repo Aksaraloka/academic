@@ -1,4 +1,11 @@
 <div>
+    @if ($ssoApp)
+        <div class="mb-5 flex items-start gap-3 rounded-lg border border-border bg-surface-muted p-3 text-sm" role="status">
+            <x-icon name="information-circle" class="mt-0.5 size-5 text-info" />
+            <p>{{ __('sso.login_notice', ['app' => $ssoApp->label()]) }}</p>
+        </div>
+    @endif
+
     <h1 class="text-2xl font-bold sm:text-3xl">Masuk</h1>
     <p class="mt-1 text-sm text-text-muted">{{ ['student' => 'Masuk sebagai mahasiswa.', 'guardian' => 'Masuk sebagai orang tua atau wali mahasiswa.', 'lecturer' => 'Masuk sebagai dosen atau staf akademik.'][$portal] }} Admin bisa masuk dari pilihan mana pun.</p>
 

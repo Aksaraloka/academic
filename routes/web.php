@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityEvidenceController;
+use App\Http\Controllers\Auth\SwitchSsoAccountController;
 use App\Http\Controllers\ExamCardPdfController;
 use App\Http\Controllers\FeedbackAttachmentController;
 use App\Http\Controllers\GradeReportController;
@@ -77,6 +78,8 @@ Route::get('/verify/{code}', LetterVerificationController::class)->where('code',
 
 // SSO untuk LMS (OAuth2 authorization code). Tenant dan peran dicek sebelum kode otorisasi diterbitkan.
 Route::get('/oauth/authorize', [AuthorizationController::class, 'authorize'])->middleware(['web', 'lms.access'])->name('passport.authorizations.authorize');
+
+Route::post('/sso/switch-account', SwitchSsoAccountController::class)->middleware('auth')->name('sso.switch-account');
 
 Route::post('/logout', function () {
     Auth::logout();

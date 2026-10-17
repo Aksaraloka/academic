@@ -2,6 +2,9 @@
 
 namespace App\Livewire\Auth;
 
+use App\Services\IntegrationApp;
+use App\Services\IntegrationApps;
+use App\Support\SsoReturn;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -33,6 +36,19 @@ class Login extends Component
         if (! in_array($this->portal, ['student', 'guardian', 'lecturer'], true)) {
             $this->portal = 'student';
         }
+
+        // Admission hanya untuk staf: langsung ke tab Dosen kecuali pengguna sudah memilih tab sendiri.
+        if (! request()->has('as') && $this->ssoApp()?->key === IntegrationApps::ADMISSION) {
+            $this->portal = 'lecturer';
+        }
+    }
+
+    /**
+     * Aplikasi tujuan bila halaman ini dibuka karena alur SSO; null untuk login biasa atau klien yang tidak dikenal.
+     */
+    public function ssoApp(): ?IntegrationApp
+    {
+        return SsoReturn::appFor(session('url.intended'));
     }
 
     public function choosePortal(string $portal): void
@@ -78,11 +94,12 @@ class Login extends Component
         RateLimiter::clear($throttleKey);
         session()->regenerate();
 
-        $this->redirectIntended(route('dashboard'), navigate: true);
+        // Alur OAuth berakhir di domain aplikasi lain, yang tidak bisa diikuti navigasi Livewire: pakai redirect penuh.
+        $this->redirectIntended(route('dashboard'), navigate: ! SsoReturn::needsFullRedirect(session('url.intended')));
     }
 
     public function render()
     {
-        return view('livewire.auth.login');
+        return view('livewire.auth.login', ['ssoApp' => $this->ssoApp()]);
     }
 }

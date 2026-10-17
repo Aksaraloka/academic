@@ -26,9 +26,29 @@ class EnsureLmsAccess
         if ($user !== null) {
             $reason = $app->denialReason($user);
 
-            abort_if($reason !== null, 403, $reason);
+            if ($reason !== null) {
+                return $this->deny($request, $app->label(), $reason, $user->name, $user->email);
+            }
         }
 
         return $next($request);
+    }
+
+    /**
+     * Halaman web (otorisasi SSO) mendapat halaman penolakan yang ramah; pemanggil API tetap menerima 403 JSON.
+     */
+    private function deny(Request $request, string $appLabel, string $reason, string $name, string $email): Response
+    {
+        if ($request->expectsJson() || $request->is('api/*')) {
+            abort(403, $reason);
+        }
+
+        return response()->view('sso.denied', [
+            'appLabel' => $appLabel,
+            'reason' => $reason,
+            'name' => $name,
+            'email' => $email,
+            'returnUrl' => $request->fullUrl(),
+        ], 403);
     }
 }
