@@ -59,7 +59,6 @@ use App\Livewire\Yudisium;
 use App\Services\StudentImporter;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Laravel\Passport\Http\Controllers\AccessTokenController;
 use Laravel\Passport\Http\Controllers\AuthorizationController;
 
 Route::redirect('/', '/home');
@@ -78,7 +77,6 @@ Route::get('/verify/{code}', LetterVerificationController::class)->where('code',
 
 // SSO untuk LMS (OAuth2 authorization code). Tenant dan peran dicek sebelum kode otorisasi diterbitkan.
 Route::get('/oauth/authorize', [AuthorizationController::class, 'authorize'])->middleware(['web', 'lms.access'])->name('passport.authorizations.authorize');
-Route::post('/oauth/token', [AccessTokenController::class, 'issueToken'])->middleware('throttle:60,1')->name('passport.token');
 
 Route::post('/logout', function () {
     Auth::logout();
