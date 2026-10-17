@@ -50,13 +50,19 @@ class SelfServiceSeeder extends Seeder
         $teachers = Teacher::query()->withoutGlobalScopes()->where('tenant_id', $tenant->id)->orderBy('id')->get();
 
         if ($students->count() < 10 || $teachers->isEmpty()) {
+            auth()->logout();
+
             return;
         }
 
-        $this->letters($students, $teachers, $actor);
-        $this->activities($students, $actor);
-        $this->scholarships($tenant, $students, $actor);
-        $this->internships($students, $teachers, $actor);
+        try {
+            $this->letters($students, $teachers, $actor);
+            $this->activities($students, $actor);
+            $this->scholarships($tenant, $students, $actor);
+            $this->internships($students, $teachers, $actor);
+        } finally {
+            auth()->logout();
+        }
     }
 
     /**
