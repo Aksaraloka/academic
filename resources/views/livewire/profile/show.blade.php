@@ -7,7 +7,11 @@
         <div class="h-24 bg-brand"></div>
         <div class="px-4 pb-5 sm:px-6">
             <div class="-mt-12 flex flex-wrap items-end justify-between gap-3">
-                <span class="flex size-24 items-center justify-center rounded-full border-4 border-surface bg-primary/15 text-3xl font-bold text-primary" aria-hidden="true">{{ $user->initials() }}</span>
+                @if ($student?->photoUrl())
+                    <img src="{{ $student->photoUrl() }}" alt="Pas foto {{ $student->name }}" class="size-24 rounded-full border-4 border-surface object-cover">
+                @else
+                    <span class="flex size-24 items-center justify-center rounded-full border-4 border-surface bg-primary/15 text-3xl font-bold text-primary" aria-hidden="true">{{ $user->initials() }}</span>
+                @endif
                 <x-button :href="route('profile.edit')" wire:navigate icon="pencil-square">Ubah profil</x-button>
             </div>
             <h1 id="nama-profil" class="mt-3 text-2xl font-bold sm:text-3xl">{{ $displayName }}</h1>

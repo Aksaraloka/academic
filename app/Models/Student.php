@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 #[Fillable(['tenant_id', 'user_id', 'program_id', 'name', 'nim', 'batch_year', 'birth_date', 'birth_place', 'gender', 'religion', 'nik', 'nationality', 'address', 'city', 'province', 'postal_code', 'phone', 'photo_path', 'status', 'entry_date', 'graduated_on', 'graduation_predicate', 'previous_school', 'admission_path', 'ukt_group', 'is_domicile_same', 'residence_type', 'domicile_address', 'domicile_city', 'domicile_province', 'domicile_postal_code', 'legacy_credits', 'legacy_quality_points', 'admission_ref'])]
 class Student extends Model
@@ -57,6 +58,19 @@ class Student extends Model
     public function scopeNewIn(Builder $query, AcademicTerm $term): void
     {
         $query->whereNotNull('admission_ref')->where('batch_year', '>=', $term->starts_at->year - 1);
+    }
+
+    public function hasPhoto(): bool
+    {
+        return $this->photo_path !== null && Storage::disk('local')->exists($this->photo_path);
+    }
+
+    /**
+     * Alamat pas foto (disajikan lewat rute yang memeriksa hak akses); parameter `v` menghindari cache lama setelah diganti.
+     */
+    public function photoUrl(): ?string
+    {
+        return $this->hasPhoto() ? route('students.photo', ['student' => $this->id, 'v' => $this->updated_at?->timestamp]) : null;
     }
 
     public function user(): BelongsTo

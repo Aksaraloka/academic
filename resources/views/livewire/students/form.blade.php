@@ -4,6 +4,20 @@
     <form wire:submit="save" class="space-y-4">
         <x-card title="Identitas dan data pribadi">
             <div class="grid gap-4 sm:grid-cols-2">
+                <div class="flex items-center gap-4 sm:col-span-2">
+                    @if ($photo && ! $errors->has('photo'))
+                        <img src="{{ $photo->temporaryUrl() }}" alt="Pratinjau pas foto" class="size-20 rounded-full object-cover">
+                    @elseif ($student?->photoUrl())
+                        <img src="{{ $student->photoUrl() }}" alt="Pas foto {{ $student->name }}" class="size-20 rounded-full object-cover">
+                    @else
+                        <span class="flex size-20 items-center justify-center rounded-full bg-primary/15 text-text-muted" aria-hidden="true"><x-icon name="user-circle" class="size-10" /></span>
+                    @endif
+                    <div class="min-w-0 flex-1">
+                        <x-field label="Pas foto" name="photo" hint="JPG atau PNG, maksimal 2 MB. Mengganti foto yang ada.">
+                            <input id="photo" type="file" wire:model="photo" accept="image/jpeg,image/png" class="input" @error('photo') aria-invalid="true" @enderror>
+                        </x-field>
+                    </div>
+                </div>
                 <div class="sm:col-span-2">
                     <x-field label="Nama lengkap" name="name" required>
                         <input id="name" type="text" wire:model="name" class="input" @error('name') aria-invalid="true" @enderror>

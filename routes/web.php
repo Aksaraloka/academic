@@ -15,6 +15,7 @@ use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\ScheduleExportController;
 use App\Http\Controllers\SkpiPdfController;
+use App\Http\Controllers\StudentPhotoController;
 use App\Http\Controllers\SurveyExportController;
 use App\Http\Controllers\YudisiumPdfController;
 use App\Livewire\Academic;
@@ -172,6 +173,7 @@ Route::middleware('auth')->group(function () {
 
     Route::livewire('/news/{news}', News\Show::class)->name('news.show');
     Route::get('/news/{news}/poster', NewsPosterController::class)->name('news.poster');
+    Route::get('/students/{student}/photo', StudentPhotoController::class)->whereNumber('student')->name('students.photo');
 
     Route::middleware('role:admin,principal,curriculum,teacher,duty')->group(function () {
         Route::livewire('/students', Students\Index::class)->name('students.index');

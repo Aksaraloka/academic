@@ -8,13 +8,21 @@ use App\Models\Program;
 use App\Models\Student;
 use App\Services\AuditLogger;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 #[Title('Data mahasiswa')]
 class Form extends Component
 {
+    use WithFileUploads;
+
+    /** @var TemporaryUploadedFile|null */
+    public $photo;
+
     public ?Student $student = null;
 
     public string $name = '';
@@ -209,6 +217,7 @@ class Form extends Component
             'admission_path' => ['nullable', Rule::in(Student::ADMISSION_PATHS)],
             'legacy_credits' => ['nullable', 'integer', 'between:0,300'],
             'legacy_quality_points' => ['nullable', 'numeric', 'between:0,1500'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
             'parents' => ['array', 'max:6'],
             'parents.*.id' => ['nullable', 'integer'],
             'parents.*.relation' => ['required', Rule::in(['Ayah', 'Ibu', 'Wali'])],
@@ -250,6 +259,7 @@ class Form extends Component
             'admission_path' => 'jalur masuk',
             'legacy_credits' => 'SKS nilai awal',
             'legacy_quality_points' => 'total mutu nilai awal',
+            'photo' => 'pas foto',
             'parents.*.name' => 'nama orang tua/wali',
             'parents.*.occupation' => 'pekerjaan',
             'parents.*.education' => 'pendidikan',
@@ -262,7 +272,7 @@ class Form extends Component
     {
         $validated = $this->validate();
         $parents = $validated['parents'] ?? [];
-        unset($validated['parents']);
+        unset($validated['parents'], $validated['photo']);
 
         $data = collect($validated)->map(fn ($value) => $value === '' ? null : $value)->all();
         $data['nationality'] ??= 'Indonesia';
@@ -283,10 +293,36 @@ class Form extends Component
             }
 
             $this->syncParents($parents);
+            $this->storePhoto();
         });
 
         session()->flash('toast', 'Data mahasiswa disimpan.');
         $this->redirectRoute('students.index', navigate: true);
+    }
+
+    public function updatedPhoto(): void
+    {
+        $this->validateOnly('photo');
+    }
+
+    /**
+     * Pas foto di disk privat; mengganti foto lama (termasuk dari Admission) tanpa meninggalkan berkas yatim.
+     */
+    private function storePhoto(): void
+    {
+        if ($this->photo === null) {
+            return;
+        }
+
+        $old = $this->student->photo_path;
+        $path = $this->photo->storeAs("students/photos/{$this->student->tenant_id}", $this->student->id.'.'.$this->photo->guessExtension(), 'local');
+        $this->student->update(['photo_path' => $path]);
+
+        if ($old !== null && $old !== $path) {
+            Storage::disk('local')->delete($old);
+        }
+
+        app(AuditLogger::class)->log('student.photo_uploaded', $this->student, ['photo_path' => $old], ['photo_path' => $path]);
     }
 
     /**
